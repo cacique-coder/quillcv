@@ -75,21 +75,53 @@ WEAK_STANDALONE = {
     "function", "partner", "use", "best",
     "practices", "provide", "leaders", "react",
     "implementation", "implementations",
+    # Filler words in bigrams
+    "primary", "focus", "term", "helping", "define", "globally",
+    "recognized", "clear", "path", "demonstrate", "specific",
+    "different", "love", "flexing", "life", "cycle",
+    "understand", "successfully", "dedicated",
 }
 
 
-# Bigram phrases that are job-ad boilerplate, not CV skills
-NOISE_BIGRAMS = {
-    "spend less", "time fixing", "time building", "digital life",
-    "encourage meaningful", "primary focus", "already includes",
-    "globally recognized", "clear path", "meet those", "around error",
-    "specific functionality", "love flexing", "love developer",
-    "life cycle", "different industries", "essential functions",
-    "reasonable accommodations", "mental disabilities", "inclusive culture",
-    "privacy policy", "sentry handles", "strategic region",
-    "helping define", "term customer", "ensuring sentry",
-    "practices provide", "provide feedback", "demonstrate business",
-}
+def _strip_boilerplate(text: str) -> str:
+    """Remove non-relevant sections from a job description.
+
+    Strips: company intro/marketing, EEO/diversity statements, privacy/legal,
+    salary/benefits, and application instructions. Keeps: role description,
+    responsibilities, qualifications, requirements, and nice-to-haves.
+    """
+    text_lower = text.lower()
+
+    # Cut everything after EEO / legal / privacy sections
+    eeo_markers = [
+        "equal opportunity", "equal employment", "we are committed to",
+        "committed to providing equal", "regardless of race",
+        "applicant privacy", "privacy policy", "handles applicant data",
+        "if you need assistance or an accommodation",
+        "reasonable accommodation",
+    ]
+    for marker in eeo_markers:
+        idx = text_lower.find(marker)
+        if idx > 0:
+            text = text[:idx]
+            text_lower = text.lower()
+            break
+
+    # Cut company intro/marketing before the role description starts
+    role_markers = [
+        "about the role", "about this role", "the role",
+        "what you'll do", "what you will do", "in this role",
+        "responsibilities", "your responsibilities",
+        "job description", "role overview", "position overview",
+        "key responsibilities", "what we're looking for",
+    ]
+    for marker in role_markers:
+        idx = text_lower.find(marker)
+        if idx > 0 and idx < len(text) // 2:
+            text = text[idx:]
+            break
+
+    return text.strip()
 
 
 def extract_keywords(text: str) -> list[str]:
@@ -98,13 +130,12 @@ def extract_keywords(text: str) -> list[str]:
     Focuses on skills, technologies, and professional competencies.
     Filters out company descriptions, boilerplate, and generic words.
     """
+    # Strip irrelevant sections first
+    text = _strip_boilerplate(text)
     text_lower = text.lower()
 
-    # Detect likely company/product names (capitalized words not at sentence start)
+    # Detect likely company/product names (capitalized words mid-sentence)
     company_words = set()
-    for match in re.finditer(r'(?<=[.!?]\s)\s*[A-Z][a-z]+|(?<=\n)\s*[A-Z][a-z]+', text):
-        pass  # skip sentence starters
-    # Words that appear capitalized mid-sentence are likely proper nouns
     for match in re.finditer(r'(?<=[a-z]\s)([A-Z][a-z]{2,})', text):
         company_words.add(match.group(1).lower())
 
@@ -130,12 +161,23 @@ def extract_keywords(text: str) -> list[str]:
     keywords = []
     seen = set()
 
-    # Add tech patterns first (highest priority) — skip URLs and company domains
+    # Add tech patterns first (highest priority)
     for term in tech_patterns:
         term_lower = term.lower()
-        # Skip things that look like domains/URLs (contain .com, .io, .ai, .org)
+        # Skip domains/URLs
         if re.search(r'\.(com|io|ai|org|net|co|edu|gov)\b', term_lower):
             continue
+        # Skip common non-tech patterns that match due to slashes/hyphens
+        if term_lower in ('and/or',):
+            continue
+        # Skip hyphenated non-tech terms (keep things like ci/cd, node.js, c#, c++)
+        # but drop made-up compounds like "can-doer", "sales-consumable", "value-delivered"
+        if '-' in term_lower:
+            # Only keep well-known hyphenated tech/skill terms
+            parts = term_lower.split('-')
+            # If any part is a noise or weak word, skip the whole thing
+            if any(p in all_noise for p in parts):
+                continue
         if term_lower not in seen:
             seen.add(term_lower)
             keywords.append(term_lower)
@@ -143,7 +185,7 @@ def extract_keywords(text: str) -> list[str]:
     # Add meaningful bigrams — both words must be non-noise
     for w1, w2 in bigrams:
         phrase = f"{w1} {w2}"
-        if phrase in seen or phrase in NOISE_BIGRAMS:
+        if phrase in seen:
             continue
         if w1 in all_noise or w2 in all_noise:
             continue
