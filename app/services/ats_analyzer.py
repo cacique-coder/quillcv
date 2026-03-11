@@ -215,13 +215,21 @@ def extract_keywords(text: str) -> list[str]:
     return keywords
 
 
-def analyze_ats(cv_text: str, job_description: str) -> ATSResult:
-    """Analyze CV against job description for ATS compatibility."""
+def analyze_ats(
+    cv_text: str,
+    job_description: str,
+    keywords_override: list[str] | None = None,
+) -> ATSResult:
+    """Analyze CV against job description for ATS compatibility.
+
+    If keywords_override is provided (e.g., from LLM extraction), uses those
+    instead of the regex-based extract_keywords fallback.
+    """
     result = ATSResult()
     cv_lower = cv_text.lower()
 
     # 1. Keyword matching
-    job_keywords = extract_keywords(job_description)
+    job_keywords = keywords_override if keywords_override is not None else extract_keywords(job_description)
     for kw in job_keywords:
         if kw in cv_lower:
             result.matched_keywords.append(kw)

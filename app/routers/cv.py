@@ -11,6 +11,7 @@ from app.services.ats_analyzer import analyze_ats
 from app.services.ai_generator import generate_tailored_cv
 from app.services.attempt_store import get_attempt, get_document_bytes, get_document_filename, update_attempt
 from app.services.generation_log import log_generation
+from app.services.keyword_extractor import extract_keywords_llm
 from app.services.pdf_generator import generate_pdf
 from app.services.template_registry import get_region, get_template, REGION_RULES
 
@@ -68,9 +69,25 @@ async def analyze(request: Request):
     template_id = attempt.get("template_id", "modern")
     job_description = attempt.get("job_description", "")
 
-    # Run ATS analysis
+    llm = request.app.state.llm
+
+    # Extract keywords with LLM (or fall back to regex)
     t0 = time.monotonic()
-    ats_result = analyze_ats(cv_text, job_description)
+    keyword_data = await extract_keywords_llm(job_description, llm)
+    if keyword_data:
+        job_keywords = keyword_data["all_keywords"]
+        keyword_categories = keyword_data["categories"]
+        timings["keyword_extraction"] = round(time.monotonic() - t0, 2)
+        # Cache on the attempt for re-use
+        update_attempt(attempt_id, extracted_keywords=keyword_data)
+    else:
+        job_keywords = None  # will fall back to regex in analyze_ats
+        keyword_categories = None
+        timings["keyword_extraction"] = round(time.monotonic() - t0, 2)
+
+    # Run ATS analysis with LLM-extracted keywords
+    t0 = time.monotonic()
+    ats_result = analyze_ats(cv_text, job_description, keywords_override=job_keywords)
     timings["ats_original"] = round(time.monotonic() - t0, 2)
 
     # Get template and region info
@@ -80,11 +97,10 @@ async def analyze(request: Request):
 
     # Generate tailored CV as structured data
     t0 = time.monotonic()
-    llm = request.app.state.llm
     cv_data = await generate_tailored_cv(
         cv_text, job_description, ats_result.missing_keywords,
         region=region_config, llm=llm, attempt=attempt,
-        ats_result=ats_result,
+        ats_result=ats_result, keyword_categories=keyword_categories,
     )
     timings["ai_generate"] = round(time.monotonic() - t0, 2)
 
@@ -111,7 +127,7 @@ async def analyze(request: Request):
     generated_text = re.sub(r'<style[^>]*>.*?</style>', '', rendered_cv, flags=re.DOTALL)
     generated_text = re.sub(r'<[^>]+>', ' ', generated_text)
     generated_text = re.sub(r'\s+', ' ', generated_text).strip()
-    ats_generated = analyze_ats(generated_text, job_description)
+    ats_generated = analyze_ats(generated_text, job_description, keywords_override=job_keywords)
     timings["ats_generated"] = round(time.monotonic() - t0, 2)
 
     # Log generation for analysis

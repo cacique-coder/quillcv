@@ -157,6 +157,29 @@ def _build_personal_context(attempt: dict) -> str:
     return "\n".join(parts) if parts else ""
 
 
+def _build_keyword_context(
+    missing_keywords: list[str],
+    keyword_categories: dict | None,
+) -> str:
+    """Build keyword context for the prompt — categorized if available, flat otherwise."""
+    if keyword_categories:
+        lines = ["The following keywords were extracted from the job description by category."]
+        lines.append("Incorporate as many as truthfully applicable into the CV:")
+        for category, keywords in keyword_categories.items():
+            if not keywords:
+                continue
+            label = category.replace("_", " ").title()
+            lines.append(f"  {label}: {', '.join(keywords)}")
+        if missing_keywords:
+            lines.append(f"\nCurrently MISSING from the CV (prioritize these): {', '.join(missing_keywords[:20])}")
+        return "\n".join(lines)
+
+    # Fallback: flat list
+    if missing_keywords:
+        return f"Missing keywords to incorporate where truthfully applicable: {', '.join(missing_keywords[:15])}"
+    return ""
+
+
 async def generate_tailored_cv(
     cv_text: str,
     job_description: str,
@@ -165,6 +188,7 @@ async def generate_tailored_cv(
     llm: LLMClient,
     attempt: dict | None = None,
     ats_result: ATSResult | None = None,
+    keyword_categories: dict | None = None,
 ) -> dict | None:
     """Use an LLM client to generate structured CV data tailored to the job.
 
@@ -173,10 +197,10 @@ async def generate_tailored_cv(
     cv_text = sanitize_user_input(cv_text, MAX_CV_LENGTH, "CV text")
     job_description = sanitize_user_input(job_description, MAX_JOB_DESC_LENGTH, "Job description")
 
-    keywords_str = ', '.join(missing_keywords[:15])
     region_rules = _build_region_rules(region)
     personal_context = _build_personal_context(attempt or {})
     ats_report = _build_ats_report(ats_result) if ats_result else ""
+    keyword_context = _build_keyword_context(missing_keywords, keyword_categories)
 
     prompt = f"""{_SYSTEM_INSTRUCTION}
 
@@ -195,7 +219,9 @@ Rules:
 {region_rules}
 ===END REGION FORMAT RULES===
 
-Missing keywords to incorporate where truthfully applicable: {keywords_str}
+===TARGET KEYWORDS===
+{keyword_context}
+===END TARGET KEYWORDS===
 
 {f"===ATS ANALYSIS OF ORIGINAL CV (use this to prioritize improvements)===" + chr(10) + ats_report + chr(10) + "===END ATS ANALYSIS===" if ats_report else ""}
 
