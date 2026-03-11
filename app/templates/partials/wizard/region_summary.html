@@ -1,3 +1,4 @@
+{% from "macros/ui.html" import field_tag %}
 <div class="region-summary-card">
     <div class="region-summary-header">
         <span>{{ region_config.flag }} {{ region_config.name }}</span>
@@ -7,26 +8,26 @@
         <div class="field-group">
             <span class="field-group-label">Included on CV</span>
             <div class="field-tags">
-                {% if fields.references %}<span class="field-tag field-tag-yes">References</span>{% endif %}
-                {% if fields.visa %}<span class="field-tag field-tag-yes">Visa/Work rights</span>{% endif %}
-                {% if fields.photo %}<span class="field-tag field-tag-yes">Photo ({{ fields.photo_level }})</span>{% endif %}
-                {% if fields.dob %}<span class="field-tag field-tag-yes">Date of birth</span>{% endif %}
-                {% if fields.nationality %}<span class="field-tag field-tag-yes">Nationality</span>{% endif %}
-                {% if fields.marital %}<span class="field-tag field-tag-yes">Marital status</span>{% endif %}
+                {% if fields.references %}{{ field_tag("References", "yes") }}{% endif %}
+                {% if fields.visa %}{{ field_tag("Visa/Work rights", "yes") }}{% endif %}
+                {% if fields.photo %}{{ field_tag("Photo (" ~ fields.photo_level ~ ")", "yes") }}{% endif %}
+                {% if fields.dob %}{{ field_tag("Date of birth", "yes") }}{% endif %}
+                {% if fields.nationality %}{{ field_tag("Nationality", "yes") }}{% endif %}
+                {% if fields.marital %}{{ field_tag("Marital status", "yes") }}{% endif %}
                 {% if not fields.references and not fields.visa and not fields.photo and not fields.dob and not fields.nationality and not fields.marital %}
-                <span class="field-tag field-tag-none">Standard sections only</span>
+                {{ field_tag("Standard sections only", "none") }}
                 {% endif %}
             </div>
         </div>
         <div class="field-group">
             <span class="field-group-label">Not expected</span>
             <div class="field-tags">
-                {% if not fields.references %}<span class="field-tag field-tag-no">References</span>{% endif %}
-                {% if not fields.visa %}<span class="field-tag field-tag-no">Visa status</span>{% endif %}
-                {% if not fields.photo %}<span class="field-tag field-tag-no">Photo</span>{% endif %}
-                {% if not fields.dob %}<span class="field-tag field-tag-no">Date of birth</span>{% endif %}
-                {% if not fields.nationality %}<span class="field-tag field-tag-no">Nationality</span>{% endif %}
-                {% if not fields.marital %}<span class="field-tag field-tag-no">Marital status</span>{% endif %}
+                {% if not fields.references %}{{ field_tag("References", "no") }}{% endif %}
+                {% if not fields.visa %}{{ field_tag("Visa status", "no") }}{% endif %}
+                {% if not fields.photo %}{{ field_tag("Photo", "no") }}{% endif %}
+                {% if not fields.dob %}{{ field_tag("Date of birth", "no") }}{% endif %}
+                {% if not fields.nationality %}{{ field_tag("Nationality", "no") }}{% endif %}
+                {% if not fields.marital %}{{ field_tag("Marital status", "no") }}{% endif %}
             </div>
         </div>
     </div>

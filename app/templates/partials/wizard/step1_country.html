@@ -1,3 +1,4 @@
+{% from "macros/ui.html" import wizard_nav %}
 {% set step = 1 %}
 {% include "partials/wizard/progress.html" %}
 
@@ -31,8 +32,5 @@
         {% include "partials/wizard/region_summary.html" %}
     </div>
 
-    <div class="panel-actions">
-        <span></span>
-        <button type="submit" class="btn-next">Continue</button>
-    </div>
+    {{ wizard_nav(back_step=0, next_label="Continue") }}
 </form>

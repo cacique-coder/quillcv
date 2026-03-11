@@ -1,0 +1,155 @@
+{#
+  QuillCV — Reusable UI Component Macros
+  Usage: {% from "macros/ui.html" import form_group, badge, wizard_nav, section_divider, info_card %}
+#}
+
+
+{# ── Form Group ────────────────────────────────────────────── #}
+{# Wraps a label + hint + input slot in consistent markup.
+   Usage:
+     {% call form_group("Job Description", hint="Paste the full job posting", required=true) %}
+       <textarea name="job_description" rows="10"></textarea>
+     {% endcall %}
+#}
+{% macro form_group(label, hint="", required=false, optional=false, optional_text="optional") %}
+<div class="form-group">
+    <label>{{ label }}
+        {%- if required %} <span class="required">*</span>{% endif -%}
+        {%- if optional %} <span class="optional-label">({{ optional_text }})</span>{% endif -%}
+    </label>
+    {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+
+{# ── Text Input ────────────────────────────────────────────── #}
+{# Renders a styled text/email/tel input.
+   Usage: {{ text_input("visa_status", placeholder="e.g. Full working rights", value=attempt.get('visa_status', '')) }}
+#}
+{% macro text_input(name, type="text", placeholder="", value="", required=false) %}
+<input type="{{ type }}" name="{{ name }}" class="input-field"
+       placeholder="{{ placeholder }}" value="{{ value }}"
+       {% if required %}required{% endif %}>
+{% endmacro %}
+
+
+{# ── Textarea ──────────────────────────────────────────────── #}
+{# Renders a styled textarea.
+   Usage: {{ text_area("self_description", rows=3, placeholder="...", value=data) }}
+#}
+{% macro text_area(name, id="", rows=3, placeholder="", value="", required=false) %}
+<textarea {% if id %}id="{{ id }}"{% else %}id="{{ name }}"{% endif %}
+          name="{{ name }}" rows="{{ rows }}"
+          placeholder="{{ placeholder }}"
+          {% if required %}required{% endif %}>{{ value }}</textarea>
+{% endmacro %}
+
+
+{# ── File Input ────────────────────────────────────────────── #}
+{# Renders a styled file input with optional stored file indicator.
+   Usage: {{ file_input("cv_file", accept=".pdf,.docx", stored_name=cv_filename) }}
+#}
+{% macro file_input(name, accept="", required=false, multiple=false, stored_name="") %}
+{% if stored_name %}
+<div class="stored-file">
+    <span class="stored-file-icon">&#128196;</span>
+    <span class="stored-file-name">{{ stored_name }}</span>
+    <span class="stored-file-status">Saved from previous upload</span>
+</div>
+<p class="hint" style="margin-top: 0.4rem;">Upload a new file to replace it, or leave empty to keep the current one.</p>
+<input type="file" name="{{ name }}" accept="{{ accept }}" {% if multiple %}multiple{% endif %}>
+{% else %}
+<input type="file" name="{{ name }}" accept="{{ accept }}"
+       {% if required %}required{% endif %} {% if multiple %}multiple{% endif %}>
+{% endif %}
+{% endmacro %}
+
+
+{# ── Badge / Tag ───────────────────────────────────────────── #}
+{# Renders a small status badge.
+   Variants: "match", "missing", "yes", "no", "none", "more", "required", "common", "optional"
+   Usage: {{ badge("Python", "match") }}
+#}
+{% macro badge(text, variant="default") %}
+<span class="tag tag-{{ variant }}">{{ text }}</span>
+{% endmacro %}
+
+
+{# ── Field Tag (region fields) ─────────────────────────────── #}
+{# Usage: {{ field_tag("References", "yes") }} #}
+{% macro field_tag(text, status="yes") %}
+<span class="field-tag field-tag-{{ status }}">{{ text }}</span>
+{% endmacro %}
+
+
+{# ── Section Divider ──────────────────────────────────────── #}
+{# Usage: {{ section_divider("Your Personal Voice") }}
+#}
+{% macro section_divider(label) %}
+<div class="form-section-divider">
+    <span>{{ label }}</span>
+</div>
+{% endmacro %}
+
+
+{# ── Info Card ─────────────────────────────────────────────── #}
+{# Wraps content in an info card.
+   Usage:
+     {% call info_card() %}
+       <p>Some helpful information here.</p>
+     {% endcall %}
+#}
+{% macro info_card() %}
+<div class="info-card">
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+
+{# ── Wizard Navigation ────────────────────────────────────── #}
+{# Renders back + next/submit buttons for wizard steps.
+   Usage: {{ wizard_nav(back_step=1, next_label="Continue", loading_text="Analyzing...") }}
+   Pass back_step=0 for no back button (step 1).
+#}
+{% macro wizard_nav(back_step=0, next_label="Continue", next_type="submit", loading_text="", hx_indicator="") %}
+<div class="panel-actions">
+    {% if back_step > 0 %}
+    <button type="button" class="btn-back"
+            hx-get="/wizard/step/{{ back_step }}" hx-target="#wizard-container" hx-swap="innerHTML">Back</button>
+    {% else %}
+    <span></span>
+    {% endif %}
+    <button type="{{ next_type }}" class="btn-next"
+            {% if loading_text %}
+            hx-disabled-elt="this"
+            hx-on::before-request="this.innerHTML='{{ loading_text }}'; this.classList.add('btn-generating');"
+            {% endif %}>
+        {{ next_label }}
+    </button>
+</div>
+{% if hx_indicator %}
+<div class="ai-loading-hint htmx-indicator" id="{{ hx_indicator }}">
+    <div class="spinner"></div>
+</div>
+{% endif %}
+{% endmacro %}
+
+
+{# ── Reference Entry ──────────────────────────────────────── #}
+{# Renders a reference person form block.
+   Usage: {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
+#}
+{% macro reference_entry(index, ref={}) %}
+<div class="reference-entry">
+    <div class="ref-row">
+        {{ text_input("ref_name_" ~ index, placeholder="Full name", value=ref.get('name', '') if ref else '') }}
+        {{ text_input("ref_title_" ~ index, placeholder="Job title", value=ref.get('title', '') if ref else '') }}
+    </div>
+    <div class="ref-row">
+        {{ text_input("ref_company_" ~ index, placeholder="Company", value=ref.get('company', '') if ref else '') }}
+        {{ text_input("ref_email_" ~ index, type="email", placeholder="Email", value=ref.get('email', '') if ref else '') }}
+        {{ text_input("ref_phone_" ~ index, type="tel", placeholder="Phone", value=ref.get('phone', '') if ref else '') }}
+    </div>
+</div>
+{% endmacro %}

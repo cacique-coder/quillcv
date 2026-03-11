@@ -1,3 +1,4 @@
+{% from "macros/ui.html" import wizard_nav %}
 {% set step = 4 %}
 {% include "partials/wizard/progress.html" %}
 
@@ -44,9 +45,5 @@
         {% endfor %}
     </div>
 
-    <div class="panel-actions">
-        <button type="button" class="btn-back"
-                hx-get="/wizard/step/3" hx-target="#wizard-container" hx-swap="innerHTML">Back</button>
-        <button type="submit" class="btn-next">Continue</button>
-    </div>
+    {{ wizard_nav(back_step=3, next_label="Continue") }}
 </form>

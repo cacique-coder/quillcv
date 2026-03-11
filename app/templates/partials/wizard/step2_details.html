@@ -1,3 +1,4 @@
+{% from "macros/ui.html" import form_group, text_input, text_area, section_divider, wizard_nav, info_card, reference_entry %}
 {% set step = 2 %}
 {% include "partials/wizard/progress.html" %}
 
@@ -38,95 +39,44 @@
     {% endif %}
 
     {% if fields.references %}
-    <div class="form-group">
-        <label>References</label>
-        <p class="hint">{{ region_config.name }} expects references on the CV. Add 2-3 professional referees — this is something AI cannot fabricate.</p>
+    {% call form_group("References", hint=region_config.name ~ " expects references on the CV. Add 2-3 professional referees — this is something AI cannot fabricate.") %}
+        {% set refs = attempt.get('references', []) %}
         <div id="references-list">
-            {% set refs = attempt.get('references', []) %}
-            <div class="reference-entry">
-                <div class="ref-row">
-                    <input type="text" name="ref_name_1" placeholder="Full name" class="input-field"
-                           value="{{ refs[0].name if refs|length > 0 else '' }}">
-                    <input type="text" name="ref_title_1" placeholder="Job title" class="input-field"
-                           value="{{ refs[0].title if refs|length > 0 else '' }}">
-                </div>
-                <div class="ref-row">
-                    <input type="text" name="ref_company_1" placeholder="Company" class="input-field"
-                           value="{{ refs[0].company if refs|length > 0 else '' }}">
-                    <input type="email" name="ref_email_1" placeholder="Email" class="input-field"
-                           value="{{ refs[0].email if refs|length > 0 else '' }}">
-                    <input type="tel" name="ref_phone_1" placeholder="Phone" class="input-field"
-                           value="{{ refs[0].phone if refs|length > 0 else '' }}">
-                </div>
-            </div>
-            <div class="reference-entry">
-                <div class="ref-row">
-                    <input type="text" name="ref_name_2" placeholder="Full name" class="input-field"
-                           value="{{ refs[1].name if refs|length > 1 else '' }}">
-                    <input type="text" name="ref_title_2" placeholder="Job title" class="input-field"
-                           value="{{ refs[1].title if refs|length > 1 else '' }}">
-                </div>
-                <div class="ref-row">
-                    <input type="text" name="ref_company_2" placeholder="Company" class="input-field"
-                           value="{{ refs[1].company if refs|length > 1 else '' }}">
-                    <input type="email" name="ref_email_2" placeholder="Email" class="input-field"
-                           value="{{ refs[1].email if refs|length > 1 else '' }}">
-                    <input type="tel" name="ref_phone_2" placeholder="Phone" class="input-field"
-                           value="{{ refs[1].phone if refs|length > 1 else '' }}">
-                </div>
-            </div>
+            {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
+            {{ reference_entry(2, refs[1] if refs|length > 1 else {}) }}
         </div>
-    </div>
+    {% endcall %}
     {% endif %}
 
     {% if fields.visa %}
-    <div class="form-group">
-        <label>Visa / Work Rights Status</label>
-        <p class="hint">{{ region_config.name }} expects work rights information on your CV.</p>
-        <input type="text" name="visa_status" class="input-field"
-               placeholder="e.g. Full working rights, PR, Visa subclass 482..."
-               value="{{ attempt.get('visa_status', '') }}">
-    </div>
+    {% call form_group("Visa / Work Rights Status", hint=region_config.name ~ " expects work rights information on your CV.") %}
+        {{ text_input("visa_status", placeholder="e.g. Full working rights, PR, Visa subclass 482...", value=attempt.get('visa_status', '')) }}
+    {% endcall %}
     {% endif %}
 
     {% if not fields.photo and not fields.references and not fields.visa %}
-    <div class="info-card">
+    {% call info_card() %}
         <p>{{ region_config.flag }} {{ region_config.name }} doesn't require photo, references, or visa details on the CV — great, fewer things to fill in!</p>
-    </div>
+    {% endcall %}
     {% endif %}
 
-    <div class="form-section-divider">
-        <span>Your Personal Voice</span>
-    </div>
+    {{ section_divider("Your Personal Voice") }}
 
     <p class="hint" style="margin-bottom: 0.8rem;">These help the AI capture your authentic voice — not just your skills, but who you are. All optional, but they make a real difference in the output.</p>
 
-    <div class="form-group">
-        <label for="self_description">How would you describe yourself as a professional?</label>
-        <p class="hint">Your working style, strengths, what colleagues say about you.</p>
-        <textarea id="self_description" name="self_description" rows="3"
-                  placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems...">{{ attempt.get('self_description', '') }}</textarea>
-    </div>
+    {% call form_group("How would you describe yourself as a professional?", hint="Your working style, strengths, what colleagues say about you.") %}
+        {{ text_area("self_description", rows=3, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems...", value=attempt.get('self_description', '')) }}
+    {% endcall %}
 
-    <div class="form-group">
-        <label for="values">What are your professional values?</label>
-        <p class="hint">What matters to you in how you work and what you build.</p>
-        <textarea id="values" name="values" rows="3"
-                  placeholder="e.g. Code quality, user-centric design, continuous learning, transparent communication...">{{ attempt.get('values', '') }}</textarea>
-    </div>
+    {% call form_group("What are your professional values?", hint="What matters to you in how you work and what you build.") %}
+        {{ text_area("values", rows=3, placeholder="e.g. Code quality, user-centric design, continuous learning, transparent communication...", value=attempt.get('values', '')) }}
+    {% endcall %}
 
-    <div class="form-group">
-        <label for="offer_appeal">What attracts you to this role?</label>
-        <p class="hint">What excites you about the job? This helps align the CV's tone with your genuine motivation.</p>
-        <textarea id="offer_appeal" name="offer_appeal" rows="3"
-                  placeholder="e.g. The chance to work on distributed systems at scale, the team's open-source culture...">{{ attempt.get('offer_appeal', '') }}</textarea>
-    </div>
+    {% call form_group("What attracts you to this role?", hint="What excites you about the job? This helps align the CV's tone with your genuine motivation.") %}
+        {{ text_area("offer_appeal", rows=3, placeholder="e.g. The chance to work on distributed systems at scale, the team's open-source culture...", value=attempt.get('offer_appeal', '')) }}
+    {% endcall %}
 
-    <div class="panel-actions">
-        <button type="button" class="btn-back"
-                hx-get="/wizard/step/1" hx-target="#wizard-container" hx-swap="innerHTML">Back</button>
-        <button type="submit" class="btn-next">Continue</button>
-    </div>
+    {{ wizard_nav(back_step=1, next_label="Continue") }}
 
     {% if dev_mode %}
     <button type="button" class="btn-dev-fill" onclick="devFillStep2()">Dev: Fill form</button>
