@@ -8,13 +8,29 @@
     <script src="https://unpkg.com/htmx.org@2.0.2"></script>
 </head>
 <body>
-    <header>
-        <nav style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 0.8rem; font-size: 0.85rem;">
-            <a href="/">Generate CV</a>
-            <a href="/demo">Browse Templates</a>
+    <header class="site-header">
+        <nav class="site-nav">
+            <a href="/" class="nav-link">Generate CV</a>
+            <a href="/demo" class="nav-link">Browse Templates</a>
         </nav>
-        <h1><a href="/" style="color: inherit; text-decoration: none;">QuillCV</a></h1>
-        <p class="subtitle">ATS-optimized CVs tailored to job descriptions</p>
+        <div class="brand">
+            <svg class="brand-quill" viewBox="0 0 40 40" width="36" height="36" aria-hidden="true">
+                <path d="M30 4c-5 2.5-9.5 9-12 15s-3.5 11-4.5 14.5c0 0 2.5-3.5 6-7s7-5.5 7-5.5l-1-2.5c-2.5 1.5-6 4.5-8 8 1-4.5 3.5-10 6-14.5s5.5-9 9-10z"
+                      fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"
+                      class="brand-quill-draw"/>
+                <path d="M14 33.5c-2 0.5-5 0.5-7-0.5" fill="none" stroke="var(--accent)"
+                      stroke-width="1.2" stroke-linecap="round" class="brand-quill-ink"/>
+            </svg>
+            <div class="brand-text">
+                <h1 class="brand-name"><a href="/">QuillCV</a></h1>
+                <p class="brand-tagline">ATS-optimized CVs tailored to job descriptions</p>
+            </div>
+        </div>
+        <!-- Sketchy underline -->
+        <svg class="header-underline" viewBox="0 0 400 6" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 3 Q40 0, 80 3 T160 3 T240 3 T320 3 T400 3" fill="none"
+                  stroke="var(--border)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
     </header>
     <main>
         {% block content %}{% endblock %}

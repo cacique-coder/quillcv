@@ -1,28 +1,43 @@
-<div class="wizard-progress">
-    <div class="wizard-steps">
-        <div class="wizard-step {% if step >= 1 %}{% if step == 1 %}active{% else %}completed{% endif %}{% endif %}">
-            <span class="step-num">{% if step > 1 %}&#10003;{% else %}1{% endif %}</span>
-            <span class="step-label">Country</span>
-        </div>
-        <div class="step-line {% if step > 1 %}completed{% endif %}"></div>
-        <div class="wizard-step {% if step >= 2 %}{% if step == 2 %}active{% else %}completed{% endif %}{% endif %}">
-            <span class="step-num">{% if step > 2 %}&#10003;{% else %}2{% endif %}</span>
-            <span class="step-label">Your Details</span>
-        </div>
-        <div class="step-line {% if step > 2 %}completed{% endif %}"></div>
-        <div class="wizard-step {% if step >= 3 %}{% if step == 3 %}active{% else %}completed{% endif %}{% endif %}">
-            <span class="step-num">{% if step > 3 %}&#10003;{% else %}3{% endif %}</span>
-            <span class="step-label">Documents</span>
-        </div>
-        <div class="step-line {% if step > 3 %}completed{% endif %}"></div>
-        <div class="wizard-step {% if step >= 4 %}{% if step == 4 %}active{% else %}completed{% endif %}{% endif %}">
-            <span class="step-num">{% if step > 4 %}&#10003;{% else %}4{% endif %}</span>
-            <span class="step-label">Template</span>
-        </div>
-        <div class="step-line {% if step > 4 %}completed{% endif %}"></div>
-        <div class="wizard-step {% if step == 5 %}active{% endif %}">
-            <span class="step-num">5</span>
-            <span class="step-label">Generate</span>
-        </div>
+{% set steps = [
+    (1, "Country"),
+    (2, "Details"),
+    (3, "Documents"),
+    (4, "Template"),
+    (5, "Generate"),
+] %}
+<div class="wiz-progress">
+    {% for num, label in steps %}
+    {% set state = "completed" if step > num else ("active" if step == num else "upcoming") %}
+    <div class="wiz-step wiz-step--{{ state }}">
+        <svg class="wiz-node" viewBox="0 0 36 36" width="36" height="36">
+            <!-- Hand-drawn circle -->
+            <circle cx="18" cy="18" r="14" fill="none" stroke-width="2"
+                    stroke="{% if state == 'completed' %}var(--green){% elif state == 'active' %}var(--accent){% else %}var(--border){% endif %}"
+                    stroke-dasharray="{% if state == 'active' %}88{% else %}0{% endif %}"
+                    stroke-dashoffset="{% if state == 'active' %}88{% else %}0{% endif %}"
+                    stroke-linecap="round"
+                    class="wiz-circle{% if state == 'active' %} wiz-circle--draw{% endif %}"/>
+            {% if state == 'completed' %}
+            <!-- Hand-drawn checkmark -->
+            <path d="M12 18.5l4 4 8-8" fill="none" stroke="var(--green)"
+                  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                  class="wiz-check"/>
+            {% else %}
+            <text x="18" y="22" text-anchor="middle" font-size="13" font-weight="700"
+                  fill="{% if state == 'active' %}var(--accent){% else %}var(--text-muted){% endif %}">{{ num }}</text>
+            {% endif %}
+        </svg>
+        <span class="wiz-label">{{ label }}</span>
     </div>
+    {% if not loop.last %}
+    <div class="wiz-connector wiz-connector--{{ 'done' if step > num else 'pending' }}">
+        <svg viewBox="0 0 60 8" preserveAspectRatio="none" class="wiz-line-svg">
+            <path d="M2 4 Q15 1, 30 4 T58 4" fill="none"
+                  stroke="{% if step > num %}var(--green){% else %}var(--border){% endif %}"
+                  stroke-width="2" stroke-linecap="round"
+                  stroke-dasharray="{% if step <= num %}4 4{% else %}0{% endif %}"/>
+        </svg>
+    </div>
+    {% endif %}
+    {% endfor %}
 </div>
