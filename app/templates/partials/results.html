@@ -1,10 +1,72 @@
+{% from "macros/ui.html" import badge %}
 <div id="generate-area" class="results-container">
 
     <!-- Success indicator -->
     <div class="generate-success">
         <span class="generate-success-icon">&#10003;</span>
-        <span>CV generated successfully using the <strong>{{ template.name }}</strong> template for <strong>{{ region }}</strong></span>
+        <span>CV generated successfully using the <strong>{{ template.name }}</strong> template for <strong>{{ region }}</strong>
+            {%- if fixes_applied %} — {{ fixes_applied }} fix{{ 'es' if fixes_applied > 1 }} applied{% endif -%}
+        </span>
     </div>
+
+    <!-- CV Quality Review -->
+    {% if quality_review and quality_review.flags %}
+    <form class="quality-review" hx-post="/apply-fixes" hx-target="#generate-area" hx-swap="outerHTML"
+          hx-indicator="#fixes-loader">
+        <div class="quality-review-header">
+            <svg viewBox="0 0 24 24" width="22" height="22" class="quality-review-icon">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="var(--warning)" stroke-width="2"/>
+                <line x1="12" y1="7" x2="12" y2="13" stroke="var(--warning)" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="16.5" r="1.2" fill="var(--warning)"/>
+            </svg>
+            <div>
+                <h2>Items to Reconsider</h2>
+                <p class="hint">{{ quality_review.summary }}</p>
+            </div>
+        </div>
+        <div class="quality-flags">
+            {% for flag in quality_review.flags %}
+            <div class="quality-flag quality-flag--{{ flag.severity }}">
+                <label class="quality-flag-top">
+                    <input type="checkbox" name="selected" class="quality-flag-check"
+                           value="{{ loop.index0 }}" checked>
+                    <div class="quality-flag-body">
+                        <div class="quality-flag-header">
+                            {% if flag.severity == 'remove' %}
+                            <span class="quality-flag-severity quality-severity-remove">Remove</span>
+                            {% else %}
+                            <span class="quality-flag-severity quality-severity-improve">Improve</span>
+                            {% endif %}
+                            {{ badge(flag.category | replace("_", " ") | title, flag.severity) }}
+                            {% if flag.section %}<span class="quality-flag-section">in {{ flag.section }}</span>{% endif %}
+                        </div>
+                        <p class="quality-flag-item">"{{ flag.item }}"</p>
+                        <p class="quality-flag-reason">{{ flag.reason }}</p>
+                        {% if flag.suggestion %}
+                        <p class="quality-flag-suggestion">Suggestion: {{ flag.suggestion }}</p>
+                        {% endif %}
+                    </div>
+                </label>
+                <input type="text" name="instruction_{{ loop.index0 }}"
+                       class="quality-flag-instruction"
+                       placeholder="Optional: tell the AI how to handle this (max 500 chars)"
+                       maxlength="500">
+            </div>
+            {% endfor %}
+        </div>
+        <div class="quality-actions">
+            <button type="submit" class="btn-apply-fixes"
+                    hx-disabled-elt="this"
+                    hx-on::before-request="this.innerHTML='Applying fixes...'; this.classList.add('btn-generating');">
+                Apply Selected Fixes
+            </button>
+            <span class="quality-actions-hint">This uses AI to refine your CV — counts as an extra credit</span>
+        </div>
+        <div class="ai-loading-hint htmx-indicator" id="fixes-loader">
+            <div class="spinner"></div>
+        </div>
+    </form>
+    {% endif %}
 
     <!-- ATS Score Comparison -->
     <div class="ats-comparison">
@@ -63,10 +125,9 @@
             <div class="ats-kw-col">
                 <h3>Keywords gained</h3>
                 <div class="keyword-tags">
-                    {% set gained = [] %}
                     {% for kw in ats_generated.matched_keywords %}
                         {% if kw in ats_original.missing_keywords %}
-                            <span class="tag tag-match">{{ kw }}</span>
+                            {{ badge(kw, "match") }}
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -75,10 +136,10 @@
                 <h3>Still missing</h3>
                 <div class="keyword-tags">
                     {% for kw in ats_generated.missing_keywords[:15] %}
-                    <span class="tag tag-missing">{{ kw }}</span>
+                    {{ badge(kw, "missing") }}
                     {% endfor %}
                     {% if ats_generated.missing_keywords | length > 15 %}
-                    <span class="tag tag-more">+{{ ats_generated.missing_keywords | length - 15 }} more</span>
+                    {{ badge("+" ~ (ats_generated.missing_keywords | length - 15) ~ " more", "more") }}
                     {% endif %}
                 </div>
             </div>

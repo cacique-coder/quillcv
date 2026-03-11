@@ -12,6 +12,7 @@
     --green: #34d399;
     --yellow: #fbbf24;
     --red: #f87171;
+    --warning: #f59e0b;
     --radius: 8px;
 }
 
@@ -65,16 +66,6 @@ body {
     justify-content: center;
     gap: 0.75rem;
     margin-bottom: 0.8rem;
-}
-.brand-quill-draw {
-    stroke-dasharray: 100;
-    stroke-dashoffset: 100;
-    animation: drawQuill 1.8s ease-out forwards;
-}
-.brand-quill-ink {
-    stroke-dasharray: 20;
-    stroke-dashoffset: 20;
-    animation: drawQuill 0.8s 1.2s ease-out forwards;
 }
 .brand-text {
     text-align: left;
@@ -297,6 +288,18 @@ button[type="submit"]:active {
 .tag-more {
     background: var(--border);
     color: var(--text-muted);
+}
+.tag-remove {
+    background: rgba(248, 113, 113, 0.12);
+    color: var(--red);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    font-size: 0.72rem;
+}
+.tag-improve {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--warning);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    font-size: 0.72rem;
 }
 
 /* Issues & Recommendations */
@@ -1619,6 +1622,182 @@ header a:hover { text-decoration: underline; }
 }
 .ai-loading-hint .spinner {
     border-top-color: var(--accent);
+}
+
+/* CV Quality Review */
+.quality-review {
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--warning) 30%, var(--border));
+    border-radius: 12px 6px 10px 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.quality-review-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+.quality-review-header h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.1rem;
+    color: var(--warning);
+}
+.quality-review-header .hint { margin: 0; }
+.quality-review-icon { flex-shrink: 0; margin-top: 0.15rem; }
+.quality-flags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+.quality-flag {
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+    border: 1px dashed var(--border);
+    border-radius: 8px 5px 7px 6px;
+    padding: 0.9rem 1rem;
+}
+.quality-flag--remove {
+    border-color: color-mix(in srgb, var(--red) 40%, var(--border));
+}
+.quality-flag--improve {
+    border-color: color-mix(in srgb, var(--warning) 40%, var(--border));
+}
+.quality-flag-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+.quality-flag-severity {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+}
+.quality-severity-remove {
+    background: color-mix(in srgb, var(--red) 20%, transparent);
+    color: var(--red);
+}
+.quality-severity-improve {
+    background: color-mix(in srgb, var(--warning) 20%, transparent);
+    color: var(--warning);
+}
+.quality-flag-item {
+    font-style: italic;
+    color: var(--text);
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+.quality-flag-reason {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+/* Selectable flag (label wrapping checkbox) */
+.quality-flag-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    cursor: pointer;
+}
+.quality-flag:has(.quality-flag-check:not(:checked)) {
+    opacity: 0.45;
+    border-style: dotted;
+}
+.quality-flag:has(.quality-flag-check:not(:checked)) .quality-flag-instruction {
+    display: none;
+}
+.quality-flag-check {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    margin-top: 0.15rem;
+    cursor: pointer;
+    position: relative;
+    background: transparent;
+    transition: border-color 0.15s, background 0.15s;
+}
+.quality-flag-check:checked {
+    border-color: var(--warning);
+    background: color-mix(in srgb, var(--warning) 15%, transparent);
+}
+.quality-flag-check:checked::after {
+    content: '';
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 6px; height: 10px;
+    border: solid var(--warning);
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
+}
+.quality-flag-body { flex: 1; }
+.quality-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+}
+.btn-apply-fixes {
+    background: var(--warning);
+    color: #1a1a1a;
+    border: none;
+    padding: 0.6rem 1.4rem;
+    border-radius: 8px 5px 7px 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-apply-fixes:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.3);
+}
+.quality-actions-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+.quality-flag-section {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+.quality-flag-suggestion {
+    font-size: 0.82rem;
+    color: var(--green);
+    margin-top: 0.3rem;
+    padding-left: 0.6rem;
+    border-left: 2px solid color-mix(in srgb, var(--green) 30%, transparent);
+    line-height: 1.4;
+}
+.quality-flag-instruction {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.45rem 0.7rem;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 6px 4px 5px 4px;
+    color: var(--text);
+    font-size: 0.82rem;
+    font-family: inherit;
+    transition: border-color 0.15s;
+}
+.quality-flag-instruction::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+.quality-flag-instruction:focus {
+    outline: none;
+    border-color: var(--accent);
+    border-style: solid;
 }
 
 /* ATS Comparison */
