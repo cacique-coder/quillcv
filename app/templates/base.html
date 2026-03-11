@@ -11,8 +11,15 @@
 <body>
     <header class="site-header">
         <nav class="site-nav">
-            <a href="/" class="nav-link">Generate CV</a>
+            <a href="/app" class="nav-link">Generate CV</a>
             <a href="/demo" class="nav-link">Browse Templates</a>
+            <a href="/pricing" class="nav-link">Pricing</a>
+            {% if user %}
+                <span class="nav-credits" title="Credits remaining">{{ balance|default(0) }} credits</span>
+                <a href="/logout" class="nav-link">Sign Out</a>
+            {% else %}
+                <a href="/login" class="nav-link">Sign In</a>
+            {% endif %}
         </nav>
         <div class="brand">
             <svg class="brand-quill" viewBox="0 0 80 60" width="36" height="27" aria-hidden="true">

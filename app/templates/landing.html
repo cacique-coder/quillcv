@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuillCV — ATS-Optimized CVs That Get You Interviews</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+    <header class="landing-header">
+        <nav class="landing-nav">
+            <a href="/" class="landing-logo">
+                <svg class="brand-quill" viewBox="0 0 80 60" width="28" height="21" aria-hidden="true">
+                    <path d="M40 2 L68 54 C62 58, 54 56, 48 46 L40 30 L32 46 C26 56, 18 58, 12 54 Z"
+                          fill="var(--accent)"/>
+                </svg>
+                QuillCV
+            </a>
+            <div class="landing-nav-links">
+                <a href="/pricing" class="nav-link">Pricing</a>
+                <a href="/demo" class="nav-link">Templates</a>
+                <a href="/login" class="nav-link">Sign In</a>
+                <a href="/signup" class="btn-cta btn-cta--small">Get Started</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="landing">
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    CVs that pass ATS filters<br>
+                    <span class="hero-accent">and land interviews</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Paste a job description, upload your CV, and get an ATS-optimized version
+                    tailored to the role — formatted for your target country.
+                </p>
+                <div class="hero-cta">
+                    <a href="/signup" class="btn-cta">Start Building Your CV</a>
+                    <p class="hero-note">
+                        {% if spots_remaining > 0 %}
+                            Alpha pricing: <strong>$29 for 50 generations</strong> — {{ spots_remaining }} spots left
+                        {% else %}
+                            Join the waitlist for post-alpha access
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it works -->
+        <section class="how-it-works">
+            <h2 class="section-title">How it works</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Paste the job description</h3>
+                    <p>We extract key skills, requirements, and keywords the ATS will scan for.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Upload your CV</h3>
+                    <p>PDF, DOCX, or plain text. We parse your experience, skills, and achievements.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Get your tailored CV</h3>
+                    <p>AI rewrites your CV to match the job — download as PDF or raw HTML. Includes ATS scoring and quality review.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="features">
+            <h2 class="section-title">Built for real-world job applications</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>ATS Optimization</h3>
+                    <p>Your CV is structured and worded to pass Applicant Tracking Systems — not just look good to humans.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Keyword Matching</h3>
+                    <p>We extract keywords from the job description and ensure they appear naturally in your CV.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>12 Country Formats</h3>
+                    <p>AU, US, UK, CA, NZ, DE, FR, NL, IN, BR, AE, JP — each with the right conventions for that market.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Quality Review</h3>
+                    <p>AI flags weak certifications, irrelevant skills, and poor phrasing — with options to fix or override.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>6 Professional Templates</h3>
+                    <p>Clean, ATS-friendly designs. Download as PDF or grab the raw HTML to tweak yourself.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Credits Never Expire</h3>
+                    <p>No subscriptions during alpha. Buy credits once, use them whenever you need.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="final-cta">
+            <h2>Stop getting filtered out by ATS</h2>
+            <p>Join {{ spots_remaining }} remaining alpha spots and get 50 CV generations for $29.</p>
+            <a href="/signup" class="btn-cta">Create Your Account</a>
+        </section>
+    </main>
+
+    <footer class="landing-footer">
+        <p>&copy; 2026 QuillCV. All rights reserved.</p>
+    </footer>
+</body>
+</html>

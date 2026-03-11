@@ -1,16 +1,26 @@
 import os
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.routers import cv, demo, photos, wizard
-from app.services.template_registry import list_templates, list_regions
+from app.routers import auth as auth_router
+from app.routers import payments as payments_router
+from app.routers import landing as landing_router
 from app.services.llm_client import AnthropicAPIClient, ClaudeCodeClient
 
-app = FastAPI(title="QuillCV")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from app.database import init_db
+    await init_db()
+    yield
+
+
+app = FastAPI(title="QuillCV", lifespan=lifespan)
 
 # Dev mode: enabled when using the default session secret (i.e. local development)
 app.state.dev_mode = os.environ.get("SESSION_SECRET", "quillcv-dev-secret-change-in-prod") == "quillcv-dev-secret-change-in-prod"
@@ -35,18 +45,17 @@ app.mount(
     name="static",
 )
 
-templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+# Auth & payments
+app.include_router(auth_router.router)
+app.include_router(payments_router.router)
 
+# Landing page replaces the old / route
+app.include_router(landing_router.router)
+
+# App routes
 app.include_router(wizard.router)
 app.include_router(cv.router)
 app.include_router(demo.router)
 app.include_router(photos.router)
 
 
-@app.get("/")
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "templates": list_templates(),
-        "regions": list_regions(),
-    })

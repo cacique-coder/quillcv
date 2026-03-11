@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="auth-page">
+    <div class="auth-card" style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">&#10003;</div>
+        <h2>Payment successful!</h2>
+        <p class="auth-subtitle">{{ credits }} credits have been added to your account.</p>
+        <p style="margin: 1.5rem 0; color: var(--text-muted);">
+            Your credits never expire. Start building your ATS-optimized CV now.
+        </p>
+        <a href="/app" class="btn-cta btn-cta--full">Start Building Your CV</a>
+    </div>
+</section>
+{% endblock %}

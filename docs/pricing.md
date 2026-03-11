@@ -8,8 +8,10 @@
 
 ## Post-Alpha (Planned)
 
-- Subscription model: $15-29/mo with monthly generation caps
-- Founder alumni may get a discounted renewal rate
+- Personal accounts: credit packs only (no subscriptions)
+- Business/team accounts: subscription option TBD
+- Pricing TBD based on alpha feedback
+- Founder alumni may get discounted rates on future packs
 
 ## Cost Estimates
 

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="pricing-page">
+    <h2 class="section-title">Credit packs, no subscriptions*</h2>
+    <p class="pricing-subtitle">Credits never expire. Use them whenever you need.<br>
+    <small style="color: var(--text-muted);">*Business/team subscriptions may be available later.</small></p>
+
+    <div class="pricing-cards">
+        <div class="pricing-card pricing-card--featured">
+            <div class="pricing-badge">Alpha — Founders Cohort</div>
+            <div class="pricing-price">
+                <span class="pricing-amount">$29</span>
+                <span class="pricing-period">one-time</span>
+            </div>
+            <ul class="pricing-features">
+                <li>50 CV generations</li>
+                <li>All 6 templates</li>
+                <li>12 country formats</li>
+                <li>ATS scoring & keyword analysis</li>
+                <li>AI quality review & fixes</li>
+                <li>PDF & raw HTML download</li>
+                <li><strong>Credits never expire</strong></li>
+            </ul>
+            <div class="pricing-spots">
+                {% if spots_remaining > 0 %}
+                    <span class="spots-count">{{ spots_remaining }}</span> of 100 spots remaining
+                {% else %}
+                    <span class="spots-count">Sold out</span>
+                {% endif %}
+            </div>
+            {% if user %}
+                {% if balance > 0 %}
+                    <p class="pricing-balance">You have <strong>{{ balance }}</strong> credits remaining</p>
+                    <a href="/app" class="btn-cta btn-cta--full">Go to App</a>
+                {% elif stripe_enabled and spots_remaining > 0 %}
+                    <form method="post" action="/checkout/alpha">
+                        <button type="submit" class="btn-cta btn-cta--full">Buy Alpha Pack</button>
+                    </form>
+                {% elif spots_remaining == 0 %}
+                    <button class="btn-cta btn-cta--full btn-cta--disabled" disabled>Sold Out</button>
+                {% else %}
+                    <p class="pricing-note">Payments coming soon</p>
+                {% endif %}
+            {% else %}
+                <a href="/signup" class="btn-cta btn-cta--full">Create Account</a>
+            {% endif %}
+        </div>
+
+        <div class="pricing-card">
+            <div class="pricing-badge pricing-badge--muted">Post-Alpha</div>
+            <div class="pricing-price">
+                <span class="pricing-amount">Credit Packs</span>
+            </div>
+            <ul class="pricing-features">
+                <li>Same features — no premium tiers</li>
+                <li>Buy more credits anytime</li>
+                <li>No subscriptions for personal accounts</li>
+                <li><strong>Alpha founders get discounted rates</strong></li>
+            </ul>
+            <p class="pricing-note">Pricing based on alpha feedback</p>
+        </div>
+    </div>
+
+    <div class="pricing-faq">
+        <h3>Common questions</h3>
+        <div class="faq-item">
+            <h4>Do credits expire?</h4>
+            <p>No. Alpha credits never expire. Use them whenever you need, no pressure.</p>
+        </div>
+        <div class="faq-item">
+            <h4>What counts as one generation?</h4>
+            <p>One generation = one tailored CV output. You can review, apply quality fixes, and download the PDF — all for one credit.</p>
+        </div>
+        <div class="faq-item">
+            <h4>Can I buy more credits later?</h4>
+            <p>Yes. Extra credits will be available at $0.50-1.00 per generation after the alpha pack.</p>
+        </div>
+        <div class="faq-item">
+            <h4>What if I want a refund?</h4>
+            <p>If you haven't used any credits, we'll refund you in full. Contact us within 30 days.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
