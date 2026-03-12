@@ -76,6 +76,12 @@ body {
     from { transform: scaleX(0); }
     to   { transform: scaleX(1); }
 }
+.nav-link--muted {
+    opacity: 0.6;
+}
+.nav-link--muted:hover {
+    opacity: 1;
+}
 .brand {
     display: flex;
     align-items: center;
@@ -2367,6 +2373,17 @@ header a:hover { text-decoration: underline; }
 .btn-cta:active { transform: translateY(0) rotate(0deg); }
 .btn-cta--small { padding: 0.5rem 1.2rem; font-size: 0.85rem; box-shadow: none; }
 .btn-cta--full { width: 100%; text-align: center; }
+.btn-cta--secondary {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    box-shadow: none;
+}
+.btn-cta--secondary:hover {
+    background: rgba(108, 99, 255, 0.08);
+    box-shadow: none;
+    transform: translateY(-1px) rotate(0deg);
+}
 .btn-cta--outline {
     background: transparent;
     border: 1px solid var(--border);
@@ -2708,9 +2725,10 @@ header a:hover { text-decoration: underline; }
 }
 .pricing-cards {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1.15fr 1fr;
     gap: 2rem;
     margin-bottom: 3rem;
+    align-items: start;
 }
 .pricing-card {
     background: var(--surface);
@@ -2723,6 +2741,11 @@ header a:hover { text-decoration: underline; }
 .pricing-card--featured {
     border-color: var(--accent);
     position: relative;
+    transform: scale(1.04) translateY(-6px) rotate(0.5deg);
+    box-shadow:
+        4px 8px 24px rgba(108, 99, 255, 0.18),
+        inset 0 0 40px rgba(0, 0, 0, 0.03);
+    z-index: 1;
 }
 .pricing-badge {
     display: inline-block;
@@ -2998,7 +3021,7 @@ header a:hover { text-decoration: underline; }
     box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.15);
     position: relative;
 }
-.pricing-faq--notebook h3 {
+.pricing-faq--notebook .pricing-faq-heading {
     text-align: center;
     margin-bottom: 1.5rem;
     font-size: 1.3rem;
@@ -3044,6 +3067,108 @@ header a:hover { text-decoration: underline; }
     grid-template-columns: repeat(3, 1fr);
 }
 
+/* Keyword-rich intro paragraph below H1 */
+.pricing-intro {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 0.5rem;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+}
+
+/* Social proof trust line */
+.pricing-social-proof {
+    text-align: center;
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 0.75rem auto 1.5rem;
+    opacity: 0.85;
+}
+
+/* Section heading above the cards grid */
+.pricing-section-heading {
+    text-align: center;
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0 auto 0.5rem;
+}
+
+/* Comparison/context line below value anchor */
+.pricing-comparison {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: -1rem auto 2rem;
+    max-width: 480px;
+    opacity: 0.75;
+}
+
+/* Risk reversal note below CTA */
+.pricing-risk-reversal {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0.6rem 0 0;
+    opacity: 0.7;
+}
+
+/* Post-alpha nudge CTA line */
+.pricing-postalpha-nudge {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 1rem;
+    text-align: center;
+    line-height: 1.5;
+}
+.pricing-postalpha-nudge a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.pricing-postalpha-nudge a:hover {
+    opacity: 0.8;
+}
+
+/* Internal links within feature lists */
+.pricing-feature-link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: rgba(108, 99, 255, 0.35);
+}
+.pricing-feature-link:hover {
+    color: var(--accent);
+    text-decoration-color: var(--accent);
+}
+
+/* FAQ heading — styled to match existing h3 pattern but now an h2 */
+.pricing-faq-heading {
+    font-family: 'Caveat', cursive;
+    font-size: 1.75rem;
+    font-weight: 600;
+    text-align: center;
+    margin: 0 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* FAQ item h3 — keep visual style identical to previous h4 */
+.pricing-faq--notebook .faq-item h3 {
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+    color: var(--text-primary, var(--text));
+}
+
 /* Responsive overrides for crafted pricing */
 @media (max-width: 768px) {
     .pricing-doodle { display: none; }
@@ -3080,6 +3205,7 @@ header a:hover { text-decoration: underline; }
     .step-arrows { display: none; }
     .features-grid { grid-template-columns: 1fr; }
     .pricing-cards { grid-template-columns: 1fr; }
+    .pricing-card--featured { transform: rotate(0deg); box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.2), inset 0 0 40px rgba(0, 0, 0, 0.03); }
     .who-grid { grid-template-columns: 1fr; }
     .section-title { font-size: 1.65rem; }
     .how-it-works,
@@ -4263,5 +4389,262 @@ select.input-field {
     text-decoration: none;
 }
 .bld-editing-new:hover { text-decoration: underline; }
+
+/* ── Account page ── */
+.account-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+.account-header {
+    margin-bottom: 2rem;
+}
+
+.account-header h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.account-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.account-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.account-section--danger {
+    border-color: color-mix(in srgb, var(--red) 35%, var(--border));
+    background: color-mix(in srgb, var(--red) 4%, var(--surface));
+}
+
+.account-section--danger h3 {
+    color: var(--red);
+    border-bottom-color: color-mix(in srgb, var(--red) 25%, var(--border));
+}
+
+.account-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+}
+
+.account-field label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.account-value {
+    font-size: 0.95rem;
+    color: var(--text);
+    padding: 0.45rem 0;
+}
+
+.account-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.account-hint a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.account-hint a:hover {
+    text-decoration: underline;
+}
+
+/* Stats row */
+.account-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.account-stat {
+    flex: 1;
+    min-width: 100px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    text-align: center;
+}
+
+.account-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+}
+
+.account-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Billing table */
+.account-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin-bottom: 0.5rem;
+}
+
+.account-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+}
+
+.account-table td {
+    padding: 0.65rem 0.75rem;
+    color: var(--text);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.account-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status badge */
+.account-status {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.account-status--completed {
+    background: color-mix(in srgb, var(--green) 15%, transparent);
+    color: var(--green);
+}
+
+.account-status--pending {
+    background: color-mix(in srgb, var(--yellow) 15%, transparent);
+    color: var(--yellow);
+}
+
+.account-status--failed {
+    background: color-mix(in srgb, var(--red) 15%, transparent);
+    color: var(--red);
+}
+
+/* Passkeys */
+.account-passkeys {
+    margin-top: 1.25rem;
+}
+
+.account-passkeys > label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.6rem;
+}
+
+.account-passkey-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+    font-size: 0.88rem;
+}
+
+/* Change password form separation */
+.account-password-form {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+/* Feedback messages */
+.account-success {
+    font-size: 0.85rem;
+    color: var(--green);
+    margin-top: 0.6rem;
+}
+
+.account-error {
+    font-size: 0.85rem;
+    color: var(--red);
+    margin-top: 0.6rem;
+}
+
+/* Button variants */
+.btn-danger {
+    display: inline-block;
+    padding: 0.55rem 1.2rem;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.btn-danger:hover {
+    opacity: 0.85;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.82rem;
+}
+
+@media (max-width: 600px) {
+    .account-stats {
+        gap: 0.6rem;
+    }
+    .account-stat {
+        min-width: 80px;
+    }
+    .account-stat-value {
+        font-size: 1.4rem;
+    }
+    .account-table th,
+    .account-table td {
+        padding: 0.5rem 0.4rem;
+        font-size: 0.8rem;
+    }
+}
 
 /* (Old builder UX styles removed — replaced by .bld-* classes above) */

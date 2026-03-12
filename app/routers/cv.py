@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.database import async_session
 from app.services.ai_generator import generate_tailored_cv
+from app.services.llm_client import set_llm_context
 from app.services.ats_analyzer import analyze_ats
 from app.services.attempt_store import get_attempt, get_document_bytes, get_document_filename, update_attempt
 from app.services.cv_parser import parse_cv
@@ -43,6 +44,7 @@ async def _run_generation_pipeline(
     llm,
     llm_fast,
     on_progress: ProgressCallback = _noop_progress,
+    user_id: str | None = None,
 ) -> dict:
     """Shared CV generation pipeline used by both HTTP and WebSocket endpoints.
 
@@ -50,6 +52,15 @@ async def _run_generation_pipeline(
     Keys: ats_original, ats_generated, generated_cv, cv_text, template,
           region, region_rules, quality_review, timings.
     """
+    import uuid as _uuid_mod
+    pipeline_transaction_id = _uuid_mod.uuid4().hex
+    set_llm_context(
+        service="pipeline",
+        attempt_id=attempt_id,
+        user_id=user_id,
+        transaction_id=pipeline_transaction_id,
+    )
+
     attempt = get_attempt(attempt_id)
     if not attempt:
         raise ValueError("Session expired. Please start again.")
@@ -218,12 +229,23 @@ async def _run_generation_pipeline(
 async def ws_analyze(websocket: WebSocket):
     attempt_id = websocket.query_params.get("attempt_id", "")
     if not attempt_id or not get_attempt(attempt_id):
+        logger.warning("WebSocket rejected — invalid attempt_id=%r", attempt_id)
         await websocket.close(code=4000, reason="Invalid attempt")
         return
 
     await websocket.accept()
+    ws_start = time.monotonic()
+    current_step: list[str] = ["(not started)"]  # mutable cell for finally block
+
+    logger.debug("WebSocket connected attempt=%s", attempt_id)
 
     async def send_progress(step: str, detail: str) -> None:
+        current_step[0] = step
+        step_elapsed = round((time.monotonic() - ws_start) * 1000)
+        logger.debug(
+            "WebSocket progress attempt=%s step=%r detail=%r elapsed=%dms",
+            attempt_id, step, detail, step_elapsed,
+        )
         try:
             await websocket.send_json({"type": "progress", "step": step, "detail": detail})
         except (WebSocketDisconnect, RuntimeError) as err:
@@ -233,24 +255,70 @@ async def ws_analyze(websocket: WebSocket):
         llm = websocket.app.state.llm
         llm_fast = websocket.app.state.llm_fast
 
+        ws_user = getattr(websocket.state, "user", None)
+        ws_user_id = ws_user.id if ws_user else None
+
         result = await _run_generation_pipeline(
             attempt_id, llm, llm_fast, on_progress=send_progress,
+            user_id=ws_user_id,
         )
+
+        total_ms = round((time.monotonic() - ws_start) * 1000)
+        llm_usage = result.get("quality_review") and (
+            # _llm_usage lives inside cv_data; surface it for the log if present
+            result.get("quality_review", {}) or {}
+        )
+        # Pull usage from cv_data if available (pipeline stores it there)
+        attempt_data = {}
+        try:
+            from app.services.attempt_store import get_attempt as _get
+            attempt_data = _get(attempt_id) or {}
+        except Exception:
+            pass
+        cv_data = attempt_data.get("cv_data") or {}
+        usage = cv_data.get("_llm_usage", {})
+        if usage:
+            logger.info(
+                "WebSocket complete attempt=%s duration=%dms "
+                "input_tokens=%s output_tokens=%s cost_usd=%s",
+                attempt_id, total_ms,
+                usage.get("input_tokens", "?"),
+                usage.get("output_tokens", "?"),
+                usage.get("cost_usd", "?"),
+            )
+        else:
+            logger.info(
+                "WebSocket complete attempt=%s duration=%dms",
+                attempt_id, total_ms,
+            )
 
         # Render the final HTML
         html = templates.get_template("partials/results.html").render(**result)
         await websocket.send_json({"type": "complete", "html": html})
 
     except WebSocketDisconnect:
-        logger.info("WebSocket disconnected during generation (attempt=%s)", attempt_id)
+        elapsed_ms = round((time.monotonic() - ws_start) * 1000)
+        logger.info(
+            "WebSocket disconnected attempt=%s step=%r elapsed=%dms",
+            attempt_id, current_step[0], elapsed_ms,
+        )
         return
     except ValueError as e:
+        elapsed_ms = round((time.monotonic() - ws_start) * 1000)
+        logger.warning(
+            "WebSocket validation error attempt=%s step=%r elapsed=%dms error=%r",
+            attempt_id, current_step[0], elapsed_ms, str(e),
+        )
         try:
             await websocket.send_json({"type": "error", "message": str(e)})
         except (WebSocketDisconnect, RuntimeError):
             pass
     except Exception:
-        logger.exception("WebSocket generation failed (attempt=%s)", attempt_id)
+        elapsed_ms = round((time.monotonic() - ws_start) * 1000)
+        logger.exception(
+            "WebSocket generation failed attempt=%s step=%r elapsed=%dms",
+            attempt_id, current_step[0], elapsed_ms,
+        )
         try:
             await websocket.send_json({"type": "error", "message": "Generation failed. Please try again."})
         except (WebSocketDisconnect, RuntimeError):
@@ -276,11 +344,15 @@ async def analyze(request: Request):
             {"request": request, "error": "No active session. Please start from the beginning."},
         )
 
+    http_user = getattr(request.state, "user", None)
+    http_user_id = http_user.id if http_user else None
+
     try:
         result = await _run_generation_pipeline(
             attempt_id,
             request.app.state.llm,
             request.app.state.llm_fast,
+            user_id=http_user_id,
         )
     except ValueError as e:
         return templates.TemplateResponse(

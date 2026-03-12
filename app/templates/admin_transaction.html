@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Transaction {{ transaction_id[:12] }} — Admin | QuillCV{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .admin-heading {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+  .admin-sub {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-family: monospace;
+    margin-bottom: 1.5rem;
+    word-break: break-all;
+  }
+  .admin-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+  }
+  .admin-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .admin-nav a:hover { color: var(--accent); border-color: var(--accent); }
+  .stat-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .stat-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
+  }
+  .stat-pill strong { color: var(--accent); }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .data-table td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: auto;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .status-success { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .status-error   { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .status-timeout { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .error-msg {
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--red);
+    max-width: 300px;
+    word-break: break-word;
+  }
+</style>
+
+<div class="admin-wrap">
+  <div class="admin-nav">
+    <a href="/admin">Dashboard</a>
+    <a href="/admin/requests">All Requests</a>
+  </div>
+
+  <h1 class="admin-heading">Transaction Detail</h1>
+  <p class="admin-sub">{{ transaction_id }}</p>
+
+  <div class="stat-row">
+    <div class="stat-pill">Calls: <strong>{{ tx_requests | length }}</strong></div>
+    <div class="stat-pill">Total Cost: <strong>${{ "%.5f" | format(total_cost) }}</strong></div>
+    <div class="stat-pill">Input Tokens: <strong>{{ "{:,}".format(total_input) }}</strong></div>
+    <div class="stat-pill">Output Tokens: <strong>{{ "{:,}".format(total_output) }}</strong></div>
+    <div class="stat-pill">Total Duration: <strong>{{ total_duration }}ms</strong></div>
+    {% if tx_requests %}
+    <div class="stat-pill">Attempt: <strong style="font-family:monospace">{{ tx_requests[0].attempt_id or "—" }}</strong></div>
+    {% endif %}
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Time</th>
+          <th>Service</th>
+          <th>Model</th>
+          <th>Prompt Chars</th>
+          <th>In Tokens</th>
+          <th>Out Tokens</th>
+          <th>Cache Read</th>
+          <th>Cache Create</th>
+          <th>Cost</th>
+          <th>Duration</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in tx_requests %}
+        <tr>
+          <td style="color:var(--text-muted)">{{ loop.index }}</td>
+          <td style="white-space:nowrap;font-size:0.8rem">{{ r.created_at.strftime("%H:%M:%S") }}</td>
+          <td>{{ r.service }}</td>
+          <td style="font-family:monospace;font-size:0.78rem">{{ r.model }}</td>
+          <td>{{ "{:,}".format(r.prompt_chars) }}</td>
+          <td>{{ "{:,}".format(r.input_tokens) }}</td>
+          <td>{{ "{:,}".format(r.output_tokens) }}</td>
+          <td>{{ "{:,}".format(r.cache_read_tokens) }}</td>
+          <td>{{ "{:,}".format(r.cache_creation_tokens) }}</td>
+          <td>${{ "%.5f" | format(r.cost_usd) }}</td>
+          <td>{{ r.duration_ms }}ms</td>
+          <td>
+            <span class="status-badge status-{{ r.status }}">{{ r.status }}</span>
+            {% if r.error_message %}
+            <div class="error-msg">{{ r.error_message }}</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

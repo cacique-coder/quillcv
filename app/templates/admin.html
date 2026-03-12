@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}Admin — API Request Logs | QuillCV{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .admin-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+  .admin-sub {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+  }
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 2rem 0 0.75rem;
+  }
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  @media (max-width: 700px) {
+    .breakdown-grid { grid-template-columns: 1fr; }
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .data-table td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(108, 99, 255, 0.05); }
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: auto;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .status-success { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .status-error   { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .status-timeout { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .tx-link {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .tx-link:hover { text-decoration: underline; }
+  .admin-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+  }
+  .admin-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .admin-nav a:hover, .admin-nav a.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .view-all-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    color: var(--accent);
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+  .view-all-link:hover { text-decoration: underline; }
+</style>
+
+<div class="admin-wrap">
+  <div class="admin-nav">
+    <a href="/admin" class="active">Dashboard</a>
+    <a href="/admin/requests">All Requests</a>
+  </div>
+
+  <h1 class="admin-heading">Admin — API Costs</h1>
+  <p class="admin-sub">Logged as {{ user.email }}</p>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total API Calls</div>
+      <div class="stat-value">{{ total_requests | int }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Cost</div>
+      <div class="stat-value">${{ "%.4f" | format(total_cost) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cost Today</div>
+      <div class="stat-value">${{ "%.4f" | format(cost_today) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Cost / Generation</div>
+      <div class="stat-value">${{ "%.4f" | format(avg_cost) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unique Generations</div>
+      <div class="stat-value">{{ unique_generations }}</div>
+    </div>
+  </div>
+
+  <div class="breakdown-grid">
+    <div>
+      <div class="section-title">Cost by Model</div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Calls</th>
+              <th>Input Tok</th>
+              <th>Output Tok</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in cost_by_model %}
+            <tr>
+              <td style="font-family:monospace;font-size:0.8rem">{{ row.model }}</td>
+              <td>{{ row.calls }}</td>
+              <td>{{ "{:,}".format(row.input_tokens | int) }}</td>
+              <td>{{ "{:,}".format(row.output_tokens | int) }}</td>
+              <td>${{ "%.4f" | format(row.cost) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="color:var(--text-muted)">No data yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Cost by Service</div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Calls</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in cost_by_service %}
+            <tr>
+              <td>{{ row.service }}</td>
+              <td>{{ row.calls }}</td>
+              <td>${{ "%.4f" | format(row.cost) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" style="color:var(--text-muted)">No data yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Recent Requests</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Transaction</th>
+          <th>Attempt</th>
+          <th>Service</th>
+          <th>Model</th>
+          <th>In Tok</th>
+          <th>Out Tok</th>
+          <th>Cost</th>
+          <th>Duration</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent_requests %}
+        <tr>
+          <td style="white-space:nowrap;font-size:0.8rem">{{ r.created_at.strftime("%m-%d %H:%M:%S") }}</td>
+          <td>
+            <a href="/admin/requests/{{ r.transaction_id }}" class="tx-link" title="{{ r.transaction_id }}">
+              {{ r.transaction_id[:12] }}…
+            </a>
+          </td>
+          <td style="font-family:monospace;font-size:0.78rem;color:var(--text-muted)">
+            {{ r.attempt_id[:8] ~ "…" if r.attempt_id else "—" }}
+          </td>
+          <td>{{ r.service }}</td>
+          <td style="font-family:monospace;font-size:0.78rem">{{ r.model.split(":")[-1][:20] }}</td>
+          <td>{{ "{:,}".format(r.input_tokens) }}</td>
+          <td>{{ "{:,}".format(r.output_tokens) }}</td>
+          <td>${{ "%.4f" | format(r.cost_usd) }}</td>
+          <td>{{ r.duration_ms }}ms</td>
+          <td>
+            <span class="status-badge status-{{ r.status }}">{{ r.status }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="10" style="color:var(--text-muted)">No API calls logged yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <a href="/admin/requests" class="view-all-link">View all requests &rarr;</a>
+</div>
+{% endblock %}

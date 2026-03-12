@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -94,3 +94,32 @@ class SavedCV(Base):
     markdown: Mapped[str] = mapped_column(Text, nullable=False)  # sanitized markdown content
     cv_data_json: Mapped[str] = mapped_column(Text, nullable=False)  # structured CV data as JSON
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class APIRequestLog(Base):
+    """Log of every LLM API call for cost tracking and debugging."""
+    __tablename__ = "api_request_logs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    transaction_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)  # UUID4 for grouping related calls
+    attempt_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)  # links to CV generation attempt
+    user_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("users.id"), nullable=True, index=True)
+
+    # Request info
+    service: Mapped[str] = mapped_column(String(50), nullable=False)  # "ai_generator", "keyword_extractor", etc.
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    prompt_chars: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Response info
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cache_read_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cache_creation_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    duration_ms: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Status
+    status: Mapped[str] = mapped_column(String(20), default="success")  # success, error, timeout
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)

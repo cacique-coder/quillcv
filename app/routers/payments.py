@@ -16,7 +16,6 @@ from app.services.credit_service import (
     ALPHA_PACK_PRICE_CENTS,
     TOPUP_PACKS,
     add_credits,
-    get_balance,
 )
 from app.services.user_service import count_alpha_users
 
@@ -39,12 +38,6 @@ def _get_stripe():
 
 @router.get("/pricing")
 async def pricing_page(request: Request):
-    user = await get_current_user(request)
-    balance = 0
-    if user:
-        async with async_session() as db:
-            balance = await get_balance(db, user.id)
-
     async with async_session() as db:
         alpha_count = await count_alpha_users(db)
 
@@ -52,8 +45,6 @@ async def pricing_page(request: Request):
 
     return templates.TemplateResponse("pricing.html", {
         "request": request,
-        "user": user,
-        "balance": balance,
         "spots_remaining": spots_remaining,
         "alpha_count": alpha_count,
         "stripe_enabled": bool(STRIPE_SECRET_KEY),
@@ -207,7 +198,6 @@ async def checkout_success(request: Request, session_id: str = ""):
 
     return templates.TemplateResponse("checkout_success.html", {
         "request": request,
-        "user": user,
         "credits": credits_granted,
     })
 

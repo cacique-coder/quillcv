@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}API Requests — Admin | QuillCV{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .admin-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+  .admin-sub {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  .admin-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+  }
+  .admin-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .admin-nav a:hover, .admin-nav a.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .data-table td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(108, 99, 255, 0.05); }
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: auto;
+    margin-bottom: 1.5rem;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .status-success { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .status-error   { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .status-timeout { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .tx-link {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .tx-link:hover { text-decoration: underline; }
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+  }
+  .pagination a {
+    color: var(--accent);
+    text-decoration: none;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+  }
+  .pagination a:hover { background: rgba(108, 99, 255, 0.1); }
+  .pagination span { color: var(--text-muted); }
+</style>
+
+<div class="admin-wrap">
+  <div class="admin-nav">
+    <a href="/admin">Dashboard</a>
+    <a href="/admin/requests" class="active">All Requests</a>
+  </div>
+
+  <h1 class="admin-heading">API Request Log</h1>
+  <p class="admin-sub">{{ total_count }} total requests &mdash; page {{ page }} of {{ total_pages }}</p>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Transaction</th>
+          <th>Attempt</th>
+          <th>Service</th>
+          <th>Model</th>
+          <th>Prompt Chars</th>
+          <th>In Tokens</th>
+          <th>Out Tokens</th>
+          <th>Cache Read</th>
+          <th>Cost</th>
+          <th>Duration</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in requests %}
+        <tr>
+          <td style="white-space:nowrap;font-size:0.8rem">{{ r.created_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+          <td>
+            <a href="/admin/requests/{{ r.transaction_id }}" class="tx-link" title="{{ r.transaction_id }}">
+              {{ r.transaction_id[:12] }}…
+            </a>
+          </td>
+          <td style="font-family:monospace;font-size:0.78rem;color:var(--text-muted)">
+            {{ r.attempt_id[:8] ~ "…" if r.attempt_id else "—" }}
+          </td>
+          <td>{{ r.service }}</td>
+          <td style="font-family:monospace;font-size:0.78rem">{{ r.model[:30] }}</td>
+          <td>{{ "{:,}".format(r.prompt_chars) }}</td>
+          <td>{{ "{:,}".format(r.input_tokens) }}</td>
+          <td>{{ "{:,}".format(r.output_tokens) }}</td>
+          <td>{{ "{:,}".format(r.cache_read_tokens) }}</td>
+          <td>${{ "%.5f" | format(r.cost_usd) }}</td>
+          <td>{{ r.duration_ms }}ms</td>
+          <td>
+            <span class="status-badge status-{{ r.status }}">{{ r.status }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="12" style="color:var(--text-muted)">No API calls logged yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    {% if has_prev %}
+      <a href="/admin/requests?page={{ page - 1 }}">&larr; Prev</a>
+    {% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if has_next %}
+      <a href="/admin/requests?page={{ page + 1 }}">Next &rarr;</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

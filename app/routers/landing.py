@@ -7,7 +7,6 @@ from fastapi.templating import Jinja2Templates
 
 from app.auth.dependencies import get_current_user
 from app.database import async_session
-from app.services.credit_service import get_balance
 from app.services.user_service import count_alpha_users
 
 router = APIRouter()
@@ -21,7 +20,6 @@ async def landing(request: Request):
         # Logged in users go to the app
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "user": user,
         })
 
     async with async_session() as db:
@@ -45,14 +43,9 @@ async def app_page(request: Request):
             "spots_remaining": 100,
         })
 
-    async with async_session() as db:
-        balance = await get_balance(db, user.id)
-
     from app.services.template_registry import list_regions, list_templates
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "user": user,
-        "balance": balance,
         "templates": list_templates(),
         "regions": list_regions(),
     })
