@@ -1,259 +1,500 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import form_group, text_input, text_area, select_input, section_divider, info_card, repeatable_entry %}
+{% from "macros/ui.html" import select_input %}
+
+{% block head_extra %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
 
 {% block app_nav %}{% include "partials/app_nav.html" %}{% endblock %}
 
 {% block content %}
-<div class="builder-page">
-    <div class="builder-header">
-        <h2>Manual CV Builder</h2>
-        <p class="hint">Fill in your details, pick a template, and download a beautifully formatted CV. Free — no account or credits needed.</p>
-    </div>
+<div class="bld">
+    <!-- Top progress bar -->
+    <div class="bld-progress"><div class="bld-progress-fill" id="bld-progress-fill"></div></div>
 
-    <form id="builder-form" class="builder-layout"
+    <form id="builder-form" class="bld-workspace"
           hx-post="/builder/preview"
           hx-target="#builder-preview"
-          hx-swap="innerHTML">
+          hx-swap="innerHTML"
+          hx-trigger="input changed delay:800ms from:find input, input changed delay:800ms from:find textarea, change delay:200ms from:find select"
+          hx-indicator="#builder-form">
 
-        <div class="builder-form-col">
-            <!-- Template & Region -->
-            <fieldset>
-                <legend>Template & Region</legend>
-                <div class="form-row">
-                    {% call form_group("Template") %}
-                        {{ select_input("template_id", options=template_options, selected=selected_template) }}
-                    {% endcall %}
-                    {% call form_group("Region") %}
-                        <select name="region" class="input-field" onchange="updateRegionFields()">
-                            {% for value, label in region_options %}
-                            <option value="{{ value }}" {% if value == selected_region %}selected{% endif %}>{{ label }}</option>
+        <!-- ═══ LEFT: Form with tabs ═══ -->
+        <div class="bld-form">
+            {% if editing_cv_id %}
+            <div class="bld-editing-banner">
+                Editing: <strong>{{ editing_label }}</strong>
+                <a href="/builder" class="bld-editing-new">or start fresh</a>
+            </div>
+            <input type="hidden" name="editing_cv_id" value="{{ editing_cv_id }}">
+            {% endif %}
+            <nav class="bld-tabs" role="tablist">
+                <button type="button" class="bld-tab active" data-tab="setup" role="tab" aria-selected="true">
+                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span class="bld-tab-label">Setup</span>
+                    <span class="bld-tab-dot" id="dot-setup"></span>
+                </button>
+                <button type="button" class="bld-tab" data-tab="profile" role="tab" aria-selected="false">
+                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span class="bld-tab-label">Profile</span>
+                    <span class="bld-tab-dot" id="dot-profile"></span>
+                </button>
+                <button type="button" class="bld-tab" data-tab="experience" role="tab" aria-selected="false">
+                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                    <span class="bld-tab-label">Experience</span>
+                    <span class="bld-tab-dot" id="dot-experience"></span>
+                </button>
+                <button type="button" class="bld-tab" data-tab="education" role="tab" aria-selected="false">
+                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/></svg>
+                    <span class="bld-tab-label">Education</span>
+                    <span class="bld-tab-dot" id="dot-education"></span>
+                </button>
+                <button type="button" class="bld-tab" data-tab="extras" role="tab" aria-selected="false">
+                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span class="bld-tab-label">Extras</span>
+                    <span class="bld-tab-dot" id="dot-extras"></span>
+                </button>
+            </nav>
+
+            <!-- ── Panels ── -->
+            <div class="bld-panels">
+
+                <!-- SETUP -->
+                <section class="bld-panel active" data-panel="setup" role="tabpanel">
+                    <div class="bld-section-head">
+                        <h3>Template &amp; Region</h3>
+                        <p>Choose your CV design and target country.</p>
+                    </div>
+                    <div class="bld-fields">
+                        <div class="bld-row">
+                            <div class="bld-field">
+                                <label class="bld-label">Template</label>
+                                {{ select_input("template_id", options=template_options, selected=selected_template) }}
+                            </div>
+                            <div class="bld-field">
+                                <label class="bld-label">Region</label>
+                                <select name="region" class="input-field" onchange="updateRegionFields()">
+                                    {% for value, label in region_options %}
+                                    <option value="{{ value }}" {% if value == selected_region %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div id="region-hint" class="bld-hint"></div>
+                    </div>
+                    <div class="bld-nav">
+                        <span></span>
+                        <button type="button" class="bld-btn-next" onclick="switchTab('profile')">Profile <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+                    </div>
+                </section>
+
+                <!-- PROFILE -->
+                <section class="bld-panel" data-panel="profile" role="tabpanel">
+                    <div class="bld-section-head">
+                        <h3>Your Profile</h3>
+                        <p>Contact info, summary, and region-specific details.</p>
+                    </div>
+                    <div class="bld-fields">
+                        <div class="bld-row">
+                            <div class="bld-field bld-field--2x">
+                                <label class="bld-label">Full Name</label>
+                                <input type="text" name="name" class="input-field" placeholder="Jane Smith" value="{{ cv_data.name }}">
+                            </div>
+                            <div class="bld-field bld-field--2x">
+                                <label class="bld-label">Job Title</label>
+                                <input type="text" name="title" class="input-field" placeholder="Senior Software Engineer" value="{{ cv_data.title }}">
+                            </div>
+                        </div>
+                        <div class="bld-row bld-row--3">
+                            <div class="bld-field">
+                                <label class="bld-label">Email</label>
+                                <input type="email" name="email" class="input-field" placeholder="jane@example.com" value="{{ cv_data.email }}">
+                            </div>
+                            <div class="bld-field">
+                                <label class="bld-label">Phone</label>
+                                <input type="tel" name="phone" class="input-field" placeholder="+61 400 000 000" value="{{ cv_data.phone }}">
+                            </div>
+                            <div class="bld-field">
+                                <label class="bld-label">Location</label>
+                                <input type="text" name="location" class="input-field" placeholder="Sydney, Australia" value="{{ cv_data.location }}">
+                            </div>
+                        </div>
+                        <div class="bld-row bld-row--3">
+                            <div class="bld-field">
+                                <label class="bld-label">LinkedIn</label>
+                                <input type="text" name="linkedin" class="input-field" placeholder="linkedin.com/in/janesmith" value="{{ cv_data.linkedin }}">
+                            </div>
+                            <div class="bld-field">
+                                <label class="bld-label">GitHub</label>
+                                <input type="text" name="github" class="input-field" placeholder="github.com/janesmith" value="{{ cv_data.github }}">
+                            </div>
+                            <div class="bld-field">
+                                <label class="bld-label">Portfolio</label>
+                                <input type="text" name="portfolio" class="input-field" placeholder="janesmith.dev" value="{{ cv_data.portfolio }}">
+                            </div>
+                        </div>
+
+                        <div class="bld-divider"></div>
+
+                        <div class="bld-field">
+                            <label class="bld-label">Professional Summary</label>
+                            <span class="bld-hint">2-4 sentences highlighting key strengths and career focus.</span>
+                            <textarea name="summary" rows="3" class="input-field" placeholder="Experienced software engineer with 8+ years building scalable web applications...">{{ cv_data.summary }}</textarea>
+                        </div>
+
+                        <!-- Region: Photo -->
+                        <div id="section-photo" class="region-conditional" style="display:none;">
+                            <div class="bld-divider"></div>
+                            <label class="bld-label">CV Photo</label>
+                            <p class="bld-hint" id="photo-level-hint"></p>
+                            <div class="bld-photo-zone">
+                                <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp"
+                                       hx-post="/photos/upload" hx-target="#photo-result" hx-swap="innerHTML"
+                                       hx-encoding="multipart/form-data" hx-indicator="#photo-spinner">
+                                <div class="bld-photo-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                                    <span>Click or drag a photo</span>
+                                    <span class="bld-hint">JPEG, PNG, or WebP — max 5MB</span>
+                                </div>
+                            </div>
+                            <div id="photo-spinner" class="htmx-indicator"><div class="spinner" style="width:18px;height:18px;border-width:2px;"></div></div>
+                            <div id="photo-result"></div>
+                        </div>
+
+                        <!-- Region: Personal Details -->
+                        <div id="section-personal-details" class="region-conditional" style="display:none;">
+                            <div class="bld-divider"></div>
+                            <label class="bld-label">Regional Details</label>
+                            <p class="bld-hint" style="margin-bottom:0.6rem;">Expected on CVs in your selected region.</p>
+                            <div class="bld-row">
+                                <div id="field-dob" class="bld-field region-conditional" style="display:none;">
+                                    <label class="bld-label-sm">Date of Birth</label>
+                                    <input type="text" name="dob" class="input-field" placeholder="15/03/1990" value="{{ cv_data.dob }}">
+                                </div>
+                                <div id="field-nationality" class="bld-field region-conditional" style="display:none;">
+                                    <label class="bld-label-sm">Nationality</label>
+                                    <input type="text" name="nationality" class="input-field" placeholder="Australian" value="{{ cv_data.nationality }}">
+                                </div>
+                                <div id="field-marital" class="bld-field region-conditional" style="display:none;">
+                                    <label class="bld-label-sm">Marital Status</label>
+                                    <input type="text" name="marital_status" class="input-field" placeholder="Single" value="{{ cv_data.marital_status }}">
+                                </div>
+                            </div>
+                            <div id="field-visa" class="bld-field region-conditional" style="display:none;margin-top:0.5rem;">
+                                <label class="bld-label-sm">Visa / Work Rights</label>
+                                <input type="text" name="visa_status" class="input-field" placeholder="Full working rights, PR, Visa subclass 482..." value="{{ cv_data.visa_status }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bld-nav">
+                        <button type="button" class="bld-btn-prev" onclick="switchTab('setup')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Setup</button>
+                        <button type="button" class="bld-btn-next" onclick="switchTab('experience')">Experience <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+                    </div>
+                </section>
+
+                <!-- EXPERIENCE -->
+                <section class="bld-panel" data-panel="experience" role="tabpanel">
+                    <div class="bld-section-head">
+                        <h3>Work Experience</h3>
+                        <p>Roles, achievements, and technologies used.</p>
+                    </div>
+                    <div class="bld-fields">
+                        <div id="experience-entries">
+                            {% set exps = cv_data.experience if cv_data.experience else [{}] %}
+                            {% for exp in exps %}
+                            <div class="bld-card">
+                                <div class="bld-card-head">
+                                    <span class="bld-card-num">#{{ loop.index }}</span>
+                                    {% if not loop.first %}
+                                    <button type="button" class="bld-card-remove" onclick="this.closest('.bld-card').remove()">Remove</button>
+                                    {% endif %}
+                                </div>
+                                <div class="bld-card-grid">
+                                    <div class="bld-field">
+                                        <label class="bld-label-sm">Job Title</label>
+                                        <input type="text" name="exp_title_{{ loop.index0 }}" class="input-field" placeholder="Senior Software Engineer" value="{{ exp.get('title', '') }}">
+                                    </div>
+                                    <div class="bld-field">
+                                        <label class="bld-label-sm">Dates</label>
+                                        <input type="text" name="exp_date_{{ loop.index0 }}" class="input-field" placeholder="Jan 2022 – Present" value="{{ exp.get('date', '') }}">
+                                    </div>
+                                    <div class="bld-field">
+                                        <label class="bld-label-sm">Company</label>
+                                        <input type="text" name="exp_company_{{ loop.index0 }}" class="input-field" placeholder="Acme Corp" value="{{ exp.get('company', '') }}">
+                                    </div>
+                                    <div class="bld-field">
+                                        <label class="bld-label-sm">Location</label>
+                                        <input type="text" name="exp_location_{{ loop.index0 }}" class="input-field" placeholder="Sydney" value="{{ exp.get('location', '') }}">
+                                    </div>
+                                    <div class="bld-field bld-field--full">
+                                        <label class="bld-label-sm">Tech / Tools</label>
+                                        <input type="text" name="exp_tech_{{ loop.index0 }}" class="input-field" placeholder="Python, FastAPI, PostgreSQL" value="{{ exp.get('tech', '') }}">
+                                    </div>
+                                    <div class="bld-field bld-field--full">
+                                        <label class="bld-label-sm">Achievements <span class="bld-hint">(one per line)</span></label>
+                                        <textarea name="exp_bullets_{{ loop.index0 }}" rows="3" class="input-field" placeholder="Led migration of legacy system to microservices, reducing deploy time by 60%">{{ exp.get('bullets', [])|join('\n') }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
                             {% endfor %}
-                        </select>
-                    {% endcall %}
-                </div>
-                <div id="region-hint" class="hint" style="margin-top: 0.4rem;"></div>
-            </fieldset>
-
-            <!-- Personal Info -->
-            <fieldset>
-                <legend>Personal Info</legend>
-                <div class="form-row">
-                    <div class="form-group form-group--wide">
-                        {{ text_input("name", placeholder="Jane Smith", value=cv_data.name) }}
+                        </div>
+                        <button type="button" class="bld-add" onclick="addExperience()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Experience
+                        </button>
                     </div>
-                    <div class="form-group form-group--wide">
-                        {{ text_input("title", placeholder="Senior Software Engineer", value=cv_data.title) }}
+                    <div class="bld-nav">
+                        <button type="button" class="bld-btn-prev" onclick="switchTab('profile')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Profile</button>
+                        <button type="button" class="bld-btn-next" onclick="switchTab('education')">Education <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
                     </div>
-                </div>
-                <div class="form-row">
-                    {{ text_input("email", type="email", placeholder="jane@example.com", value=cv_data.email) }}
-                    {{ text_input("phone", type="tel", placeholder="+61 400 000 000", value=cv_data.phone) }}
-                    {{ text_input("location", placeholder="Sydney, Australia", value=cv_data.location) }}
-                </div>
-                <div class="form-row">
-                    {{ text_input("linkedin", placeholder="linkedin.com/in/janesmith", value=cv_data.linkedin) }}
-                    {{ text_input("github", placeholder="github.com/janesmith", value=cv_data.github) }}
-                    {{ text_input("portfolio", placeholder="janesmith.dev", value=cv_data.portfolio) }}
-                </div>
-            </fieldset>
+                </section>
 
-            <!-- Region-specific: Photo -->
-            <fieldset id="section-photo" class="region-conditional" style="display:none;">
-                <legend>CV Photo</legend>
-                <p class="hint" id="photo-level-hint"></p>
-                <div class="photo-drop-zone">
-                    <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp"
-                           hx-post="/photos/upload"
-                           hx-target="#photo-result"
-                           hx-swap="innerHTML"
-                           hx-encoding="multipart/form-data"
-                           hx-indicator="#photo-spinner">
-                    <p>Click or drag a photo here</p>
-                    <span class="hint">JPEG, PNG, or WebP — max 5MB</span>
-                </div>
-                <div id="photo-spinner" class="htmx-indicator">
-                    <div class="spinner" style="width:24px;height:24px;border-width:2px;"></div>
-                </div>
-                <div id="photo-result"></div>
-            </fieldset>
-
-            <!-- Region-specific: Personal Details -->
-            <fieldset id="section-personal-details" class="region-conditional" style="display:none;">
-                <legend>Personal Details</legend>
-                <p class="hint">These fields are expected on CVs in your selected region.</p>
-                <div class="form-row">
-                    <div id="field-dob" class="form-group region-conditional" style="display:none;">
-                        <label>Date of Birth</label>
-                        {{ text_input("dob", placeholder="15/03/1990", value=cv_data.dob) }}
+                <!-- EDUCATION -->
+                <section class="bld-panel" data-panel="education" role="tabpanel">
+                    <div class="bld-section-head">
+                        <h3>Education &amp; Certifications</h3>
+                        <p>Qualifications and professional certifications.</p>
                     </div>
-                    <div id="field-nationality" class="form-group region-conditional" style="display:none;">
-                        <label>Nationality</label>
-                        {{ text_input("nationality", placeholder="Australian", value=cv_data.nationality) }}
-                    </div>
-                    <div id="field-marital" class="form-group region-conditional" style="display:none;">
-                        <label>Marital Status</label>
-                        {{ text_input("marital_status", placeholder="Single", value=cv_data.marital_status) }}
-                    </div>
-                </div>
-                <div id="field-visa" class="form-group region-conditional" style="display:none; margin-top: 0.6rem;">
-                    <label>Visa / Work Rights</label>
-                    {{ text_input("visa_status", placeholder="Full working rights, PR, Visa subclass 482...", value=cv_data.visa_status) }}
-                </div>
-            </fieldset>
-
-            <!-- Summary -->
-            <fieldset>
-                <legend>Professional Summary</legend>
-                {% call form_group("Summary", hint="2-4 sentences highlighting your key strengths and career focus.") %}
-                    {{ text_area("summary", rows=3, placeholder="Experienced software engineer with 8+ years building scalable web applications...", value=cv_data.summary) }}
-                {% endcall %}
-            </fieldset>
-
-            <!-- Experience -->
-            <fieldset>
-                <legend>Experience</legend>
-                <div id="experience-entries">
-                    {% set exps = cv_data.experience if cv_data.experience else [{}] %}
-                    {% for exp in exps %}
-                    {% call repeatable_entry(index=loop.index0, removable=not loop.first) %}
-                        <div class="form-row">
-                            <div class="form-group form-group--wide">
-                                {{ text_input("exp_title_" ~ loop.index0, placeholder="Senior Software Engineer", value=exp.get('title', '')) }}
+                    <div class="bld-fields">
+                        <label class="bld-label">Education</label>
+                        <div id="education-entries">
+                            {% set edus = cv_data.education if cv_data.education else [{}] %}
+                            {% for edu in edus %}
+                            <div class="bld-card bld-card--compact">
+                                <div class="bld-card-head">
+                                    <span class="bld-card-num">#{{ loop.index }}</span>
+                                    {% if not loop.first %}
+                                    <button type="button" class="bld-card-remove" onclick="this.closest('.bld-card').remove()">Remove</button>
+                                    {% endif %}
+                                </div>
+                                <div class="bld-card-grid">
+                                    <div class="bld-field bld-field--full">
+                                        <label class="bld-label-sm">Degree / Qualification</label>
+                                        <input type="text" name="edu_degree_{{ loop.index0 }}" class="input-field" placeholder="Bachelor of Computer Science" value="{{ edu.get('degree', '') }}">
+                                    </div>
+                                    <div class="bld-field">
+                                        <label class="bld-label-sm">Institution</label>
+                                        <input type="text" name="edu_institution_{{ loop.index0 }}" class="input-field" placeholder="University of Sydney" value="{{ edu.get('institution', '') }}">
+                                    </div>
+                                    <div class="bld-field">
+                                        <label class="bld-label-sm">Year</label>
+                                        <input type="text" name="edu_date_{{ loop.index0 }}" class="input-field" placeholder="2018" value="{{ edu.get('date', '') }}">
+                                    </div>
+                                </div>
                             </div>
-                            {{ text_input("exp_date_" ~ loop.index0, placeholder="Jan 2022 – Present", value=exp.get('date', '')) }}
+                            {% endfor %}
                         </div>
-                        <div class="form-row">
-                            {{ text_input("exp_company_" ~ loop.index0, placeholder="Acme Corp", value=exp.get('company', '')) }}
-                            {{ text_input("exp_location_" ~ loop.index0, placeholder="Sydney", value=exp.get('location', '')) }}
-                            {{ text_input("exp_tech_" ~ loop.index0, placeholder="Python, FastAPI, PostgreSQL", value=exp.get('tech', '')) }}
+                        <button type="button" class="bld-add" onclick="addEducation()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Education
+                        </button>
+
+                        <div class="bld-divider"></div>
+
+                        <div class="bld-field">
+                            <label class="bld-label">Certifications</label>
+                            <span class="bld-hint">One per line</span>
+                            <textarea name="certifications" rows="3" class="input-field" placeholder="AWS Solutions Architect Professional (2024)&#10;Certified Kubernetes Administrator (2023)">{{ cv_data.certifications|join('\n') }}</textarea>
                         </div>
-                        {% call form_group("Achievements", hint="One per line") %}
-                            {{ text_area("exp_bullets_" ~ loop.index0, rows=3, placeholder="Led migration of legacy system to microservices, reducing deploy time by 60%", value=exp.get('bullets', [])|join('\n')) }}
-                        {% endcall %}
-                    {% endcall %}
-                    {% endfor %}
-                </div>
-                <button type="button" class="repeatable-add" onclick="addExperience()">+ Add Experience</button>
-            </fieldset>
+                    </div>
+                    <div class="bld-nav">
+                        <button type="button" class="bld-btn-prev" onclick="switchTab('experience')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Experience</button>
+                        <button type="button" class="bld-btn-next" onclick="switchTab('extras')">Skills &amp; More <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+                    </div>
+                </section>
 
-            <!-- Skills -->
-            <fieldset>
-                <legend>Skills</legend>
-                {% call form_group("Skills", hint="Comma-separated") %}
-                    {{ text_input("skills", placeholder="Python, JavaScript, AWS, Docker, PostgreSQL, React", value=cv_data.skills|join(', ')) }}
-                {% endcall %}
-            </fieldset>
+                <!-- EXTRAS -->
+                <section class="bld-panel" data-panel="extras" role="tabpanel">
+                    <div class="bld-section-head">
+                        <h3>Skills &amp; More</h3>
+                        <p>Technical skills, languages, and references.</p>
+                    </div>
+                    <div class="bld-fields">
+                        <div class="bld-field">
+                            <label class="bld-label">Skills</label>
+                            <span class="bld-hint">Comma-separated</span>
+                            <input type="text" name="skills" class="input-field" placeholder="Python, JavaScript, AWS, Docker, PostgreSQL, React" value="{{ cv_data.skills|join(', ') }}">
+                        </div>
+                        <div class="bld-field">
+                            <label class="bld-label">Languages</label>
+                            <span class="bld-hint">Comma-separated with proficiency</span>
+                            <input type="text" name="languages" class="input-field" placeholder="English (Native), Spanish (Professional), French (Basic)" value="{{ cv_data.languages|join(', ') }}">
+                        </div>
 
-            <!-- Education -->
-            <fieldset>
-                <legend>Education</legend>
-                <div id="education-entries">
-                    {% set edus = cv_data.education if cv_data.education else [{}] %}
-                    {% for edu in edus %}
-                    {% call repeatable_entry(index=loop.index0, removable=not loop.first) %}
-                        <div class="form-row">
-                            <div class="form-group form-group--wide">
-                                {{ text_input("edu_degree_" ~ loop.index0, placeholder="Bachelor of Computer Science", value=edu.get('degree', '')) }}
+                        <!-- References (region-conditional) -->
+                        <div id="section-references" class="region-conditional" style="display:none;">
+                            <div class="bld-divider"></div>
+                            <label class="bld-label">References</label>
+                            <p class="bld-hint" style="margin-bottom:0.6rem;">Expected on CVs in your selected region.</p>
+                            <div id="reference-entries">
+                                {% set refs = cv_data.references if cv_data.references else [{}] %}
+                                {% for ref in refs %}
+                                <div class="bld-card bld-card--compact">
+                                    <div class="bld-card-head">
+                                        <span class="bld-card-num">#{{ loop.index }}</span>
+                                        {% if not loop.first %}
+                                        <button type="button" class="bld-card-remove" onclick="this.closest('.bld-card').remove()">Remove</button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="bld-card-grid">
+                                        <div class="bld-field">
+                                            <label class="bld-label-sm">Name</label>
+                                            <input type="text" name="ref_name_{{ loop.index0 }}" class="input-field" placeholder="John Doe" value="{{ ref.get('name', '') }}">
+                                        </div>
+                                        <div class="bld-field">
+                                            <label class="bld-label-sm">Title</label>
+                                            <input type="text" name="ref_title_{{ loop.index0 }}" class="input-field" placeholder="Engineering Manager" value="{{ ref.get('title', '') }}">
+                                        </div>
+                                        <div class="bld-field">
+                                            <label class="bld-label-sm">Company</label>
+                                            <input type="text" name="ref_company_{{ loop.index0 }}" class="input-field" placeholder="Acme Corp" value="{{ ref.get('company', '') }}">
+                                        </div>
+                                        <div class="bld-field">
+                                            <label class="bld-label-sm">Contact</label>
+                                            <input type="text" name="ref_contact_{{ loop.index0 }}" class="input-field" placeholder="john@acme.com" value="{{ ref.get('contact', '') }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
-                            {{ text_input("edu_institution_" ~ loop.index0, placeholder="University of Sydney", value=edu.get('institution', '')) }}
-                            {{ text_input("edu_date_" ~ loop.index0, placeholder="2018", value=edu.get('date', '')) }}
+                            <button type="button" class="bld-add" onclick="addReference()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add Reference
+                            </button>
                         </div>
-                    {% endcall %}
-                    {% endfor %}
+                    </div>
+                    <div class="bld-nav">
+                        <button type="button" class="bld-btn-prev" onclick="switchTab('education')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Education</button>
+                        <span class="bld-nav-done">All sections complete</span>
+                    </div>
+                </section>
+
+            </div><!-- /.bld-panels -->
+        </div><!-- /.bld-form -->
+
+        <!-- ═══ RIGHT: Preview ═══ -->
+        <div class="bld-preview">
+            <div class="bld-preview-sticky">
+                <div class="bld-preview-bar">
+                    <div class="bld-preview-title">
+                        <span class="bld-preview-led"></span>
+                        Live Preview
+                        <span class="bld-preview-updating" id="preview-updating-indicator">
+                            <span class="spinner" style="width:12px;height:12px;border-width:1.5px;margin:0;"></span>
+                        </span>
+                    </div>
+                    <div class="bld-preview-btns">
+                        <button type="button" class="bld-btn-save" id="btn-bar-save" onclick="openSaveModal()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Save
+                        </button>
+                        <a href="/builder/download-pdf" class="bld-btn-pdf" id="btn-bar-download" hidden download>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            PDF
+                        </a>
+                    </div>
                 </div>
-                <button type="button" class="repeatable-add" onclick="addEducation()">+ Add Education</button>
-            </fieldset>
-
-            <!-- Certifications -->
-            <fieldset>
-                <legend>Certifications</legend>
-                {% call form_group("Certifications", hint="One per line") %}
-                    {{ text_area("certifications", rows=2, placeholder="AWS Solutions Architect Professional (2024)\nCertified Kubernetes Administrator (2023)", value=cv_data.certifications|join('\n')) }}
-                {% endcall %}
-            </fieldset>
-
-            <!-- References (region-conditional) -->
-            <fieldset id="section-references" class="region-conditional" style="display:none;">
-                <legend>References</legend>
-                <p class="hint">References are expected on CVs in your selected region.</p>
-                <div id="reference-entries">
-                    {% set refs = cv_data.references if cv_data.references else [{}] %}
-                    {% for ref in refs %}
-                    {% call repeatable_entry(index=loop.index0, removable=not loop.first) %}
-                        <div class="form-row">
-                            {{ text_input("ref_name_" ~ loop.index0, placeholder="John Doe", value=ref.get('name', '')) }}
-                            {{ text_input("ref_title_" ~ loop.index0, placeholder="Engineering Manager", value=ref.get('title', '')) }}
-                            {{ text_input("ref_company_" ~ loop.index0, placeholder="Acme Corp", value=ref.get('company', '')) }}
-                            {{ text_input("ref_contact_" ~ loop.index0, placeholder="john@acme.com", value=ref.get('contact', '')) }}
+                <div class="bld-paper">
+                    <div id="builder-preview">
+                        <div class="bld-empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" width="44" height="44" style="opacity:0.3;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            <p>Your CV preview will appear here</p>
+                            <span>Fill in the form and it updates automatically</span>
                         </div>
-                    {% endcall %}
-                    {% endfor %}
-                </div>
-                <button type="button" class="repeatable-add" onclick="addReference()">+ Add Reference</button>
-            </fieldset>
-
-            <!-- Languages -->
-            <fieldset>
-                <legend>Languages</legend>
-                {% call form_group("Languages", hint="Comma-separated") %}
-                    {{ text_input("languages", placeholder="English (Native), Spanish (Professional), French (Basic)", value=cv_data.languages|join(', ')) }}
-                {% endcall %}
-            </fieldset>
-
-            <div class="builder-actions">
-                <button type="submit" class="btn-generate">Preview CV</button>
-            </div>
-        </div>
-
-        <div class="builder-preview-col">
-            <div class="builder-preview-sticky">
-                <div class="builder-preview-header">
-                    <h3>Preview</h3>
-                    <a href="/builder/download-pdf" class="btn-download builder-download-btn" id="download-btn" style="display:none;" download>Download PDF</a>
-                </div>
-                <div id="builder-preview" class="builder-preview-area">
-                    <p class="builder-preview-empty">Fill in your details and click "Preview CV" to see your formatted CV here.</p>
+                    </div>
                 </div>
             </div>
-        </div>
+        </div><!-- /.bld-preview -->
+
     </form>
 </div>
 
-<script>
-var REGION_FIELDS = {{ region_fields_json | safe }};
+<!-- Save modal -->
+<div id="save-modal-backdrop" class="bld-modal-bg" style="display:none;" onclick="closeSaveModal()"></div>
+<div id="save-modal" class="bld-modal" role="dialog" aria-modal="true" aria-label="Save CV" style="display:none;">
+    <h3>{% if editing_cv_id %}Update this CV{% else %}Save this CV{% endif %}</h3>
+    <div class="bld-modal-body">
+        <input type="text" id="modal-save-label" name="save_label" class="input-field" placeholder="Name this CV (e.g. Frontend Role — Google)" value="{{ editing_label }}">
+        <input type="text" id="modal-save-job-title" name="save_job_title" class="input-field" placeholder="Target job title (optional)" value="{{ editing_job_title }}">
+    </div>
+    <div class="bld-modal-foot">
+        <button type="button" class="bld-btn-cancel" onclick="closeSaveModal()">Cancel</button>
+        <button type="button" class="bld-btn-save"
+                hx-post="/builder/save"
+                hx-include="#modal-save-label, #modal-save-job-title"
+                hx-target="#modal-save-result"
+                hx-swap="innerHTML"
+                hx-disabled-elt="this">Save</button>
+    </div>
+    <div id="modal-save-result" style="margin-top:0.5rem;font-size:0.82rem;"></div>
+</div>
 
+<!-- Toast -->
+<div id="builder-toast" class="bld-toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   Builder — Tabs, Region Fields, Dynamic Entries
+   ═══════════════════════════════════════════════ */
+
+var REGION_FIELDS = {{ region_fields_json | safe }};
 var expCount = {{ (cv_data.experience|length) or 1 }};
 var eduCount = {{ (cv_data.education|length) or 1 }};
 var refCount = {{ (cv_data.references|length) or 1 }};
 
+/* ── Tab switching ── */
+function switchTab(tabName) {
+    // Deactivate all tabs & panels
+    document.querySelectorAll('.bld-tab').forEach(function(t) {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.bld-panel').forEach(function(p) {
+        p.classList.remove('active');
+    });
+    // Activate target
+    var tab = document.querySelector('.bld-tab[data-tab="' + tabName + '"]');
+    var panel = document.querySelector('.bld-panel[data-panel="' + tabName + '"]');
+    if (tab) { tab.classList.add('active'); tab.setAttribute('aria-selected', 'true'); }
+    if (panel) {
+        panel.classList.add('active');
+        // Smooth scroll to top of form
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    updateProgress();
+}
+
+// Tab click handlers
+document.querySelectorAll('.bld-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        switchTab(this.dataset.tab);
+    });
+});
+
+/* ── Region fields ── */
 function updateRegionFields() {
     var region = document.querySelector('select[name="region"]').value;
     var fields = REGION_FIELDS[region] || {};
 
-    // Photo section
     toggle('section-photo', fields.photo);
     var photoHint = document.getElementById('photo-level-hint');
     if (photoHint) {
         var levelText = {
             'required': 'A professional photo is required for CVs in this region.',
-            'common': 'A professional photo is common and expected in this region.',
-            'optional': 'A photo is optional but sometimes included in this region.'
+            'common': 'A professional photo is common and expected.',
+            'optional': 'A photo is optional but sometimes included.'
         };
         photoHint.textContent = levelText[fields.photo_level] || '';
     }
 
-    // Personal details section — show if any sub-field is needed
-    var hasPersonalDetails = fields.dob || fields.nationality || fields.marital || fields.visa;
-    toggle('section-personal-details', hasPersonalDetails);
+    var hasPersonal = fields.dob || fields.nationality || fields.marital || fields.visa;
+    toggle('section-personal-details', hasPersonal);
     toggle('field-dob', fields.dob);
     toggle('field-nationality', fields.nationality);
     toggle('field-marital', fields.marital);
     toggle('field-visa', fields.visa);
-
-    // References section
     toggle('section-references', fields.references);
 
-    // Region hint
     var hints = [];
     if (fields.photo) hints.push('Photo (' + fields.photo_level + ')');
     if (fields.dob) hints.push('Date of birth');
@@ -263,11 +504,9 @@ function updateRegionFields() {
     if (fields.references) hints.push('References');
 
     var hintEl = document.getElementById('region-hint');
-    if (hints.length > 0) {
-        hintEl.textContent = 'This region expects: ' + hints.join(', ');
-    } else {
-        hintEl.textContent = 'This region has no extra field requirements.';
-    }
+    hintEl.textContent = hints.length > 0
+        ? 'This region expects: ' + hints.join(', ')
+        : 'No extra field requirements for this region.';
 }
 
 function toggle(id, show) {
@@ -275,63 +514,176 @@ function toggle(id, show) {
     if (el) el.style.display = show ? '' : 'none';
 }
 
-function _inputHtml(name, placeholder) {
-    return '<input type="text" name="' + name + '" class="input-field" placeholder="' + placeholder + '">';
-}
-function _textareaHtml(name, rows, placeholder) {
-    return '<textarea name="' + name + '" rows="' + rows + '" placeholder="' + placeholder + '"></textarea>';
+/* ── Dynamic entries ── */
+function _expCardHtml(i) {
+    return '<div class="bld-card">'
+        + '<div class="bld-card-head"><span class="bld-card-num">#' + (i+1) + '</span>'
+        + '<button type="button" class="bld-card-remove" onclick="this.closest(\'.bld-card\').remove()">Remove</button></div>'
+        + '<div class="bld-card-grid">'
+        + '<div class="bld-field"><label class="bld-label-sm">Job Title</label>'
+        + '<input type="text" name="exp_title_' + i + '" class="input-field" placeholder="Senior Software Engineer"></div>'
+        + '<div class="bld-field"><label class="bld-label-sm">Dates</label>'
+        + '<input type="text" name="exp_date_' + i + '" class="input-field" placeholder="Jan 2022 – Present"></div>'
+        + '<div class="bld-field"><label class="bld-label-sm">Company</label>'
+        + '<input type="text" name="exp_company_' + i + '" class="input-field" placeholder="Acme Corp"></div>'
+        + '<div class="bld-field"><label class="bld-label-sm">Location</label>'
+        + '<input type="text" name="exp_location_' + i + '" class="input-field" placeholder="Sydney"></div>'
+        + '<div class="bld-field bld-field--full"><label class="bld-label-sm">Tech / Tools</label>'
+        + '<input type="text" name="exp_tech_' + i + '" class="input-field" placeholder="Python, FastAPI"></div>'
+        + '<div class="bld-field bld-field--full"><label class="bld-label-sm">Achievements <span class="bld-hint">(one per line)</span></label>'
+        + '<textarea name="exp_bullets_' + i + '" rows="3" class="input-field" placeholder="Led migration of legacy system..."></textarea></div>'
+        + '</div></div>';
 }
 
 function addExperience() {
     var i = expCount++;
     var container = document.getElementById('experience-entries');
     var div = document.createElement('div');
-    div.className = 'repeatable-entry';
-    div.innerHTML = '<button type="button" class="repeatable-remove" onclick="this.closest(\'.repeatable-entry\').remove()">Remove</button>'
-        + '<div class="form-row"><div class="form-group form-group--wide">' + _inputHtml('exp_title_' + i, 'Senior Software Engineer') + '</div>'
-        + _inputHtml('exp_date_' + i, 'Jan 2022 – Present') + '</div>'
-        + '<div class="form-row">' + _inputHtml('exp_company_' + i, 'Acme Corp')
-        + _inputHtml('exp_location_' + i, 'Sydney')
-        + _inputHtml('exp_tech_' + i, 'Python, FastAPI') + '</div>'
-        + '<div class="form-group"><label>Achievements</label><p class="hint">One per line</p>'
-        + _textareaHtml('exp_bullets_' + i, 3, 'Led migration of legacy system...') + '</div>';
-    container.appendChild(div);
-    div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    div.innerHTML = _expCardHtml(i);
+    container.appendChild(div.firstChild);
+    container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    updateProgress();
 }
 
 function addEducation() {
     var i = eduCount++;
     var container = document.getElementById('education-entries');
     var div = document.createElement('div');
-    div.className = 'repeatable-entry';
-    div.innerHTML = '<button type="button" class="repeatable-remove" onclick="this.closest(\'.repeatable-entry\').remove()">Remove</button>'
-        + '<div class="form-row"><div class="form-group form-group--wide">' + _inputHtml('edu_degree_' + i, 'Bachelor of Computer Science') + '</div>'
-        + _inputHtml('edu_institution_' + i, 'University of Sydney')
-        + _inputHtml('edu_date_' + i, '2018') + '</div>';
+    div.className = 'bld-card bld-card--compact';
+    div.innerHTML = '<div class="bld-card-head"><span class="bld-card-num">#' + (i+1) + '</span>'
+        + '<button type="button" class="bld-card-remove" onclick="this.closest(\'.bld-card\').remove()">Remove</button></div>'
+        + '<div class="bld-card-grid">'
+        + '<div class="bld-field bld-field--full"><label class="bld-label-sm">Degree / Qualification</label>'
+        + '<input type="text" name="edu_degree_' + i + '" class="input-field" placeholder="Bachelor of Computer Science"></div>'
+        + '<div class="bld-field"><label class="bld-label-sm">Institution</label>'
+        + '<input type="text" name="edu_institution_' + i + '" class="input-field" placeholder="University of Sydney"></div>'
+        + '<div class="bld-field"><label class="bld-label-sm">Year</label>'
+        + '<input type="text" name="edu_date_' + i + '" class="input-field" placeholder="2018"></div>'
+        + '</div>';
     container.appendChild(div);
+    updateProgress();
 }
 
 function addReference() {
     var i = refCount++;
     var container = document.getElementById('reference-entries');
     var div = document.createElement('div');
-    div.className = 'repeatable-entry';
-    div.innerHTML = '<button type="button" class="repeatable-remove" onclick="this.closest(\'.repeatable-entry\').remove()">Remove</button>'
-        + '<div class="form-row">' + _inputHtml('ref_name_' + i, 'John Doe')
-        + _inputHtml('ref_title_' + i, 'Engineering Manager')
-        + _inputHtml('ref_company_' + i, 'Acme Corp')
-        + _inputHtml('ref_contact_' + i, 'john@acme.com') + '</div>';
+    div.className = 'bld-card bld-card--compact';
+    div.innerHTML = '<div class="bld-card-head"><span class="bld-card-num">#' + (i+1) + '</span>'
+        + '<button type="button" class="bld-card-remove" onclick="this.closest(\'.bld-card\').remove()">Remove</button></div>'
+        + '<div class="bld-card-grid">'
+        + '<div class="bld-field"><label class="bld-label-sm">Name</label>'
+        + '<input type="text" name="ref_name_' + i + '" class="input-field" placeholder="John Doe"></div>'
+        + '<div class="bld-field"><label class="bld-label-sm">Title</label>'
+        + '<input type="text" name="ref_title_' + i + '" class="input-field" placeholder="Engineering Manager"></div>'
+        + '<div class="bld-field"><label class="bld-label-sm">Company</label>'
+        + '<input type="text" name="ref_company_' + i + '" class="input-field" placeholder="Acme Corp"></div>'
+        + '<div class="bld-field"><label class="bld-label-sm">Contact</label>'
+        + '<input type="text" name="ref_contact_' + i + '" class="input-field" placeholder="john@acme.com"></div>'
+        + '</div>';
     container.appendChild(div);
+    updateProgress();
 }
 
-document.body.addEventListener('htmx:afterSwap', function(e) {
-    if (e.detail.target.id === 'builder-preview') {
-        document.getElementById('download-btn').style.display = '';
+/* ── Progress bar + completion dots ── */
+function updateProgress() {
+    var fields = ['name', 'title', 'email', 'summary', 'exp_title_0', 'edu_degree_0', 'skills'];
+    var filled = 0;
+    fields.forEach(function(f) {
+        var el = document.querySelector('[name="' + f + '"]');
+        if (el && el.value.trim()) filled++;
+    });
+    var pct = Math.round((filled / fields.length) * 100);
+    var bar = document.getElementById('bld-progress-fill');
+    if (bar) bar.style.width = pct + '%';
+
+    // Tab dots
+    _setDot('dot-setup', !!document.querySelector('select[name="template_id"]').value);
+    _setDot('dot-profile', !!(
+        _val('name') && _val('title') && _val('email')
+    ));
+    _setDot('dot-experience', !!_val('exp_title_0'));
+    _setDot('dot-education', !!_val('edu_degree_0'));
+    _setDot('dot-extras', !!_val('skills'));
+}
+
+function _val(name) {
+    var el = document.querySelector('[name="' + name + '"]');
+    return el ? el.value.trim() : '';
+}
+
+function _setDot(id, filled) {
+    var dot = document.getElementById(id);
+    if (dot) dot.classList.toggle('filled', filled);
+}
+
+/* ── HTMX hooks ── */
+document.body.addEventListener('htmx:beforeRequest', function(e) {
+    if (e.detail.target && e.detail.target.id === 'builder-preview') {
+        var led = document.querySelector('.bld-preview-led');
+        if (led) led.classList.add('pulse');
     }
 });
 
-// Initialize on page load
+document.body.addEventListener('htmx:afterSwap', function(e) {
+    if (e.detail.target && e.detail.target.id === 'builder-preview') {
+        var led = document.querySelector('.bld-preview-led');
+        if (led) led.classList.remove('pulse');
+        document.getElementById('btn-bar-download').removeAttribute('hidden');
+        showToast('Preview updated');
+        updateProgress();
+    }
+    if (e.detail.target && e.detail.target.id === 'modal-save-result') {
+        if (e.detail.target.innerHTML.indexOf('save-success') !== -1) {
+            setTimeout(closeSaveModal, 1500);
+            showToast('CV saved');
+        }
+    }
+});
+
+/* Track input changes for progress */
+document.getElementById('builder-form').addEventListener('input', updateProgress, { passive: true });
+
+/* ── Ctrl+S shortcut ── */
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        htmx.trigger(document.getElementById('builder-form'), 'submit');
+        showToast('Updating preview...');
+    }
+});
+
+/* ── Toast ── */
+var _toastTimer = null;
+function showToast(msg) {
+    var toast = document.getElementById('builder-toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2200);
+}
+
+/* ── Save modal ── */
+function openSaveModal() {
+    document.getElementById('save-modal-backdrop').style.display = '';
+    document.getElementById('save-modal').style.display = '';
+    document.getElementById('modal-save-label').focus();
+}
+function closeSaveModal() {
+    document.getElementById('save-modal-backdrop').style.display = 'none';
+    document.getElementById('save-modal').style.display = 'none';
+    document.getElementById('modal-save-result').innerHTML = '';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('save-modal').style.display !== 'none') {
+        closeSaveModal();
+    }
+});
+
+/* ── Init ── */
 updateRegionFields();
+updateProgress();
 </script>
 
 {% if dev_mode %}
@@ -351,88 +703,51 @@ function devFillBuilder() {
         skills: "Python, TypeScript, FastAPI, React, PostgreSQL, Redis, Docker, Kubernetes, AWS, Terraform, GraphQL, REST APIs",
         languages: "English (Native), Mandarin (Professional), Japanese (Basic)",
         certifications: "AWS Solutions Architect Professional (2024)\nCertified Kubernetes Administrator (2023)\nGoogle Cloud Professional Cloud Architect (2022)",
-        // Region-specific
         visa_status: "Full working rights — Australian Citizen",
         dob: "15/03/1990",
         nationality: "Australian",
         marital_status: "Single",
     };
-
     for (var key in fields) {
         var el = document.querySelector('[name="' + key + '"]');
         if (el) el.value = fields[key];
     }
-
     // Experience 0
     var exp0 = {
-        exp_title_0: "Senior Full-Stack Engineer",
-        exp_date_0: "Mar 2022 – Present",
-        exp_company_0: "Canva",
-        exp_location_0: "Sydney",
+        exp_title_0: "Senior Full-Stack Engineer", exp_date_0: "Mar 2022 – Present",
+        exp_company_0: "Canva", exp_location_0: "Sydney",
         exp_tech_0: "Python, FastAPI, React, TypeScript, PostgreSQL, Kubernetes",
         exp_bullets_0: "Led migration of monolithic API to microservices architecture, reducing p95 latency from 800ms to 120ms\nDesigned and shipped real-time collaboration feature used by 500K+ users within first quarter\nEstablished code review standards and mentored 4 junior engineers, all promoted within 18 months\nReduced CI/CD pipeline time from 25 min to 8 min by parallelising test suites and optimising Docker builds"
     };
-    for (var key in exp0) {
-        var el = document.querySelector('[name="' + key + '"]');
-        if (el) el.value = exp0[key];
-    }
-
-    // Add second experience
+    for (var key in exp0) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = exp0[key]; }
     addExperience();
     var exp1 = {
-        exp_title_1: "Software Engineer",
-        exp_date_1: "Jan 2019 – Feb 2022",
-        exp_company_1: "Atlassian",
-        exp_location_1: "Sydney",
+        exp_title_1: "Software Engineer", exp_date_1: "Jan 2019 – Feb 2022",
+        exp_company_1: "Atlassian", exp_location_1: "Sydney",
         exp_tech_1: "Java, Spring Boot, React, AWS, DynamoDB",
-        exp_bullets_1: "Built and maintained microservices handling 10M+ API requests per day for Jira Cloud\nImplemented feature flagging system that reduced release risk and enabled 3x faster feature rollouts\nLed cross-team initiative to standardise error handling, reducing customer-reported bugs by 40%\nContributed to open-source internal tooling adopted by 12 teams across the organisation"
+        exp_bullets_1: "Built and maintained microservices handling 10M+ API requests per day for Jira Cloud\nImplemented feature flagging system that reduced release risk and enabled 3x faster feature rollouts\nLed cross-team initiative to standardise error handling, reducing customer-reported bugs by 40%"
     };
-    for (var key in exp1) {
-        var el = document.querySelector('[name="' + key + '"]');
-        if (el) el.value = exp1[key];
-    }
-
-    // Add third experience
+    for (var key in exp1) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = exp1[key]; }
     addExperience();
     var exp2 = {
-        exp_title_2: "Junior Developer",
-        exp_date_2: "Jul 2016 – Dec 2018",
-        exp_company_2: "Tyro Payments",
-        exp_location_2: "Sydney",
+        exp_title_2: "Junior Developer", exp_date_2: "Jul 2016 – Dec 2018",
+        exp_company_2: "Tyro Payments", exp_location_2: "Sydney",
         exp_tech_2: "Ruby on Rails, PostgreSQL, React, AWS",
-        exp_bullets_2: "Developed payment processing features handling $2M+ daily transaction volume\nBuilt internal admin dashboard used by 50+ support staff, reducing ticket resolution time by 30%\nMigrated legacy jQuery frontend to React, improving page load times by 60%"
+        exp_bullets_2: "Developed payment processing features handling $2M+ daily transaction volume\nBuilt internal admin dashboard used by 50+ support staff, reducing ticket resolution time by 30%"
     };
-    for (var key in exp2) {
-        var el = document.querySelector('[name="' + key + '"]');
-        if (el) el.value = exp2[key];
-    }
-
+    for (var key in exp2) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = exp2[key]; }
     // Education 0
-    var edu0 = {
-        edu_degree_0: "Bachelor of Computer Science (Honours)",
-        edu_institution_0: "University of New South Wales",
-        edu_date_0: "2016"
-    };
-    for (var key in edu0) {
-        var el = document.querySelector('[name="' + key + '"]');
-        if (el) el.value = edu0[key];
-    }
-
+    var edu0 = { edu_degree_0: "Bachelor of Computer Science (Honours)", edu_institution_0: "University of New South Wales", edu_date_0: "2016" };
+    for (var key in edu0) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = edu0[key]; }
     // References 0
-    var ref0 = {
-        ref_name_0: "James Park",
-        ref_title_0: "Engineering Manager",
-        ref_company_0: "Canva",
-        ref_contact_0: "james.park@example.com"
-    };
-    for (var key in ref0) {
-        var el = document.querySelector('[name="' + key + '"]');
-        if (el) el.value = ref0[key];
-    }
-
-    // Set region to AU to show references + visa
+    var ref0 = { ref_name_0: "James Park", ref_title_0: "Engineering Manager", ref_company_0: "Canva", ref_contact_0: "james.park@example.com" };
+    for (var key in ref0) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = ref0[key]; }
+    // Set region to AU
     document.querySelector('select[name="region"]').value = 'AU';
     updateRegionFields();
+    updateProgress();
+    htmx.trigger(document.getElementById('builder-form'), 'submit');
+    showToast('Dev data filled — generating preview...');
 }
 </script>
 {% endif %}

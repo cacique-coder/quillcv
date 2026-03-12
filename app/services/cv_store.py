@@ -105,6 +105,41 @@ async def save_cv(
     return saved
 
 
+async def update_cv(
+    db: AsyncSession,
+    *,
+    cv_id: str,
+    region: str,
+    template_id: str,
+    rendered_html: str,
+    cv_data: dict,
+    label: str = "",
+    job_title: str = "",
+) -> SavedCV | None:
+    """Update an existing saved CV."""
+    result = await db.execute(select(SavedCV).where(SavedCV.id == cv_id))
+    saved = result.scalar_one_or_none()
+    if not saved:
+        return None
+
+    markdown = html_to_markdown(rendered_html)
+    data_copy = {k: v for k, v in cv_data.items() if not k.startswith("_")}
+
+    saved.region = region
+    saved.template_id = template_id
+    saved.markdown = markdown
+    saved.cv_data_json = json.dumps(data_copy, default=str)
+    if label:
+        saved.label = label
+    if job_title:
+        saved.job_title = job_title
+
+    await db.commit()
+    await db.refresh(saved)
+    logger.info("Updated CV %s", saved.id)
+    return saved
+
+
 async def get_saved_cv(db: AsyncSession, saved_cv_id: str) -> SavedCV | None:
     """Retrieve a saved CV by ID."""
     result = await db.execute(select(SavedCV).where(SavedCV.id == saved_cv_id))

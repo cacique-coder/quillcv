@@ -28,6 +28,7 @@
                 <span class="cv-card-date">{{ cv.created_at.strftime("%d %b %Y") }}</span>
             </div>
             <div class="cv-card-actions">
+                <a href="/builder/edit/{{ cv.id }}" class="btn-secondary">Edit</a>
                 <a href="/my-cvs/{{ cv.id }}/preview" class="btn-secondary" target="_blank">Preview</a>
                 <a href="/my-cvs/{{ cv.id }}/download" class="btn-primary">Download PDF</a>
             </div>

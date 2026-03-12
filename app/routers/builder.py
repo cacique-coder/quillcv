@@ -14,7 +14,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.database import async_session
 from app.services.attempt_store import create_attempt, get_attempt, update_attempt
-from app.services.cv_store import save_cv
+from app.services.cv_store import get_saved_cv, save_cv, update_cv
 from app.services.pdf_generator import generate_pdf
 from app.services.template_registry import REGIONS, TEMPLATES, list_regions, list_templates
 
@@ -170,18 +170,90 @@ async def builder_page(request: Request):
         "selected_template": template_id,
         "region_fields_json": json.dumps(region_fields),
         "dev_mode": request.app.state.dev_mode,
+        "editing_cv_id": None,
+        "editing_label": "",
+        "editing_job_title": "",
+    })
+
+
+@router.get("/edit/{cv_id}")
+async def builder_edit(cv_id: str, request: Request):
+    """Load a saved CV into the builder for editing."""
+    async with async_session() as db:
+        saved = await get_saved_cv(db, cv_id)
+
+    if not saved:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse("/my-cvs", status_code=303)
+
+    # Parse the stored cv_data_json back into builder_data
+    stored_data: dict = {}
+    if saved.cv_data_json:
+        try:
+            stored_data = json.loads(saved.cv_data_json)
+        except Exception:
+            logger.warning("Failed to parse cv_data_json for CV %s", cv_id)
+
+    # Merge stored data with template/region from the SavedCV columns
+    builder_data = {**stored_data, "template_id": saved.template_id, "region": saved.region}
+
+    # Create a fresh builder attempt for this edit session
+    attempt_id = create_attempt()
+    request.session["builder_id"] = attempt_id
+    update_attempt(attempt_id, builder_data=builder_data, editing_cv_id=cv_id)
+
+    cv_data = _cv_data_from_attempt({"builder_data": builder_data})
+    region = saved.region
+    template_id = saved.template_id
+
+    template_options = [(t.id, t.name) for t in list_templates()]
+    region_options = [(r.code, f"{r.flag} {r.name}") for r in list_regions()]
+    region_fields = _region_fields_map()
+
+    return templates.TemplateResponse("builder.html", {
+        "request": request,
+        "cv_data": cv_data,
+        "template_options": template_options,
+        "region_options": region_options,
+        "selected_region": region,
+        "selected_template": template_id,
+        "region_fields_json": json.dumps(region_fields),
+        "dev_mode": request.app.state.dev_mode,
+        "editing_cv_id": cv_id,
+        "editing_label": saved.label or "Untitled CV",
+        "editing_job_title": saved.job_title or "",
     })
 
 
 @router.post("/preview")
 async def builder_preview(request: Request):
-    """Save form data and return rendered CV preview."""
+    """Save form data and return rendered CV preview.
+
+    Auto-preview fires on every keystroke (after 800ms debounce), so the form
+    may be nearly empty. We still render — the templates handle missing fields
+    gracefully — but we return a lightweight "keep typing" placeholder if there
+    is truly no meaningful content yet.
+    """
     attempt = _get_or_create_builder(request)
     form = await request.form()
 
     # Parse all fields
     template_id = form.get("template_id", "modern").strip()
     region = form.get("region", "US").strip()
+
+    # Guard: if nothing meaningful is filled in yet, return a friendly nudge
+    # rather than rendering an empty CV template.
+    _has_content = any(
+        form.get(f, "").strip()
+        for f in ("name", "title", "summary", "exp_title_0", "edu_degree_0", "skills")
+    )
+    if not _has_content:
+        return Response(
+            '<div class="builder-preview-empty" style="padding:2.5rem 1rem;text-align:center;">'
+            '<p style="color:var(--text-muted);font-size:0.9rem;">Start filling in your details and the preview will appear here automatically.</p>'
+            '</div>',
+            media_type="text/html",
+        )
 
     skills_raw = form.get("skills", "")
     skills = [s.strip() for s in skills_raw.split(",") if s.strip()]
@@ -221,8 +293,10 @@ async def builder_preview(request: Request):
         "template_id": template_id,
     }
 
-    # Save to attempt store
-    update_attempt(attempt["id"], builder_data=builder_data)
+    # Save to attempt store — preserve editing_cv_id if present
+    editing_cv_id = attempt.get("editing_cv_id")
+    extra = {"editing_cv_id": editing_cv_id} if editing_cv_id else {}
+    update_attempt(attempt["id"], builder_data=builder_data, **extra)
 
     # Render CV with selected template
     cv_data = _cv_data_from_attempt({"builder_data": builder_data})
@@ -278,22 +352,44 @@ async def builder_save(request: Request):
         label = f"{cv_name} — {tpl_id.title()}" if cv_name else f"CV — {tpl_id.title()}"
 
     builder_data = attempt.get("builder_data", {})
+    editing_cv_id = attempt.get("editing_cv_id")
+    region = builder_data.get("region", "US")
+    template_id = builder_data.get("template_id", "modern")
 
     try:
         async with async_session() as db:
-            saved = await save_cv(
-                db,
-                attempt_id=attempt_id,
-                source="builder",
-                region=builder_data.get("region", "US"),
-                template_id=builder_data.get("template_id", "modern"),
-                rendered_html=attempt["rendered_cv"],
-                cv_data=attempt.get("cv_data", {}),
-                label=label,
-                job_title=job_title,
-            )
+            if editing_cv_id:
+                saved = await update_cv(
+                    db,
+                    cv_id=editing_cv_id,
+                    region=region,
+                    template_id=template_id,
+                    rendered_html=attempt["rendered_cv"],
+                    cv_data=attempt.get("cv_data", {}),
+                    label=label,
+                    job_title=job_title,
+                )
+                if not saved:
+                    return Response(
+                        '<div class="save-error">CV not found. It may have been deleted.</div>',
+                        media_type="text/html",
+                    )
+                action_word = "Updated"
+            else:
+                saved = await save_cv(
+                    db,
+                    attempt_id=attempt_id,
+                    source="builder",
+                    region=region,
+                    template_id=template_id,
+                    rendered_html=attempt["rendered_cv"],
+                    cv_data=attempt.get("cv_data", {}),
+                    label=label,
+                    job_title=job_title,
+                )
+                action_word = "Saved"
         return Response(
-            f'<div class="save-success">Saved as "<strong>{label}</strong>"'
+            f'<div class="save-success">{action_word} as "<strong>{label}</strong>"'
             f'{" for " + job_title if job_title else ""}'
             f' <span class="save-date">{saved.created_at.strftime("%d %b %Y %H:%M")}</span></div>',
             media_type="text/html",
