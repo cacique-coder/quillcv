@@ -224,7 +224,51 @@
     </div>
   </div>
 
-  <div class="section-title">Recent Requests</div>
+  <div class="section-title">Cost per CV Generation</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Transaction</th>
+          <th>API Calls</th>
+          <th>Models</th>
+          <th>Services</th>
+          <th>Input Tok</th>
+          <th>Output Tok</th>
+          <th>Total Cost</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cv in cv_costs %}
+        <tr>
+          <td style="white-space:nowrap;font-size:0.8rem">{{ cv.started_at.strftime("%m-%d %H:%M:%S") }}</td>
+          <td>
+            <a href="/admin/requests/{{ cv.transaction_id }}" class="tx-link" title="{{ cv.transaction_id }}">
+              {{ cv.transaction_id[:12] }}…
+            </a>
+          </td>
+          <td>{{ cv.api_calls }}</td>
+          <td style="font-family:monospace;font-size:0.78rem">
+            {% for m in cv.models.split(",") %}
+              <span style="display:inline-block;background:rgba(108,99,255,0.1);padding:0.1rem 0.4rem;border-radius:3px;margin:1px;">{{ m.split(":")[-1][:20] }}</span>
+            {% endfor %}
+          </td>
+          <td style="font-size:0.78rem">{{ cv.services }}</td>
+          <td>{{ "{:,}".format(cv.total_input | int) }}</td>
+          <td>{{ "{:,}".format(cv.total_output | int) }}</td>
+          <td style="font-weight:600;color:var(--accent)">${{ "%.4f" | format(cv.total_cost) }}</td>
+          <td>{{ "%.1f" | format(cv.total_duration / 1000) }}s</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" style="color:var(--text-muted)">No generations yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title" style="margin-top:2.5rem">Recent API Requests</div>
   <div class="table-wrap">
     <table class="data-table">
       <thead>

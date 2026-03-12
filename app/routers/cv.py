@@ -255,7 +255,9 @@ async def ws_analyze(websocket: WebSocket):
         llm = websocket.app.state.llm
         llm_fast = websocket.app.state.llm_fast
 
-        ws_user = getattr(websocket.state, "user", None)
+        # WebSocket connections bypass BaseHTTPMiddleware, so resolve user directly
+        from app.auth.dependencies import get_current_user
+        ws_user = await get_current_user(websocket)
         ws_user_id = ws_user.id if ws_user else None
 
         result = await _run_generation_pipeline(
@@ -417,6 +419,15 @@ async def apply_fixes(request: Request):
     region_code = attempt.get("region", "US")
 
     llm_fast = request.app.state.llm_fast
+
+    import uuid as _uuid_mod
+    fix_user = getattr(request.state, "user", None)
+    set_llm_context(
+        service="apply_fixes",
+        attempt_id=attempt_id,
+        user_id=fix_user.id if fix_user else None,
+        transaction_id=_uuid_mod.uuid4().hex,
+    )
 
     updated_data = await apply_review_fixes(cv_data, flags, job_description, llm=llm_fast)
     if updated_data is None:

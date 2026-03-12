@@ -8,7 +8,7 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, select
+from sqlalchemy import func, literal_column, select, text
 
 from app.auth.dependencies import get_current_user
 from app.database import async_session
@@ -106,6 +106,27 @@ async def admin_dashboard(request: Request):
         )
         recent_requests = recent_result.scalars().all()
 
+        # Cost per CV — group by transaction_id, most recent first
+        cv_cost_result = await db.execute(
+            select(
+                APIRequestLog.transaction_id,
+                APIRequestLog.attempt_id,
+                APIRequestLog.user_id,
+                func.count(APIRequestLog.id).label("api_calls"),
+                func.coalesce(func.sum(APIRequestLog.cost_usd), 0).label("total_cost"),
+                func.coalesce(func.sum(APIRequestLog.input_tokens), 0).label("total_input"),
+                func.coalesce(func.sum(APIRequestLog.output_tokens), 0).label("total_output"),
+                func.coalesce(func.sum(APIRequestLog.duration_ms), 0).label("total_duration"),
+                func.min(APIRequestLog.created_at).label("started_at"),
+                func.group_concat(APIRequestLog.service.distinct()).label("services"),
+                func.group_concat(APIRequestLog.model.distinct()).label("models"),
+            )
+            .group_by(APIRequestLog.transaction_id)
+            .order_by(func.min(APIRequestLog.created_at).desc())
+            .limit(PAGE_SIZE)
+        )
+        cv_costs = cv_cost_result.all()
+
     return templates.TemplateResponse(
         "admin.html",
         {
@@ -119,6 +140,7 @@ async def admin_dashboard(request: Request):
             "cost_by_model": cost_by_model,
             "cost_by_service": cost_by_service,
             "recent_requests": recent_requests,
+            "cv_costs": cv_costs,
         },
     )
 

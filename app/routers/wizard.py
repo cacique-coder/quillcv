@@ -235,6 +235,13 @@ async def step4(request: Request):
         recommendation_reason = cached_rec["reason"]
     else:
         # Call AI for recommendation (fast model — lightweight task)
+        from app.services.llm_client import set_llm_context
+        user = request.state.user
+        set_llm_context(
+            service="template_recommender",
+            attempt_id=attempt.get("id"),
+            user_id=user.id if user else None,
+        )
         llm = request.app.state.llm_fast
         recommended, recommendation_reason = await _recommend_templates(
             llm, region, region_config.name, job_description
@@ -325,6 +332,9 @@ def _hash(text: str) -> str:
 
 async def _recommend_templates(llm, region: str, region_name: str, job_description: str) -> tuple[list[str], str]:
     """Use AI to recommend the best templates for the job description and region."""
+    from app.services.llm_client import set_llm_context
+    set_llm_context(service="template_recommender", inherit=True)
+
     available = list_templates(region=region)
     tpl_descriptions = "\n".join(
         f"- {t.id} [{t.category}]: {t.name} — {t.ai_description or t.description} "
