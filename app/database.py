@@ -1,16 +1,17 @@
-"""SQLAlchemy async database setup with SQLite."""
-
-import os
-from pathlib import Path
+"""SQLAlchemy async database setup."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-DB_PATH = Path(__file__).parent.parent / "data" / "quillcv.db"
-DB_URL = os.environ.get("DATABASE_URL", f"sqlite+aiosqlite:///{DB_PATH}")
+from config.settings import database_config
 
+_config = database_config()
 
-engine = create_async_engine(DB_URL, echo=False)
+engine = create_async_engine(
+    _config["url"],
+    echo=_config.get("echo", False),
+    pool_size=_config.get("pool_size", 5),
+)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -20,7 +21,6 @@ class Base(DeclarativeBase):
 
 async def init_db():
     """Create all tables. Call on app startup."""
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     from app.models import APIRequestLog, Credit, Payment, SavedCV, User, WebAuthnCredential  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

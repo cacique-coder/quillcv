@@ -111,6 +111,13 @@ app.mount(
     name="static",
 )
 
+
+# Health check — Kamal requires this to verify the app is running
+@app.get("/up", include_in_schema=False)
+async def health_check():
+    return {"status": "ok"}
+
+
 # SEO infrastructure (robots.txt, sitemap.xml)
 app.include_router(seo_router.router)
 

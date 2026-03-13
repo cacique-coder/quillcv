@@ -1,0 +1,55 @@
+service: quillcv
+image: quillcv
+
+servers:
+  web:
+    hosts:
+      - <DROPLET_IP>
+    options:
+      network: "kamal"
+
+proxy:
+  ssl: true
+  host: quillcv.com
+  app_port: 8000
+  healthcheck:
+    interval: 3
+    path: /up
+    timeout: 3
+
+registry:
+  server: registry.digitalocean.com
+  username: daniel@2rk.co
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch: amd64
+
+env:
+  clear:
+    APP_ENV: production
+    LLM_PROVIDER: anthropic
+    PYTHONUNBUFFERED: "1"
+  secret:
+    - DATABASE_URL
+    - SESSION_SECRET
+    - ANTHROPIC_API_KEY
+    - STRIPE_SECRET_KEY
+    - STRIPE_WEBHOOK_SECRET
+
+accessories:
+  db:
+    image: postgres:16-alpine
+    port: "127.0.0.1:5432:5432"
+    host: <DROPLET_IP>
+    env:
+      clear:
+        POSTGRES_DB: quillcv_production
+        POSTGRES_USER: quillcv
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - quillcv-pgdata:/var/lib/postgresql/data
+    options:
+      network: "kamal"
