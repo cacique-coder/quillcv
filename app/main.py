@@ -34,6 +34,7 @@ from app.routers import auth as auth_router  # noqa: E402
 from app.routers import builder, cv, demo, my_cvs, photos, wizard  # noqa: E402
 from app.routers import landing as landing_router  # noqa: E402
 from app.routers import payments as payments_router  # noqa: E402
+from app.routers import pages as pages_router  # noqa: E402
 from app.routers import seo as seo_router  # noqa: E402
 from app.services.llm_client import ClaudeCodeClient, create_llm_client  # noqa: E402
 
@@ -121,6 +122,9 @@ async def health_check():
 # SEO infrastructure (robots.txt, sitemap.xml)
 app.include_router(seo_router.router)
 
+# Static content pages (about, privacy, terms)
+app.include_router(pages_router.router)
+
 # Auth & payments
 app.include_router(auth_router.router)
 app.include_router(payments_router.router)
@@ -137,5 +141,6 @@ app.include_router(my_cvs.router)
 app.include_router(cv.router)
 app.include_router(demo.router)
 app.include_router(photos.router)
+app.include_router(pages_router.router)
 
 

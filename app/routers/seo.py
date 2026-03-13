@@ -70,6 +70,9 @@ async def sitemap_xml():
         ("/", "1.0", "weekly"),
         ("/pricing", "0.8", "monthly"),
         ("/demo", "0.9", "weekly"),
+        ("/about", "0.5", "monthly"),
+        ("/privacy", "0.3", "yearly"),
+        ("/terms", "0.3", "yearly"),
     ]
     for path, priority, changefreq in static_pages:
         urls.append(
@@ -81,16 +84,30 @@ async def sitemap_xml():
             f"  </url>"
         )
 
+    # Country code to hreflang mapping
+    HREFLANG_MAP = {
+        "AU": "en-AU", "US": "en-US", "UK": "en-GB", "CA": "en-CA",
+        "NZ": "en-NZ", "DE": "en-DE", "FR": "en-FR", "NL": "en-NL",
+        "IN": "en-IN", "BR": "en-BR", "AE": "en-AE", "JP": "en-JP",
+    }
+
     # Country pages: /demo/{country_code}
     regions = list_regions()
     for region in regions:
         path = f"/demo/{region.code.lower()}"
+        hreflang_links = ""
+        for alt_region in regions:
+            alt_path = f"/demo/{alt_region.code.lower()}"
+            alt_lang = HREFLANG_MAP.get(alt_region.code, f"en-{alt_region.code}")
+            hreflang_links += f'    <xhtml:link rel="alternate" hreflang="{alt_lang}" href="{BASE_URL}{alt_path}"/>\n'
+        hreflang_links += f'    <xhtml:link rel="alternate" hreflang="x-default" href="{BASE_URL}/demo"/>\n'
         urls.append(
             f"  <url>\n"
             f"    <loc>{BASE_URL}{path}</loc>\n"
             f"    <lastmod>{today}</lastmod>\n"
             f"    <changefreq>monthly</changefreq>\n"
             f"    <priority>0.7</priority>\n"
+            f"{hreflang_links}"
             f"  </url>"
         )
 
@@ -112,7 +129,8 @@ async def sitemap_xml():
     url_block = "\n".join(urls)
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n'
+        '        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
         f"{url_block}\n"
         "</urlset>"
     )

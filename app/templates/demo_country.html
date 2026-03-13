@@ -7,6 +7,14 @@
 {% block twitter_title %}{{ region.name }} CV Format & Templates — QuillCV{% endblock %}
 {% block twitter_description %}See how QuillCV templates adapt to {{ region.name }} CV conventions. {{ region.page_length }}, correct date formats, and region-specific sections.{% endblock %}
 
+{% block head_extra %}
+<meta name="robots" content="index, follow">
+{% for r in all_regions %}
+<link rel="alternate" hreflang="en-{{ 'gb' if r.code == 'UK' else r.code|lower }}" href="https://quillcv.com/demo/{{ r.code|lower }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com/demo">
+{% endblock %}
+
 {% block structured_data %}
 <script type="application/ld+json">
 {

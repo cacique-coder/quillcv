@@ -61,6 +61,7 @@ async def demo_country(request: Request, country_code: str):
         "templates": country_templates,
         "grouped_templates": grouped,
         "roles": list_roles(),
+        "all_regions": list_regions(),
         "page_description": f"See how QuillCV templates adapt to {region.name} CV conventions. {region.page_length}, {region.date_format} dates, {photo_note}.",
     })
 

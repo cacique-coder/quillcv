@@ -18,13 +18,22 @@
     <meta name="twitter:description" content="{% block twitter_description %}Build ATS-optimized CVs tailored to job descriptions. 12 country formats and AI quality review.{% endblock %}">
     <meta property="og:image" content="{% block og_image %}https://quillcv.com/static/og-default.png{% endblock %}">
     <meta name="twitter:image" content="{% block twitter_image %}https://quillcv.com/static/og-default.png{% endblock %}">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KZQBQB9NF4"></script>
+    <!-- Google Analytics — loaded only after cookie consent -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-KZQBQB9NF4');
+      function loadGA() {
+        if (document.querySelector('script[src*="googletagmanager"]')) return;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-KZQBQB9NF4';
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', 'G-KZQBQB9NF4', { anonymize_ip: true });
+      }
+      // Auto-load if consent was previously given
+      if (document.cookie.indexOf('cookie_consent=accepted') !== -1) { loadGA(); }
     </script>
     <link rel="stylesheet" href="/static/style.css?v=2">
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
@@ -88,6 +97,9 @@
             <a href="/">Home</a>
             <a href="/pricing">Pricing</a>
             <a href="/demo">Templates</a>
+            <a href="/about">About</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
             {% if request.state.user %}
                 <a href="/account">My Account</a>
             {% else %}
@@ -96,5 +108,30 @@
         </nav>
         <p class="footer-copy">&copy; 2026 QuillCV. All rights reserved.</p>
     </footer>
+    <!-- Cookie consent banner -->
+    <div id="cookie-banner" class="cookie-banner" style="display:none" role="dialog" aria-label="Cookie consent">
+        <div class="cookie-banner-content">
+            <p>We use cookies for analytics to improve your experience. <a href="/privacy">Learn more</a></p>
+            <div class="cookie-banner-actions">
+                <button onclick="acceptCookies()" class="cookie-btn cookie-btn--accept">Accept</button>
+                <button onclick="declineCookies()" class="cookie-btn cookie-btn--decline">Decline</button>
+            </div>
+        </div>
+    </div>
+    <script>
+      function acceptCookies() {
+        document.cookie = 'cookie_consent=accepted;path=/;max-age=31536000;SameSite=Lax';
+        document.getElementById('cookie-banner').style.display = 'none';
+        loadGA();
+      }
+      function declineCookies() {
+        document.cookie = 'cookie_consent=declined;path=/;max-age=31536000;SameSite=Lax';
+        document.getElementById('cookie-banner').style.display = 'none';
+      }
+      // Show banner if no consent cookie exists
+      if (document.cookie.indexOf('cookie_consent=') === -1) {
+        document.getElementById('cookie-banner').style.display = 'flex';
+      }
+    </script>
 </body>
 </html>
