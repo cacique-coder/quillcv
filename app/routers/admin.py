@@ -1,7 +1,6 @@
 """Super admin routes: API request logs, cost tracking, usage analytics."""
 
 import logging
-import os
 import secrets
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -22,20 +21,11 @@ templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates"
 
 PAGE_SIZE = 50
 
-# Emails allowed to access admin. If empty, dev mode allows any logged-in user.
-ADMIN_EMAILS: set[str] = set(
-    e.strip() for e in os.environ.get("ADMIN_EMAILS", "daniel@example.com,xzdasx@gmail.com").split(",") if e.strip()
-)
-
-
 def _is_admin(user) -> bool:
-    """Return True if the user is permitted to access admin pages."""
+    """Return True if the user has the admin role."""
     if not user:
         return False
-    # Dev mode: no ADMIN_EMAILS set — allow any authenticated user
-    if not ADMIN_EMAILS:
-        return True
-    return user.email in ADMIN_EMAILS
+    return getattr(user, "role", "consumer") == "admin"
 
 
 @router.get("/admin")
