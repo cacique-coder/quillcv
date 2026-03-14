@@ -1,6 +1,7 @@
 """PII redaction for CV text before sending to external AI APIs.
 
-Replaces the user's name, email addresses, and phone numbers with stable
+Replaces the user's name, email addresses, phone numbers, date of birth,
+document ID (cédula / national ID), and reference contacts with stable
 placeholders so that the LLM never sees real identity data.  After generation
 the placeholders are swapped back to real values.
 
@@ -9,6 +10,16 @@ Usage:
     redacted_text = redactor.redact(cv_text)
     # ... send redacted_text to LLM, get cv_data dict back ...
     restored_data = redactor.restore(cv_data)
+
+Extended usage (with additional PII from vault):
+    redactor = PIIRedactor(
+        full_name="Jane Doe",
+        dob="1990-05-15",
+        document_id="12345678",
+        references=[
+            {"name": "Bob Smith", "email": "bob@example.com", "phone": "+1 555 0100"},
+        ],
+    )
 """
 
 import re
@@ -16,8 +27,13 @@ from dataclasses import dataclass, field
 
 # Stable tokens — deliberately ugly so the LLM won't confuse them with real content
 _NAME_TOKEN = "<<CANDIDATE_NAME>>"
-_EMAIL_TOKEN_PREFIX = "<<EMAIL_"  # <<EMAIL_1>>, <<EMAIL_2>>, ...
-_PHONE_TOKEN_PREFIX = "<<PHONE_"  # <<PHONE_1>>, <<PHONE_2>>, ...
+_EMAIL_TOKEN_PREFIX = "<<EMAIL_"       # <<EMAIL_1>>, <<EMAIL_2>>, ...
+_PHONE_TOKEN_PREFIX = "<<PHONE_"       # <<PHONE_1>>, <<PHONE_2>>, ...
+_DOB_TOKEN = "<<DOB>>"
+_DOCUMENT_ID_TOKEN = "<<DOCUMENT_ID>>"
+_REF_NAME_PREFIX = "<<REF_NAME_"       # <<REF_NAME_1>>, ...
+_REF_EMAIL_PREFIX = "<<REF_EMAIL_"     # <<REF_EMAIL_1>>, ...
+_REF_PHONE_PREFIX = "<<REF_PHONE_"     # <<REF_PHONE_1>>, ...
 
 # Patterns
 _EMAIL_RE = re.compile(
@@ -36,12 +52,28 @@ _PHONE_RE = re.compile(
     r"(?!\d)",                 # not followed by digit
 )
 
+# Date of birth — common formats: YYYY-MM-DD, DD/MM/YYYY, DD.MM.YYYY, Month D YYYY
+_DOB_RE = re.compile(
+    r"\b(?:"
+    r"\d{4}[-/]\d{2}[-/]\d{2}"                        # YYYY-MM-DD / YYYY/MM/DD
+    r"|\d{1,2}[-/.]\d{1,2}[-/.]\d{4}"                 # DD-MM-YYYY / DD/MM/YYYY
+    r"|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|"
+    r"Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
+    r"\s+\d{1,2},?\s+\d{4}"                           # Month D YYYY
+    r")\b",
+    re.IGNORECASE,
+)
+
 
 @dataclass
 class PIIRedactor:
     """Redact and restore PII in CV text and structured CV data."""
 
     full_name: str
+    dob: str = ""
+    document_id: str = ""
+    references: list[dict] = field(default_factory=list)
+
     _emails: list[str] = field(default_factory=list, init=False)
     _phones: list[str] = field(default_factory=list, init=False)
     _name_variants: list[str] = field(default_factory=list, init=False)
@@ -76,6 +108,30 @@ class PIIRedactor:
         for variant in self._name_variants:
             text = re.sub(re.escape(variant), _NAME_TOKEN, text, flags=re.IGNORECASE)
 
+        # 4. Redact reference contacts (name, email, phone within reference blocks)
+        for i, ref in enumerate(self.references, 1):
+            if ref.get("name"):
+                text = re.sub(re.escape(ref["name"]), f"{_REF_NAME_PREFIX}{i}>>", text, flags=re.IGNORECASE)
+            # Reference email/phone are already caught by regexes above, but we
+            # also assign them explicit ref-specific tokens so restore() is precise.
+            if ref.get("email"):
+                text = text.replace(f"{_EMAIL_TOKEN_PREFIX}", f"{_REF_EMAIL_PREFIX}")
+                # More targeted: replace any occurrence of the raw email value (if not yet tokenised)
+                text = text.replace(ref["email"], f"{_REF_EMAIL_PREFIX}{i}>>")
+            if ref.get("phone"):
+                text = text.replace(ref["phone"], f"{_REF_PHONE_PREFIX}{i}>>")
+
+        # 5. Redact DOB if provided
+        if self.dob:
+            text = text.replace(self.dob, _DOB_TOKEN)
+        # Also redact DOB matched by pattern when not provided explicitly
+        if not self.dob:
+            text = _DOB_RE.sub(_DOB_TOKEN, text)
+
+        # 6. Redact document ID if provided
+        if self.document_id:
+            text = text.replace(self.document_id, _DOCUMENT_ID_TOKEN)
+
         return text
 
     def restore(self, cv_data: dict) -> dict:
@@ -88,11 +144,25 @@ class PIIRedactor:
 
     def _build_replacement_map(self) -> dict[str, str]:
         """Build a token→real-value mapping."""
-        mapping = {_NAME_TOKEN: self.full_name}
+        mapping: dict[str, str] = {_NAME_TOKEN: self.full_name}
         for i, email in enumerate(self._emails, 1):
             mapping[f"{_EMAIL_TOKEN_PREFIX}{i}>>"] = email
         for i, phone in enumerate(self._phones, 1):
             mapping[f"{_PHONE_TOKEN_PREFIX}{i}>>"] = phone
+
+        if self.dob:
+            mapping[_DOB_TOKEN] = self.dob
+        if self.document_id:
+            mapping[_DOCUMENT_ID_TOKEN] = self.document_id
+
+        for i, ref in enumerate(self.references, 1):
+            if ref.get("name"):
+                mapping[f"{_REF_NAME_PREFIX}{i}>>"] = ref["name"]
+            if ref.get("email"):
+                mapping[f"{_REF_EMAIL_PREFIX}{i}>>"] = ref["email"]
+            if ref.get("phone"):
+                mapping[f"{_REF_PHONE_PREFIX}{i}>>"] = ref["phone"]
+
         return mapping
 
 

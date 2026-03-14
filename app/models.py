@@ -33,8 +33,13 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Age gate — timestamp when the user confirmed they are 18 years or older.
+    # Required by COPPA (US), LGPD Art. 14 (BR), and Ley 1581 (CO).
+    age_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     credits: Mapped[list["Credit"]] = relationship(back_populates="user", lazy="selectin")
     webauthn_credentials: Mapped[list["WebAuthnCredential"]] = relationship(back_populates="user", lazy="selectin")
+    consent_records: Mapped[list["ConsentRecord"]] = relationship(back_populates="user", lazy="select")
 
 
 class Credit(Base):
@@ -119,6 +124,75 @@ class Invitation(Base):
     redeemed_by: Mapped[str | None] = mapped_column(String(32), ForeignKey("users.id"), nullable=True)
     redeemed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class PIIVault(Base):
+    """Encrypted PII vault — stores sensitive identity fields per user.
+
+    For password users the data is encrypted with a key derived from their
+    password (PBKDF2-HMAC-SHA256).  For OAuth users the server Fernet key is
+    used instead (salt is empty string in that case).
+
+    Fields stored inside ``encrypted_data`` (as a JSON blob):
+        full_name, email, phone, dob, document_id,
+        references (list of {name, email, phone})
+    """
+    __tablename__ = "pii_vault"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("users.id"), nullable=False, unique=True, index=True
+    )
+    # Hex-encoded random salt used for PBKDF2 key derivation.
+    # Empty string for OAuth users (server-key mode).
+    salt: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    # Fernet-encrypted JSON blob containing PII fields
+    encrypted_data: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
+
+
+class ConsentRecord(Base):
+    """Audit trail for all consent actions — required by LGPD, Ley 1581, CPRA.
+
+    consent_type values:
+        "age_verification"           — user confirmed they are 18+
+        "sensitive_data_dob"         — consent to process date of birth
+        "sensitive_data_document_id" — consent to process national ID / cédula
+        "sensitive_data_photo"       — consent to process CV photo
+        "terms_acceptance"           — acceptance of terms of service
+        "privacy_policy_acceptance"  — acceptance of privacy policy
+        "ccpa_opt_out"               — CCPA/CPRA Do Not Sell or Share request
+
+    user_id is nullable so that unauthenticated visitors can submit CCPA opt-out
+    requests without having a QuillCV account.
+    """
+    __tablename__ = "consent_records"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    # Nullable: unauthenticated CCPA opt-out requests have no user_id.
+    user_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("users.id"), nullable=True, index=True
+    )
+    # One of the consent_type values listed above
+    consent_type: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
+    # True = consent granted, False = consent withheld / withdrawn
+    granted: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # Email at time of submission — required for CCPA opt-out audit trail.
+    email: Mapped[str] = mapped_column(String(255), nullable=False, default="", index=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Policy version string at time of consent (e.g. "2026-03-14")
+    policy_version: Mapped[str] = mapped_column(String(20), nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, index=True
+    )
+
+    user: Mapped["User | None"] = relationship(back_populates="consent_records")
 
 
 class APIRequestLog(Base):

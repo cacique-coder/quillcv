@@ -5,15 +5,28 @@ Each attempt stores all wizard state: region, personal details, uploaded documen
 parsed text, AI results (template recommendations), etc. Keyed by attempt_id,
 stored as JSON on disk. This avoids re-uploading files and re-calling the AI
 when the user navigates back and forth in the wizard.
+
+Security:
+- attempt.json is encrypted at rest with the server Fernet key.
+- Uploaded document bytes are also encrypted before writing to disk.
+- Attempt directories older than ATTEMPT_TTL_DAYS are cleaned up automatically.
+  Call cleanup_old_attempts() from a periodic task or on each request.
 """
 
 import json
+import logging
 import time
 import uuid
 from pathlib import Path
 from typing import Any
 
+from app.services.crypto import decrypt_data, encrypt_data
+
+logger = logging.getLogger(__name__)
+
 ATTEMPTS_DIR = Path(__file__).parent.parent / "uploads" / "attempts"
+ATTEMPT_TTL_DAYS = 7
+_SECONDS_PER_DAY = 86_400
 
 
 def create_attempt() -> str:
@@ -29,11 +42,19 @@ def create_attempt() -> str:
 
 def get_attempt(attempt_id: str) -> dict | None:
     """Load attempt data by ID. Returns None if not found."""
+    from cryptography.fernet import InvalidToken
+
     path = _path(attempt_id)
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text())
+        raw = path.read_text()
+        # Decrypt if the file is an encrypted token; fall back for legacy plaintext.
+        try:
+            raw = decrypt_data(raw)
+        except (InvalidToken, Exception):
+            pass  # Legacy unencrypted file — read as-is
+        return json.loads(raw)
     except (json.JSONDecodeError, OSError):
         return None
 
@@ -50,7 +71,7 @@ def update_attempt(attempt_id: str, **fields: Any) -> dict:
 
 
 def save_document(attempt_id: str, doc_key: str, filename: str, file_bytes: bytes) -> str:
-    """Save an uploaded document to disk and record it in the attempt.
+    """Save an uploaded document to disk (encrypted) and record it in the attempt.
 
     doc_key: "cv_file" or "extra_doc_0", "extra_doc_1"
     Returns the path relative to the attempt directory.
@@ -58,11 +79,15 @@ def save_document(attempt_id: str, doc_key: str, filename: str, file_bytes: byte
     attempt_dir = _ensure_dir(attempt_id) / "docs"
     attempt_dir.mkdir(exist_ok=True)
 
-    # Use a stable name based on doc_key so re-uploads overwrite
+    # Use a stable name based on doc_key so re-uploads overwrite.
+    # Store with .enc suffix to signal encryption.
     ext = Path(filename).suffix.lower()
-    safe_name = f"{doc_key}{ext}"
+    safe_name = f"{doc_key}{ext}.enc"
     file_path = attempt_dir / safe_name
-    file_path.write_bytes(file_bytes)
+
+    # Encrypt the raw bytes via the server key
+    encrypted = encrypt_data(file_bytes.hex())  # hex-encode bytes → str → encrypt
+    file_path.write_text(encrypted)
 
     # Record in attempt metadata
     data = get_attempt(attempt_id) or {}
@@ -71,6 +96,7 @@ def save_document(attempt_id: str, doc_key: str, filename: str, file_bytes: byte
         "filename": filename,
         "stored_as": safe_name,
         "size": len(file_bytes),
+        "encrypted": True,
     }
     update_attempt(attempt_id, documents=docs)
 
@@ -78,7 +104,9 @@ def save_document(attempt_id: str, doc_key: str, filename: str, file_bytes: byte
 
 
 def get_document_bytes(attempt_id: str, doc_key: str) -> bytes | None:
-    """Read a previously stored document's bytes."""
+    """Read a previously stored document's bytes, decrypting if needed."""
+    from cryptography.fernet import InvalidToken
+
     data = get_attempt(attempt_id)
     if not data:
         return None
@@ -88,9 +116,19 @@ def get_document_bytes(attempt_id: str, doc_key: str) -> bytes | None:
         return None
 
     file_path = _ensure_dir(attempt_id) / "docs" / doc_info["stored_as"]
-    if file_path.exists():
+    if not file_path.exists():
+        return None
+
+    if doc_info.get("encrypted"):
+        try:
+            decrypted_hex = decrypt_data(file_path.read_text())
+            return bytes.fromhex(decrypted_hex)
+        except (InvalidToken, ValueError, OSError):
+            logger.warning("Failed to decrypt document %s/%s", attempt_id, doc_key)
+            return None
+    else:
+        # Legacy unencrypted file
         return file_path.read_bytes()
-    return None
 
 
 def get_document_filename(attempt_id: str, doc_key: str) -> str | None:
@@ -117,4 +155,35 @@ def _ensure_dir(attempt_id: str) -> Path:
 
 def _save(attempt_id: str, data: dict) -> None:
     path = _path(attempt_id)
-    path.write_text(json.dumps(data, default=str))
+    plaintext = json.dumps(data, default=str)
+    path.write_text(encrypt_data(plaintext))
+
+
+def cleanup_old_attempts(ttl_days: int = ATTEMPT_TTL_DAYS) -> int:
+    """Delete attempt directories older than ``ttl_days`` days.
+
+    Returns the number of directories removed.
+    Safe to call at any time; ignores errors on individual directories.
+    """
+    if not ATTEMPTS_DIR.exists():
+        return 0
+
+    cutoff = time.time() - (ttl_days * _SECONDS_PER_DAY)
+    removed = 0
+
+    for attempt_dir in ATTEMPTS_DIR.iterdir():
+        if not attempt_dir.is_dir():
+            continue
+        try:
+            mtime = attempt_dir.stat().st_mtime
+            if mtime < cutoff:
+                import shutil
+                shutil.rmtree(attempt_dir, ignore_errors=True)
+                removed += 1
+                logger.info("Cleaned up expired attempt directory: %s", attempt_dir.name)
+        except OSError:
+            pass
+
+    if removed:
+        logger.info("Attempt cleanup: removed %d expired directories (ttl=%dd)", removed, ttl_days)
+    return removed

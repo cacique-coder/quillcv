@@ -1,9 +1,12 @@
 """Application-level middleware for QuillCV."""
 
+import os
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 _SKIP_PREFIXES = ("/static/", "/favicon.ico")
+_IS_PRODUCTION = os.environ.get("APP_ENV", "development") == "production"
 
 
 class AuthContextMiddleware(BaseHTTPMiddleware):
@@ -19,6 +22,7 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request.state.user = None
         request.state.balance = 0
+        request.state.is_production = _IS_PRODUCTION
 
         if not any(request.url.path.startswith(p) for p in _SKIP_PREFIXES):
             from app.auth.dependencies import get_current_user

@@ -4,6 +4,10 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+# Load .env file before anything reads os.environ
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent.parent / ".env")
+
 # ---------------------------------------------------------------------------
 # Logging — configured first so all module-level loggers inherit the setup
 # ---------------------------------------------------------------------------
@@ -35,6 +39,7 @@ from app.routers import builder, cv, demo, my_cvs, photos, wizard  # noqa: E402
 from app.routers import landing as landing_router  # noqa: E402
 from app.routers import payments as payments_router  # noqa: E402
 from app.routers import invitations as invitations_router  # noqa: E402
+from app.routers import onboarding as onboarding_router  # noqa: E402
 from app.routers import pages as pages_router  # noqa: E402
 from app.routers import seo as seo_router  # noqa: E402
 from app.services.llm_client import ClaudeCodeClient, create_llm_client  # noqa: E402
@@ -126,10 +131,11 @@ app.include_router(seo_router.router)
 # Static content pages (about, privacy, terms)
 app.include_router(pages_router.router)
 
-# Auth, payments, and invitations
+# Auth, payments, invitations, and onboarding
 app.include_router(auth_router.router)
 app.include_router(payments_router.router)
 app.include_router(invitations_router.router)
+app.include_router(onboarding_router.router)
 
 # Landing page replaces the old / route
 app.include_router(landing_router.router)
