@@ -113,12 +113,12 @@ def get_role(role_id: str) -> DemoRole | None:
 
 def _software_engineer() -> dict:
     return {
-        "name": "Alex Morgan",
+        "name": "Anakin Skywalker",
         "title": "Senior Software Engineer",
-        "email": "alex.morgan@email.com",
+        "email": "anakin.skywalker@rebellion.dev",
         "phone": "+61 400 123 456",
-        "linkedin": "linkedin.com/in/alexmorgan",
-        "github": "github.com/alexmorgan",
+        "linkedin": "linkedin.com/in/anakin-skywalker",
+        "github": "github.com/anakinskywalker",
         "portfolio": "",
         "summary": (
             "Results-driven software engineer with 8+ years of experience building "
@@ -194,7 +194,7 @@ def _software_engineer() -> dict:
         "projects": [
             {
                 "name": "OpenMetrics Dashboard",
-                "url": "github.com/alexmorgan/openmetrics",
+                "url": "github.com/anakinskywalker/openmetrics",
                 "description": "Open-source real-time metrics visualisation tool for Kubernetes clusters",
                 "tech": ["Python", "FastAPI", "React", "Prometheus", "Grafana"],
             },
@@ -204,11 +204,11 @@ def _software_engineer() -> dict:
 
 def _marketing_manager() -> dict:
     return {
-        "name": "Sarah Chen",
+        "name": "Nyota Uhura",
         "title": "Marketing Manager",
-        "email": "sarah.chen@email.com",
+        "email": "uhura@starfleet.io",
         "phone": "+61 412 345 678",
-        "linkedin": "linkedin.com/in/sarahchen",
+        "linkedin": "linkedin.com/in/nyota-uhura",
         "github": "",
         "portfolio": "",
         "summary": (
@@ -291,11 +291,11 @@ def _marketing_manager() -> dict:
 
 def _financial_analyst() -> dict:
     return {
-        "name": "James Richardson",
+        "name": "Leia Organa",
         "title": "Senior Financial Analyst",
-        "email": "james.richardson@email.com",
+        "email": "leia.organa@alderaan.finance",
         "phone": "+61 403 567 890",
-        "linkedin": "linkedin.com/in/jamesrichardson",
+        "linkedin": "linkedin.com/in/leia-organa",
         "github": "",
         "portfolio": "",
         "summary": (
@@ -379,11 +379,11 @@ def _financial_analyst() -> dict:
 
 def _vp_engineering() -> dict:
     return {
-        "name": "David Nakamura",
+        "name": "Jean-Luc Picard",
         "title": "Vice President of Engineering",
-        "email": "david.nakamura@email.com",
+        "email": "picard@enterprise.dev",
         "phone": "+61 401 234 567",
-        "linkedin": "linkedin.com/in/davidnakamura",
+        "linkedin": "linkedin.com/in/jeanluc-picard",
         "github": "",
         "portfolio": "",
         "summary": (
@@ -479,13 +479,13 @@ def _vp_engineering() -> dict:
 
 def _ux_designer() -> dict:
     return {
-        "name": "Mia Torres",
+        "name": "Motoko Kusanagi",
         "title": "Senior UX Designer",
-        "email": "mia.torres@email.com",
+        "email": "motoko@section9.design",
         "phone": "+61 422 345 678",
-        "linkedin": "linkedin.com/in/miatorres",
+        "linkedin": "linkedin.com/in/motoko-kusanagi",
         "github": "",
-        "portfolio": "miatorres.design",
+        "portfolio": "section9.design",
         "summary": (
             "User-centred designer with 6+ years crafting intuitive digital experiences "
             "for web and mobile products. Specialising in research-driven design, "
@@ -565,11 +565,11 @@ def _ux_designer() -> dict:
 
 def _project_manager() -> dict:
     return {
-        "name": "Rachel Kim",
+        "name": "Katara Waterbender",
         "title": "Senior Project Manager",
-        "email": "rachel.kim@email.com",
+        "email": "katara@teamavatar.pm",
         "phone": "+61 433 456 789",
-        "linkedin": "linkedin.com/in/rachelkim",
+        "linkedin": "linkedin.com/in/katara-waterbender",
         "github": "",
         "portfolio": "",
         "summary": (
@@ -656,12 +656,12 @@ def _project_manager() -> dict:
 
 def _professor() -> dict:
     return {
-        "name": "Dr. Sarah Williams",
+        "name": "Dr. Kakashi Hatake",
         "title": "Associate Professor of Computer Science",
-        "email": "s.williams@university.edu",
+        "email": "kakashi@konoha.edu",
         "phone": "+61 402 345 678",
-        "linkedin": "linkedin.com/in/sarahwilliamscs",
-        "github": "github.com/swilliams-cs",
+        "linkedin": "linkedin.com/in/kakashi-hatake",
+        "github": "github.com/kakashihatake",
         "portfolio": "",
         "summary": (
             "Associate Professor of Computer Science with 12+ years in academia, "
@@ -736,10 +736,10 @@ def _professor() -> dict:
         ],
         "projects": [],
         "publications": [
-            "Williams, S., Chen, L., & Park, J. (2023). 'Explainable Transformers for Biomedical Text Classification.' NeurIPS 2023.",
-            "Williams, S. & Rodriguez, A. (2022). 'Cross-Lingual Transfer Learning for Low-Resource NLP.' ACL 2022, pp. 1234–1245.",
-            "Park, J., Williams, S., et al. (2021). 'Attention-Based Models for Clinical Note Summarisation.' EMNLP 2021.",
-            "Williams, S. (2020). 'A Survey of Pre-trained Language Models for Domain-Specific Applications.' Journal of Machine Learning Research, 21(1), pp. 1–42.",
+            "Hatake, K., Nara, S., & Rock Lee. (2023). 'Explainable Transformers for Biomedical Text Classification.' NeurIPS 2023.",
+            "Hatake, K. & Sarutobi, A. (2022). 'Cross-Lingual Transfer Learning for Low-Resource NLP.' ACL 2022, pp. 1234–1245.",
+            "Rock Lee, Hatake, K., et al. (2021). 'Attention-Based Models for Clinical Note Summarisation.' EMNLP 2021.",
+            "Hatake, K. (2020). 'A Survey of Pre-trained Language Models for Domain-Specific Applications.' Journal of Machine Learning Research, 21(1), pp. 1–42.",
         ],
         "grants": [
             "ARC Discovery Grant — Explainable AI for Healthcare — $1,800,000 — 2021",
@@ -761,11 +761,11 @@ def _professor() -> dict:
 
 def _nurse() -> dict:
     return {
-        "name": "Emily Johnson",
+        "name": "Beverly Crusher",
         "title": "Registered Nurse — Intensive Care Unit",
-        "email": "emily.johnson@email.com",
+        "email": "crusher@enterprise.med",
         "phone": "+61 411 234 567",
-        "linkedin": "linkedin.com/in/emilyjohnsonrn",
+        "linkedin": "linkedin.com/in/beverly-crusher",
         "github": "",
         "portfolio": "",
         "summary": (
@@ -842,11 +842,11 @@ def _nurse() -> dict:
 
 def _lawyer() -> dict:
     return {
-        "name": "Michael Chen",
+        "name": "Phoenix Wright",
         "title": "Senior Associate — Corporate & Commercial Law",
-        "email": "michael.chen@email.com",
+        "email": "phoenix@wright.law",
         "phone": "+61 404 567 890",
-        "linkedin": "linkedin.com/in/michaelchenlaw",
+        "linkedin": "linkedin.com/in/phoenix-wright",
         "github": "",
         "portfolio": "",
         "summary": (
@@ -944,13 +944,13 @@ def _lawyer() -> dict:
 
 def _graphic_designer() -> dict:
     return {
-        "name": "Luna Patel",
+        "name": "Bulma Brief",
         "title": "Senior Graphic Designer",
-        "email": "luna.patel@email.com",
+        "email": "bulma@capsulecorp.design",
         "phone": "+61 421 567 890",
-        "linkedin": "linkedin.com/in/lunapatel",
+        "linkedin": "linkedin.com/in/bulma-brief",
         "github": "",
-        "portfolio": "lunapatel.design",
+        "portfolio": "capsulecorp.design",
         "summary": (
             "Creative and detail-oriented Senior Graphic Designer with 5+ years of "
             "experience delivering compelling visual identities, marketing materials, "
@@ -1025,10 +1025,10 @@ def _graphic_designer() -> dict:
         ],
         "projects": [],
         "portfolio_links": [
-            {"title": "Nova Coffee — Brand Identity", "url": "https://lunapatel.design/nova-coffee", "description": "Complete brand identity including logo, packaging, and store signage for specialty coffee chain"},
-            {"title": "TechStart Conference — Event Branding", "url": "https://lunapatel.design/techstart", "description": "Event branding, stage design, and digital assets for 2,000-attendee tech conference"},
-            {"title": "GreenLeaf Organics — Packaging", "url": "https://lunapatel.design/greenleaf", "description": "Sustainable packaging design for organic food brand achieving 20% sales uplift"},
-            {"title": "MindWell App — UI Design", "url": "https://lunapatel.design/mindwell", "description": "UI design and illustration for mental health app with 50K+ downloads"},
+            {"title": "Nova Coffee — Brand Identity", "url": "https://capsulecorp.design/nova-coffee", "description": "Complete brand identity including logo, packaging, and store signage for specialty coffee chain"},
+            {"title": "TechStart Conference — Event Branding", "url": "https://capsulecorp.design/techstart", "description": "Event branding, stage design, and digital assets for 2,000-attendee tech conference"},
+            {"title": "GreenLeaf Organics — Packaging", "url": "https://capsulecorp.design/greenleaf", "description": "Sustainable packaging design for organic food brand achieving 20% sales uplift"},
+            {"title": "MindWell App — UI Design", "url": "https://capsulecorp.design/mindwell", "description": "UI design and illustration for mental health app with 50K+ downloads"},
         ],
         "brand_statement": (
             "I believe design is a conversation between brand and audience. My work "
