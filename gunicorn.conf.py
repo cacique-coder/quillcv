@@ -18,3 +18,4 @@ keepalive = 5
 accesslog = "-"
 errorlog = "-"
 loglevel = "info"
+capture_output = True  # Redirect worker stdout/stderr to gunicorn error log (docker logs)

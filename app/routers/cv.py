@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import time
+import traceback
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 
@@ -322,6 +323,7 @@ async def ws_analyze(websocket: WebSocket):
             "WebSocket generation failed attempt=%s step=%r elapsed=%dms",
             attempt_id, current_step[0], elapsed_ms,
         )
+        traceback.print_exc()  # Safety net: write to stderr in case logging config is broken
         try:
             await websocket.send_json({"type": "error", "message": "Generation failed. Please try again."})
         except (WebSocketDisconnect, RuntimeError):
