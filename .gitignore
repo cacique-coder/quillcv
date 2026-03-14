@@ -19,5 +19,8 @@ output/
 # Personal source CVs
 source/
 
+# Local development database
+data/
+
 # SEO audit reports
 .seo-reports/
