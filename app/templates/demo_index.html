@@ -8,78 +8,254 @@
 {% block twitter_description %}Browse {{ templates|length }} ATS-optimized CV templates across 12 country formats. Australian CVs, US resumes, Japanese rirekisho, and more.{% endblock %}
 
 {% block content %}
-<section class="demo-section">
-    <h1>CV Templates by Country</h1>
-    <p class="demo-intro">Every country has unique CV expectations. Australian employers expect 2-3 pages with detailed work history. Japanese companies require a specific rirekisho format with a photo. American hiring managers want a tight 1-page resume. QuillCV handles all of this automatically — pick your target country and template to see a full demo.</p>
-    <p class="demo-free-note">All templates are <strong>free to use</strong>. Sign up and fill one in yourself, or let QuillCV's AI tailor it to your job description and target country.</p>
+<div class="demo-index-wrap">
+    <!-- Page header -->
+    <section class="demo-index-hero">
+        <!-- Floating doodles -->
+        <svg class="demo-idx-doodle demo-idx-doodle--star-1" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2 L14 9 L21 9 L15.5 13.5 L17.5 21 L12 16.5 L6.5 21 L8.5 13.5 L3 9 L10 9 Z" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <svg class="demo-idx-doodle demo-idx-doodle--star-2" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3 L13.5 10 L20 10 L15 14 L17 21 L12 17 L7 21 L9 14 L4 10 L10.5 10 Z" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <svg class="demo-idx-doodle demo-idx-doodle--arrow" width="38" height="38" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M5 35 C10 25, 15 15, 35 8" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M28 5 L36 8 L30 14" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <svg class="demo-idx-doodle demo-idx-doodle--exclaim" width="12" height="26" viewBox="0 0 14 30" fill="none" aria-hidden="true">
+            <path d="M7 2 C6 4, 8 8, 7 18" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" fill="none"/>
+            <circle cx="7" cy="25" r="2" fill="#fbbf24"/>
+        </svg>
 
-    <div class="country-grid">
-        {% for region in regions %}
-        <a href="/demo/{{ region.code }}" class="country-card">
-            <span class="country-flag">{{ region.flag }}</span>
-            <div class="country-info">
-                <strong>{{ region.name }}</strong>
-                <span class="country-meta">{{ region.page_length }} · {{ region.date_format }}</span>
-                <div class="country-badges">
-                    {% if region.include_photo == "required" %}
-                    <span class="badge badge-required">Photo required</span>
-                    {% elif region.include_photo == "common" %}
-                    <span class="badge badge-common">Photo common</span>
-                    {% else %}
-                    <span class="badge badge-no">No photo</span>
-                    {% endif %}
-                    {% if region.include_references %}
-                    <span class="badge badge-common">References</span>
-                    {% endif %}
-                    {% if region.include_dob %}
-                    <span class="badge badge-common">DOB</span>
-                    {% endif %}
+        <h1 class="demo-index-title">
+            CV Templates by Country
+            <svg class="title-scribble demo-index-title-scribble" viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 6 C30 2, 60 9, 90 5 S150 9, 180 4 S240 8, 270 3 S292 7, 300 5" stroke="var(--accent)" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
+            </svg>
+        </h1>
+        <p class="handwritten demo-index-tagline">Pick a country, pick a template, see the magic ✦</p>
+        <p class="demo-intro">Every country has unique CV expectations. Australian employers expect 2–3 pages with detailed work history. Japanese companies require a specific rirekisho format with a photo. American hiring managers want a tight 1-page resume. QuillCV handles all of this automatically — pick your target country and template to see a full demo.</p>
+        <p class="demo-free-note">All templates are <strong>free to use</strong>. Sign up and fill one in yourself, or let QuillCV's AI tailor it to your job description and target country.</p>
+    </section>
+
+    <!-- Wavy divider -->
+    <svg class="section-divider" viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 10 C50 4, 100 16, 150 10 S250 4, 300 10 S400 16, 450 10 S550 4, 600 10 S700 16, 750 10 S850 4, 900 10 S1000 16, 1050 10 S1150 4, 1200 10" stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+
+    <!-- Country grid section -->
+    <section class="demo-index-section">
+        <h2 class="section-title demo-section-title">
+            12 Country Formats
+            <svg class="title-scribble" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 4 C20 1, 40 7, 60 3 S100 6, 120 3 S160 7, 180 2 S195 5, 200 4" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+        </h2>
+        <p class="handwritten demo-section-tagline">every market has its own rules</p>
+
+        <div class="country-grid country-grid--sketch">
+            {% for region in regions %}
+            {%- set idx = loop.index0 %}
+            {%- set note_colors = ['yellow', 'blue', 'green', 'lavender', 'peach', 'pink', 'yellow', 'blue', 'green', 'lavender', 'peach', 'pink'] %}
+            <a href="/demo/{{ region.code }}" class="country-card country-card--sketch sticky-note sticky-note--{{ note_colors[idx] }}" aria-label="{{ region.name }} CV templates">
+                <div class="country-card-flag-wrap">
+                    <span class="country-flag country-flag--large">{{ region.flag }}</span>
                 </div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
+                <div class="country-info">
+                    <strong class="country-card-name">{{ region.name }}</strong>
+                    <span class="country-meta">{{ region.page_length }} · {{ region.date_format }}</span>
+                    <div class="country-badges">
+                        {% if region.include_photo == "required" %}
+                        <span class="badge badge-required">Photo required</span>
+                        {% elif region.include_photo == "common" %}
+                        <span class="badge badge-common">Photo common</span>
+                        {% else %}
+                        <span class="badge badge-no">No photo</span>
+                        {% endif %}
+                        {% if region.include_references %}
+                        <span class="badge badge-common">References</span>
+                        {% endif %}
+                        {% if region.include_dob %}
+                        <span class="badge badge-common">DOB</span>
+                        {% endif %}
+                    </div>
+                    <span class="country-card-cta">View templates →</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
 
-    <div class="template-overview">
-        <h2>Demo Roles</h2>
-        <p class="hint">Each role showcases a different template style and seniority level</p>
-        <div class="role-grid">
+    <!-- Wavy divider -->
+    <svg class="section-divider" viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 10 C50 16, 100 4, 150 10 S250 16, 300 10 S400 4, 450 10 S550 16, 600 10 S700 4, 750 10 S850 16, 900 10 S1000 4, 1050 10 S1150 16, 1200 10" stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+
+    <!-- Demo roles section -->
+    <section class="demo-index-section">
+        <h2 class="section-title demo-section-title">
+            Demo Roles
+            <svg class="title-scribble" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 5 C30 1, 60 7, 90 4 S140 8, 170 3 S195 6, 200 4" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+        </h2>
+        <p class="handwritten demo-section-tagline">real profiles, real formats</p>
+        <p class="hint" style="margin-bottom: 1.5rem;">Each role showcases a different template style and seniority level</p>
+
+        <div class="role-grid role-grid--sketch">
             {% for role in roles %}
-            <div class="role-card">
-                <strong>{{ role.name }}</strong>
-                <p class="hint">{{ role.description }}</p>
-                <span class="role-hero">Best with: {{ role.hero_template | title }}</span>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="template-overview">
-        <h2>Available Templates</h2>
-        <div class="template-grid">
-            {% for tpl in templates %}
-            <div class="template-overview-card">
-                <div class="template-preview template-preview-{{ tpl.id }}">
-                    <div class="tpl-mock-header"></div>
-                    <div class="tpl-mock-line w80"></div>
-                    <div class="tpl-mock-line w60"></div>
-                    <div class="tpl-mock-section"></div>
-                    <div class="tpl-mock-line w90"></div>
-                    <div class="tpl-mock-line w70"></div>
-                    <div class="tpl-mock-line w85"></div>
+            {%- set idx = loop.index0 %}
+            {%- set role_colors = ['blue', 'green', 'yellow', 'lavender', 'peach', 'pink'] %}
+            <div class="role-card role-card--sketch sticky-note sticky-note--{{ role_colors[idx % 6] }}">
+                <!-- Hand-drawn step number -->
+                <div class="role-card-number">
+                    <svg width="36" height="36" viewBox="0 0 52 52" fill="none" aria-hidden="true">
+                        <path d="M26 4 C40 3, 49 12, 48 26 C49 40, 38 49, 26 48 C12 49, 3 40, 4 26 C3 12, 14 3, 26 4" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    </svg>
+                    <span>{{ loop.index }}</span>
                 </div>
-                <strong>{{ tpl.name }}</strong>
-                <p class="hint">{{ tpl.description }}</p>
+                <!-- Profession doodle icon -->
+                {% if 'manager' in role.name|lower or 'director' in role.name|lower or 'executive' in role.name|lower %}
+                <!-- Briefcase icon for management roles -->
+                <svg class="role-card-icon" width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <rect x="4" y="10" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                    <path d="M10 10 L10 7 C10 6, 11 5, 14 5 C17 5, 18 6, 18 7 L18 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                    <path d="M4 17 L24 17" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+                </svg>
+                {% elif 'engineer' in role.name|lower or 'developer' in role.name|lower or 'tech' in role.name|lower %}
+                <!-- Code brackets icon for tech roles -->
+                <svg class="role-card-icon" width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <path d="M10 8 L4 14 L10 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M18 8 L24 14 L18 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M16 5 L12 23" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+                </svg>
+                {% elif 'lawyer' in role.name|lower or 'legal' in role.name|lower or 'law' in role.name|lower %}
+                <!-- Scales icon for legal roles -->
+                <svg class="role-card-icon" width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <path d="M14 4 L14 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M8 22 L20 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M14 7 L6 10 M14 7 L22 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M6 10 L4 16 C4 18, 8 18, 8 16 Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M22 10 L20 16 C20 18, 24 18, 24 16 Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                {% elif 'nurse' in role.name|lower or 'doctor' in role.name|lower or 'health' in role.name|lower or 'medical' in role.name|lower %}
+                <!-- Cross / medical icon -->
+                <svg class="role-card-icon" width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <path d="M14 5 L14 23 M5 14 L23 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                {% elif 'design' in role.name|lower or 'ux' in role.name|lower or 'ui' in role.name|lower or 'creative' in role.name|lower %}
+                <!-- Pencil / design icon -->
+                <svg class="role-card-icon" width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <path d="M18 4 L24 10 L10 24 L4 24 L4 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M16 6 L22 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+                {% elif 'market' in role.name|lower or 'sales' in role.name|lower or 'growth' in role.name|lower %}
+                <!-- Chart / marketing icon -->
+                <svg class="role-card-icon" width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <path d="M5 22 L5 6 M5 22 L24 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M8 18 L12 12 L17 15 L23 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                {% elif 'teacher' in role.name|lower or 'professor' in role.name|lower or 'educat' in role.name|lower %}
+                <!-- Graduation cap icon -->
+                <svg class="role-card-icon" width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <path d="M14 6 L25 12 L14 18 L3 12 Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M20 15 L20 21 C20 21, 17 23, 14 23 C11 23, 8 21, 8 21 L8 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                {% else %}
+                <!-- Generic person / document icon -->
+                <svg class="role-card-icon" width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <path d="M6 4 L18 4 L22 8 L22 24 L6 24 Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M18 4 L18 8 L22 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M10 13 L18 13 M10 17 L16 17" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+                {% endif %}
+                <strong class="role-card-name">{{ role.name }}</strong>
+                <p class="hint role-card-desc">{{ role.description }}</p>
+                <span class="role-hero role-hero--sketch">Best with: <strong>{{ role.hero_template | title }}</strong></span>
             </div>
             {% endfor %}
         </div>
-    </div>
+    </section>
 
-    <!-- CTA -->
-    <div class="demo-cta">
-        <h2>QuillCV is launching soon</h2>
+    <!-- Wavy divider -->
+    <svg class="section-divider" viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 10 C50 4, 100 16, 150 10 S250 4, 300 10 S400 16, 450 10 S550 4, 600 10 S700 16, 750 10 S850 4, 900 10 S1000 16, 1050 10 S1150 4, 1200 10" stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+
+    <!-- Available templates section -->
+    <section class="demo-index-section">
+        <h2 class="section-title demo-section-title">
+            Available Templates
+            <svg class="title-scribble" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 4 C25 8, 50 1, 75 5 S125 2, 150 6 S180 1, 200 4" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+        </h2>
+        <p class="handwritten demo-section-tagline">six styles, one great CV</p>
+
+        <div class="template-grid template-grid--sketch">
+            {% for tpl in templates %}
+            {%- set idx = loop.index0 %}
+            {%- set tpl_colors = ['lavender', 'blue', 'yellow', 'peach', 'green', 'pink'] %}
+            <div class="template-overview-card template-overview-card--sketch sticky-note sticky-note--{{ tpl_colors[idx % 6] }}">
+                <!-- Sketchy frame around template mock preview -->
+                <div class="template-preview-frame">
+                    <div class="template-preview template-preview-{{ tpl.id }}">
+                        <div class="tpl-mock-header"></div>
+                        <div class="tpl-mock-line w80"></div>
+                        <div class="tpl-mock-line w60"></div>
+                        <div class="tpl-mock-section"></div>
+                        <div class="tpl-mock-line w90"></div>
+                        <div class="tpl-mock-line w70"></div>
+                        <div class="tpl-mock-line w85"></div>
+                    </div>
+                    <!-- Corner fold doodle -->
+                    <svg class="template-corner-fold" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                        <path d="M0 0 L14 0 L14 14" stroke="var(--border)" stroke-width="1.2" fill="var(--bg)"/>
+                    </svg>
+                </div>
+                <strong class="template-overview-name">{{ tpl.name }}</strong>
+                <p class="hint template-overview-desc">{{ tpl.description }}</p>
+                <a href="/demo/{{ tpl.regions[0] | lower }}/{{ tpl.id }}?role=software-engineer" class="template-preview-link" aria-label="Preview {{ tpl.name }} template">
+                    Preview
+                    <svg width="14" height="10" viewBox="0 0 20 14" fill="none" aria-hidden="true">
+                        <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M12 3 L17 7 L12 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Wavy divider -->
+    <svg class="section-divider" viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 10 C50 16, 100 4, 150 10 S250 16, 300 10 S400 4, 450 10 S550 16, 600 10 S700 4, 750 10 S850 16, 900 10 S1000 4, 1050 10 S1150 16, 1200 10" stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+
+    <!-- CTA section -->
+    <section class="demo-index-cta">
+        <h2>
+            QuillCV is launching soon
+            <svg class="title-scribble" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 6 C20 2, 45 7, 70 3 S110 8, 140 4 S175 7, 200 3" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+        </h2>
         <p>Register your interest and be first to tailor your CV to job descriptions with local formatting — automatically.</p>
-        <a href="/signup" class="btn-cta">Register Your Interest</a>
-    </div>
-</section>
+        <!-- Hand-drawn annotation with curvy arrow -->
+        <div class="cta-annotation" aria-hidden="true">
+            <svg class="cta-arrow" width="80" height="60" viewBox="0 0 80 60" fill="none">
+                <path d="M10 5 C20 15, 35 40, 55 45 C60 46, 65 44, 70 40" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M63 42 L71 38 L68 47" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            <span class="handwritten cta-annotation-text">it's free to join!</span>
+        </div>
+        <a href="/signup" class="btn-cta">
+            Register Your Interest
+            <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
+                <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M12 3 L17 7 L12 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+        </a>
+    </section>
+</div>
 {% endblock %}

@@ -5351,3 +5351,365 @@ select.input-field {
     flex: 1;
     min-width: 0;
 }
+
+/* ============================================================
+   Demo Index Page — Sketchy Redesign
+   ============================================================ */
+
+/* Outer wrapper — subtle grid texture matching .landing */
+.demo-index-wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(108,99,255,0.03) 28px),
+        repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(108,99,255,0.02) 28px);
+}
+
+/* ---- Hero / page header ---- */
+.demo-index-hero {
+    text-align: center;
+    padding: 4rem 1rem 2.5rem;
+    position: relative;
+    animation: landingFadeUp 0.7s ease-out;
+}
+
+/* Floating doodles */
+.demo-idx-doodle {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.45;
+}
+.demo-idx-doodle--star-1 {
+    top: 2.5rem;
+    left: 4%;
+    animation: doodleDrift 6s ease-in-out infinite;
+}
+.demo-idx-doodle--star-2 {
+    top: 3rem;
+    right: 6%;
+    animation: doodleDrift 7s ease-in-out infinite 1.2s;
+}
+.demo-idx-doodle--arrow {
+    bottom: 30%;
+    right: 2%;
+    animation: doodleDrift 8s ease-in-out infinite 0.5s;
+    opacity: 0.3;
+}
+.demo-idx-doodle--exclaim {
+    top: 35%;
+    left: 1.5%;
+    animation: doodleDrift 5s ease-in-out infinite 2s;
+    opacity: 0.35;
+}
+@media (max-width: 768px) {
+    .demo-idx-doodle { display: none; }
+}
+
+/* Page title */
+.demo-index-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 0;
+    position: relative;
+    display: inline-block;
+}
+.demo-index-title-scribble {
+    display: block;
+    width: 100%;
+    margin-top: 0.2rem;
+    height: 10px;
+}
+@media (max-width: 768px) {
+    .demo-index-title { font-size: 2rem; }
+}
+
+/* Handwritten tagline under the title */
+.demo-index-tagline {
+    font-size: 1.4rem;
+    color: var(--accent);
+    margin: 0.75rem 0 1.25rem;
+    opacity: 0.85;
+}
+@media (max-width: 768px) {
+    .demo-index-tagline { font-size: 1.15rem; }
+}
+
+/* ---- Shared section styles ---- */
+.demo-index-section {
+    padding: 3rem 0 2rem;
+    animation: landingFadeUp 0.7s ease-out both;
+}
+
+/* Sub-heading tagline (handwritten) */
+.demo-section-tagline {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-top: -0.4rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.75;
+}
+
+/* Tweak section-title spacing within demo page */
+.demo-section-title {
+    margin-bottom: 0.15rem;
+}
+
+/* ---- Country grid — sketch style ---- */
+.country-grid--sketch {
+    gap: 1rem;
+    margin: 1rem 0 0;
+}
+
+/* Override to make country cards use sticky-note look */
+.country-card--sketch {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 1.2rem 1rem;
+    text-decoration: none;
+    color: var(--text);
+    /* sticky-note provides background, border, border-radius */
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+}
+/* Override the sticky-note hover so it feels like picking up a card */
+.country-card--sketch:hover {
+    transform: rotate(0deg) translateY(-6px) rotate(-1deg) !important;
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.25),
+        0 2px 8px rgba(108, 99, 255, 0.15) !important;
+}
+
+.country-card-flag-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+.country-flag--large {
+    font-size: 2.4rem;
+    line-height: 1;
+    display: block;
+}
+.country-card-name {
+    font-size: 1rem;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.1rem;
+}
+.country-card-cta {
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 0.4rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    display: block;
+}
+
+/* Pill-style badges — slightly rounder for sketchy feel */
+.country-card--sketch .badge {
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* ---- Role grid — index-card style ---- */
+.role-grid--sketch {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 0;
+}
+@media (max-width: 750px) {
+    .role-grid--sketch { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .role-grid--sketch { grid-template-columns: 1fr; }
+}
+
+.role-card--sketch {
+    padding: 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    /* sticky-note provides background, border, border-radius */
+    position: relative;
+}
+/* Hand-drawn step number in top-right corner */
+.role-card-number {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 36px;
+    height: 36px;
+    opacity: 0.55;
+}
+.role-card-number svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.role-card-number span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+}
+/* Doodle icon */
+.role-card-icon {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--accent);
+    opacity: 0.65;
+}
+.role-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    display: block;
+    margin-top: 0.1rem;
+}
+.role-card-desc {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    flex: 1;
+}
+
+/* Best-with link — more prominent */
+.role-hero--sketch {
+    display: inline-block;
+    font-size: 0.78rem;
+    color: var(--text);
+    background: rgba(108, 99, 255, 0.1);
+    border: 1px solid rgba(108, 99, 255, 0.25);
+    border-radius: 4px 6px 5px 3px;
+    padding: 0.2rem 0.55rem;
+    margin-top: 0.4rem;
+    width: fit-content;
+}
+.role-hero--sketch strong {
+    color: var(--accent);
+}
+
+/* ---- Template overview grid — sketch frames ---- */
+.template-grid--sketch {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 0;
+}
+@media (max-width: 750px) {
+    .template-grid--sketch { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .template-grid--sketch { grid-template-columns: 1fr; }
+}
+
+.template-overview-card--sketch {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    /* sticky-note provides background, border, border-radius */
+}
+
+/* Sketchy frame around the mini template preview */
+.template-preview-frame {
+    position: relative;
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 3px 5px 4px 2px;
+    overflow: hidden;
+    background: #fff;
+    margin-bottom: 0.5rem;
+}
+.template-preview-frame .template-preview {
+    height: 88px;
+    border-radius: 0;
+    border: none;
+}
+/* Corner fold decoration */
+.template-corner-fold {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    opacity: 0.5;
+}
+
+.template-overview-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    display: block;
+}
+.template-overview-desc {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    flex: 1;
+}
+
+/* Preview link button */
+.template-preview-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    margin-top: 0.35rem;
+    width: fit-content;
+    padding: 0.2rem 0;
+    border-bottom: 1px dashed rgba(108, 99, 255, 0.4);
+    transition: color 0.2s, border-color 0.2s;
+}
+.template-preview-link:hover {
+    color: #a78bfa;
+    border-color: rgba(167, 139, 250, 0.5);
+}
+
+/* ---- CTA section ---- */
+.demo-index-cta {
+    text-align: center;
+    padding: 4rem 2rem 5rem;
+    background: linear-gradient(180deg, transparent 0%, rgba(108, 99, 255, 0.06) 100%);
+    position: relative;
+}
+.demo-index-cta h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 0;
+    display: inline-block;
+}
+.demo-index-cta .title-scribble {
+    margin-top: 0.15rem;
+    margin-bottom: 0.75rem;
+}
+.demo-index-cta p {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 500px;
+    margin: 0 auto 1.5rem;
+}
+@media (max-width: 768px) {
+    .demo-index-cta { padding: 3rem 1.5rem 3.5rem; }
+    .demo-index-cta h2 { font-size: 1.6rem; }
+}
+
+/* Mobile: hide section-divider (matches landing page behaviour) */
+@media (max-width: 768px) {
+    .demo-index-wrap .section-divider { display: none; }
+    /* Remove rotations on mobile for cleaner stacking */
+    .demo-index-wrap .sticky-note--yellow,
+    .demo-index-wrap .sticky-note--pink,
+    .demo-index-wrap .sticky-note--blue,
+    .demo-index-wrap .sticky-note--green,
+    .demo-index-wrap .sticky-note--lavender,
+    .demo-index-wrap .sticky-note--peach { transform: rotate(0deg) !important; }
+    .demo-index-wrap .sticky-note:hover { transform: translateY(-3px) !important; }
+}
