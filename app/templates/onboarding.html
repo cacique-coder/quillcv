@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import phone_input %}
+
+{% block title %}
+  {% if mode == "account" %}Update Personal Information — QuillCV
+  {% else %}Set Up Your Profile — QuillCV{% endif %}
+{% endblock %}
+
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{# Suppress the app nav on the onboarding page so users focus on the form #}
+{% block app_nav %}
+  {% if mode == "account" %}{{ super() }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="onboarding-page">
+
+  <!-- ── Floating doodles ──────────────────────────────────────────────── -->
+  <svg class="onboarding-doodle onboarding-doodle--star" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 2 L14 9 L21 9 L15.5 13.5 L17.5 21 L12 16.5 L6.5 21 L8.5 13.5 L3 9 L10 9 Z" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>
+  <svg class="onboarding-doodle onboarding-doodle--arrow" width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <path d="M8 32 C12 22, 18 12, 34 6" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    <path d="M27 3 L35 6 L29 12" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>
+  <svg class="onboarding-doodle onboarding-doodle--exclaim" width="12" height="26" viewBox="0 0 14 30" fill="none" aria-hidden="true">
+    <path d="M7 2 C6 4, 8 8, 7 18" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <circle cx="7" cy="25" r="2" fill="#fbbf24"/>
+  </svg>
+
+  <!-- ── Trust header ──────────────────────────────────────────────────── -->
+  <div class="vault-trust-header">
+    <div class="vault-trust-icon" aria-hidden="true">
+      <!-- Hand-drawn sketchy vault icon — wobbly paths, rounded strokes -->
+      <svg viewBox="0 0 52 52" width="52" height="52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Wobbly vault body -->
+        <path d="M7 20 C6 19, 6 18, 8 17 C12 16, 40 16, 44 17 C46 18, 46 19, 45 21 L45 42 C45 44, 43 45, 42 45 C38 46, 14 46, 10 45 C8 44, 7 43, 7 41 Z" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(108,99,255,0.07)"/>
+        <!-- Wobbly shackle (arch) -->
+        <path d="M17 18 C17 12, 18 8, 26 8 C34 8, 35 12, 35 18" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" fill="none"/>
+        <!-- Wobbly keyhole circle -->
+        <path d="M26 28 C29 27, 31 29, 30 32 C29 35, 26 35, 24 33 C22 31, 23 28, 26 28" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" fill="rgba(108,99,255,0.15)"/>
+        <!-- Keyhole stem -->
+        <path d="M25 34 C25 36, 26 38, 27 38 C27 36, 27 35, 25 34" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" fill="rgba(108,99,255,0.15)"/>
+        <!-- Dial hint — small wobbly circle -->
+        <path d="M38 30 C40 29, 42 31, 41 33 C40 35, 38 35, 37 33 C36 31, 37 30, 38 30" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.55"/>
+      </svg>
+    </div>
+
+    <h1 class="vault-trust-title">
+      Your data, your eyes only
+      <!-- Squiggly underline, matching hero treatment -->
+      <svg class="vault-title-underline" viewBox="0 0 260 12" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 8 C22 2, 45 11, 68 6 S115 10, 138 5 S188 11, 210 4 S245 9, 260 6" stroke="var(--accent)" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
+      </svg>
+    </h1>
+
+    <p class="vault-trust-tagline handwritten">Zero-knowledge encryption — your secrets stay yours</p>
+
+    <p class="vault-trust-subtitle">
+      The information you enter below is encrypted with a key derived from your password.
+      Only you can ever see it — not our team, not our admins, not even us.
+      We literally cannot access it.
+    </p>
+
+    {% if not is_oauth %}
+    <!-- Encryption flow diagram — hand-drawn icons + curvy arrows -->
+    <div class="vault-flow" aria-label="Encryption flow diagram">
+      <div class="vault-flow-step">
+        <span class="vault-flow-icon" aria-hidden="true">
+          <!-- Wobbly password/lock icon -->
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+            <path d="M4 10 C3 9, 3 8, 4 8 L16 8 C17 8, 17 9, 17 10 L17 16 C17 17, 16 18, 15 18 L5 18 C4 18, 3 17, 3 16 Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M7 8 C7 5, 8 4, 10 4 C12 4, 13 5, 13 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+          </svg>
+        </span>
+        <span>Your password</span>
+      </div>
+      <!-- Hand-drawn curvy arrow -->
+      <span class="vault-flow-arrow vault-flow-arrow--drawn" aria-hidden="true">
+        <svg viewBox="0 0 28 14" width="28" height="14" fill="none">
+          <path d="M2 7 C7 4, 14 10, 20 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+          <path d="M17 4 L22 7 L17 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <div class="vault-flow-step">
+        <span class="vault-flow-icon" aria-hidden="true">
+          <!-- Wobbly shield icon -->
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+            <path d="M10 2 C10 2, 4 5, 3 7 L3 13 C3 17, 10 19, 10 19 C10 19, 17 17, 17 13 L17 7 C16 5, 10 2, 10 2 Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </span>
+        <span>Encryption key</span>
+      </div>
+      <!-- Hand-drawn curvy arrow -->
+      <span class="vault-flow-arrow vault-flow-arrow--drawn" aria-hidden="true">
+        <svg viewBox="0 0 28 14" width="28" height="14" fill="none">
+          <path d="M2 7 C8 11, 15 3, 20 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+          <path d="M17 4 L22 7 L17 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <div class="vault-flow-step vault-flow-step--accent">
+        <span class="vault-flow-icon" aria-hidden="true">
+          <!-- Wobbly vault icon -->
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+            <path d="M3 8 C2 7, 2 7, 3 6 L17 6 C18 6, 18 7, 18 8 L18 16 C18 17, 17 18, 16 18 L4 18 C3 18, 2 17, 2 16 Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M7 6 C7 4, 8 3, 10 3 C12 3, 13 4, 13 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+            <path d="M10 11 C11 10, 12 11, 12 12 C12 13, 11 14, 10 14 C9 14, 8 13, 8 12 C8 11, 9 10, 10 11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="currentColor" fill-opacity="0.4"/>
+          </svg>
+        </span>
+        <span>Locked vault</span>
+      </div>
+    </div>
+
+    <p class="vault-trust-warning">
+      <!-- Wobbly warning triangle -->
+      <svg viewBox="0 0 16 16" width="22" height="22" fill="none" aria-hidden="true" style="flex-shrink:0; margin-top:1px">
+        <path d="M8 2 C8 2, 7 3, 5 6 C3 9, 2 11, 1.5 13 C1 14, 2 14.5, 3 14.5 L13 14.5 C14 14.5, 15 14, 14.5 13 C14 11, 13 9, 11 6 C9 3, 8 2, 8 2 Z" stroke="#fbbf24" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="rgba(251,191,36,0.15)"/>
+        <path d="M8 7 C8 8, 8 10, 8 10.5" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="8" cy="12.5" r="0.8" fill="#fbbf24"/>
+      </svg>
+      <span><strong>Important:</strong> If you reset your password, you will need to re-enter this information — it cannot be recovered without your password.</span>
+    </p>
+    {% else %}
+    <p class="vault-trust-warning vault-trust-warning--oauth">
+      You signed in with {{ request.state.user.provider | title }}. Your personal information is
+      protected using a server-side encryption key unique to your account.
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- ── Form ──────────────────────────────────────────────────────────── -->
+  <div class="vault-form-card">
+    {% if mode == "account" %}
+    <div class="vault-form-back">
+      <a href="/account" class="vault-back-link">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+          <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to My Account
+      </a>
+    </div>
+    {% endif %}
+
+    <h2 class="vault-form-title">
+      {% if mode == "account" %}Update your personal information
+      {% else %}Complete your profile{% endif %}
+    </h2>
+    <p class="vault-form-subtitle">
+      This information personalises your generated CVs.
+      All fields except your name are optional.
+    </p>
+
+    {% if errors %}
+    <div class="vault-form-errors" role="alert">
+      {% for error in errors %}
+      <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post"
+          action="{{ '/account/pii' if mode == 'account' else '/onboarding' }}"
+          class="vault-form" novalidate>
+
+      <!-- ── Country selector (first field) ──────────────────────────── -->
+      <div class="vault-field">
+        <label for="vf-country" class="vault-field-label">
+          <!-- Hand-drawn sketchy lock icon -->
+          <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+            <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          Where are you located?
+        </label>
+        <select
+          id="vf-country"
+          name="country"
+          class="input-field vault-input"
+          autocomplete="country">
+          <option value="">— Select your country —</option>
+          {% for region in regions %}
+          <option value="{{ region.code }}"
+            {% if pii.country == region.code %}selected{% endif %}>
+            {{ region.flag }} {{ region.name }}
+          </option>
+          {% endfor %}
+        </select>
+        <span class="vault-field-hint">We'll customise your CV format and only ask for details relevant to this country</span>
+      </div>
+
+      <!-- ── Always-visible fields ───────────────────────────────────── -->
+
+      <!-- Full name -->
+      <div class="vault-field">
+        <label for="vf-full-name" class="vault-field-label">
+          <!-- Hand-drawn sketchy lock icon -->
+          <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+            <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          Full Name <span class="vault-field-required" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="vf-full-name"
+          type="text"
+          name="full_name"
+          class="input-field vault-input"
+          value="{{ pii.full_name | default('') }}"
+          placeholder="Jane Smith"
+          required
+          autocomplete="name">
+        <span class="vault-field-hint">As you'd like it to appear on your CV</span>
+      </div>
+
+      <!-- CV email -->
+      <div class="vault-field">
+        <label for="vf-email" class="vault-field-label">
+          <!-- Hand-drawn sketchy lock icon -->
+          <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+            <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          Contact Email
+        </label>
+        <input
+          id="vf-email"
+          type="email"
+          name="email"
+          class="input-field vault-input"
+          value="{{ pii.email | default('') }}"
+          placeholder="jane@example.com"
+          autocomplete="email">
+        <span class="vault-field-hint">Contact email for your CV — can differ from your login email</span>
+      </div>
+
+      <!-- Phone -->
+      <div class="vault-field">
+        <label class="vault-field-label">
+          <!-- Hand-drawn sketchy lock icon -->
+          <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+            <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          Phone Number
+        </label>
+        {{ phone_input("phone", value=pii.phone | default(''), placeholder="+61 400 123 456") }}
+      </div>
+
+      <!-- ── Conditional fields (shown based on selected country) ──────── -->
+      <div class="vault-conditional-fields" id="vault-conditional-fields">
+
+        <!-- Date of birth -->
+        <div class="vault-field vault-conditional-field" id="field-dob" style="display:none">
+          <label for="vf-dob" class="vault-field-label">
+            <!-- Hand-drawn sketchy lock icon -->
+            <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+              <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+            </svg>
+            Date of Birth
+          </label>
+          <input
+            id="vf-dob"
+            type="text"
+            name="dob"
+            class="input-field vault-input"
+            value="{{ pii.dob | default('') }}"
+            placeholder="DD/MM/YYYY"
+            pattern="\d{2}/\d{2}/\d{4}"
+            inputmode="numeric">
+          <span class="vault-field-hint">Format: DD/MM/YYYY</span>
+        </div>
+
+        <!-- National ID / Cedula -->
+        <div class="vault-field vault-conditional-field" id="field-document-id" style="display:none">
+          <label for="vf-document-id" class="vault-field-label">
+            <!-- Hand-drawn sketchy lock icon -->
+            <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+              <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+            </svg>
+            <span id="document-id-label">National ID</span>
+          </label>
+          <input
+            id="vf-document-id"
+            type="text"
+            name="document_id"
+            class="input-field vault-input"
+            value="{{ pii.document_id | default('') }}"
+            placeholder="e.g. 1234567890"
+            autocomplete="off">
+          <span class="vault-field-hint" id="document-id-hint">Your national identity document number</span>
+        </div>
+
+        <!-- Nationality -->
+        <div class="vault-field vault-conditional-field" id="field-nationality" style="display:none">
+          <label for="vf-nationality" class="vault-field-label">
+            <!-- Hand-drawn sketchy lock icon -->
+            <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+              <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+            </svg>
+            Nationality
+          </label>
+          <input
+            id="vf-nationality"
+            type="text"
+            name="nationality"
+            class="input-field vault-input"
+            value="{{ pii.nationality | default('') }}"
+            placeholder="e.g. Colombian"
+            autocomplete="off">
+          <span class="vault-field-hint">Your nationality as it would appear on your CV</span>
+        </div>
+
+        <!-- Marital status -->
+        <div class="vault-field vault-conditional-field" id="field-marital-status" style="display:none">
+          <label for="vf-marital-status" class="vault-field-label">
+            <!-- Hand-drawn sketchy lock icon -->
+            <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+              <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+            </svg>
+            Marital Status
+          </label>
+          <select
+            id="vf-marital-status"
+            name="marital_status"
+            class="input-field vault-input"
+            autocomplete="off">
+            <option value="">— Select —</option>
+            <option value="Single" {% if pii.marital_status == "Single" %}selected{% endif %}>Single</option>
+            <option value="Married" {% if pii.marital_status == "Married" %}selected{% endif %}>Married</option>
+            <option value="Divorced" {% if pii.marital_status == "Divorced" %}selected{% endif %}>Divorced</option>
+            <option value="Widowed" {% if pii.marital_status == "Widowed" %}selected{% endif %}>Widowed</option>
+            <option value="Prefer not to say" {% if pii.marital_status == "Prefer not to say" %}selected{% endif %}>Prefer not to say</option>
+          </select>
+          <span class="vault-field-hint">Required for CVs in some countries</span>
+        </div>
+
+      </div><!-- /.vault-conditional-fields -->
+
+      <!-- Actions -->
+      <div class="vault-form-actions">
+        <button type="submit" class="btn-cta btn-cta--full vault-submit-btn">
+          <!-- Hand-drawn sketchy lock for submit button -->
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true">
+            <path d="M4 10 C3 10, 3 10, 3 11 L3 17 C3 18, 4 18, 4 18 L16 18 C17 18, 17 17, 17 17 L17 11 C17 10, 16 10, 16 10 Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M7 10 C7 7, 8 6, 10 6 C12 6, 13 7, 13 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          </svg>
+          {% if mode == "account" %}Save Encrypted Information
+          {% else %}Encrypt &amp; Save My Information{% endif %}
+        </button>
+
+        {% if mode != "account" %}
+        <a href="/app" class="vault-skip-link">Skip for now — I'll add this later</a>
+        {% endif %}
+      </div>
+    </form>
+
+    <p class="vault-footer-note">
+      You can update this information anytime from
+      <a href="/account/pii">your account settings</a>.
+      All fields except your name are optional — only fill in what's relevant
+      for your target country.
+    </p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // Fields required per country code.
+  // Keys: dob, document_id, nationality, marital_status
+  var COUNTRY_FIELDS = {
+    "AU": { dob: false, document_id: false, nationality: false, marital_status: false },
+    "US": { dob: false, document_id: false, nationality: false, marital_status: false },
+    "UK": { dob: false, document_id: false, nationality: false, marital_status: false },
+    "CA": { dob: false, document_id: false, nationality: false, marital_status: false },
+    "NZ": { dob: false, document_id: false, nationality: false, marital_status: false },
+    "CO": { dob: true,  document_id: true,  nationality: true,  marital_status: true  },
+    "VE": { dob: true,  document_id: true,  nationality: true,  marital_status: true  },
+    "BR": { dob: true,  document_id: false, nationality: true,  marital_status: true  },
+    "DE": { dob: true,  document_id: false, nationality: true,  marital_status: false },
+    "FR": { dob: false, document_id: false, nationality: false, marital_status: false },
+    "NL": { dob: true,  document_id: false, nationality: false, marital_status: false },
+    "IN": { dob: true,  document_id: false, nationality: true,  marital_status: true  },
+    "AE": { dob: true,  document_id: false, nationality: true,  marital_status: true  },
+    "JP": { dob: true,  document_id: false, nationality: true,  marital_status: true  }
+  };
+
+  // Cedula label overrides for CO and VE
+  var CEDULA_COUNTRIES = { "CO": true, "VE": true };
+
+  function updateFields() {
+    var select = document.getElementById("vf-country");
+    if (!select) return;
+    var country = select.value;
+    var fields = COUNTRY_FIELDS[country] || null;
+
+    // Helper: show or hide a field wrapper, clearing its inputs when hidden
+    function setFieldVisible(fieldId, visible) {
+      var wrapper = document.getElementById(fieldId);
+      if (!wrapper) return;
+      if (visible) {
+        wrapper.style.display = "";
+      } else {
+        wrapper.style.display = "none";
+        // Clear values so they don't submit
+        wrapper.querySelectorAll("input, select").forEach(function (el) {
+          el.value = "";
+          el.removeAttribute("required");
+        });
+      }
+    }
+
+    setFieldVisible("field-dob",           fields ? fields.dob           : false);
+    setFieldVisible("field-document-id",   fields ? fields.document_id   : false);
+    setFieldVisible("field-nationality",   fields ? fields.nationality   : false);
+    setFieldVisible("field-marital-status", fields ? fields.marital_status : false);
+
+    // Update document_id label and hint
+    var docLabel = document.getElementById("document-id-label");
+    var docHint  = document.getElementById("document-id-hint");
+    if (docLabel && docHint) {
+      if (CEDULA_COUNTRIES[country]) {
+        docLabel.textContent = "Cedula";
+        docHint.textContent  = "Your Cedula de Ciudadanía (national ID number)";
+      } else {
+        docLabel.textContent = "National ID";
+        docHint.textContent  = "Your national identity document number";
+      }
+    }
+  }
+
+  // Run on page load (handles pre-selected country on /account/pii)
+  updateFields();
+
+  // Run on change
+  var countrySelect = document.getElementById("vf-country");
+  if (countrySelect) {
+    countrySelect.addEventListener("change", updateFields);
+  }
+})();
+</script>
+{% endblock %}

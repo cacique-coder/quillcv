@@ -1,4 +1,4 @@
-{% from "macros/ui.html" import form_group, text_input, text_area, section_divider, wizard_nav, info_card, reference_entry %}
+{% from "macros/ui.html" import form_group, text_input, text_area, section_divider, wizard_nav, info_card, reference_entry, phone_input %}
 {% set step = 2 %}
 {% include "partials/wizard/progress.html" %}
 
@@ -6,84 +6,298 @@
 
     <div class="panel-header">
         <h2>About You</h2>
-        <p class="hint">Some details can't be AI-generated — we need them from you. Fields shown here are based on {{ region_config.flag }} {{ region_config.name }} conventions.</p>
+        <p class="hint">A few personal details we can't generate — you know yourself better than any AI. Fields shown here follow {{ region_config.flag }} {{ region_config.name }} CV conventions.</p>
     </div>
+
+    {% if pii_incomplete %}
+    <div class="pii-incomplete-banner">
+        <div class="pii-incomplete-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+                <path d="M12 3 C17 2, 22 7, 21 12 C22 17, 17 22, 12 21 C7 22, 2 17, 3 12 C2 7, 7 2, 12 3" stroke="var(--accent)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                <path d="M12 8 C12 8, 12 12, 12 13" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="16.5" r="1" fill="var(--accent)"/>
+            </svg>
+        </div>
+        <div class="pii-incomplete-text">
+            <strong>Some details are still needed for {{ region_config.flag }} {{ region_config.name }}</strong>
+            <p>Fill in the fields below or <a href="/account/pii" class="pii-incomplete-link">update your encrypted vault</a> to complete your profile.</p>
+            {% if pii_missing %}
+            <ul class="pii-missing-list">
+                {% for field in pii_missing %}
+                <li>{{ field }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 
     {% if error %}
     <div class="form-error">{{ error }}</div>
     {% endif %}
 
-    <!-- Full name — mandatory, used for PII redaction -->
-    {% call form_group("Full Name", hint="Required — your name is replaced with a placeholder before your CV is sent to AI, and restored in the final output. This keeps your identity private during processing.") %}
-        {{ text_input("full_name", placeholder="e.g. Jane Doe", value=attempt.get('full_name', ''), required=true) }}
-    {% endcall %}
+    {# ─────────────────────────────────────────────────────────
+       SECTION 1 — Identity & Contact
+       ───────────────────────────────────────────────────────── #}
+    <div class="wizard-section">
+        <div class="wizard-section-header">
+            {# Hand-drawn wobbly step circle #}
+            <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                <path d="M18 3 C25 2, 33 8, 33 18 C33 28, 26 34, 18 33 C10 33, 3 27, 3 18 C3 9, 10 2, 18 3 Z"
+                      stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                      fill="var(--accent)" font-family="inherit">1</text>
+            </svg>
+            <div>
+                <h3 class="wizard-section-title">Identity &amp; Contact</h3>
+                <p class="wizard-section-desc">
+                    These details appear on your CV header. They're encrypted in your vault — we pre-filled them for you.
+                    AI never sees your real identity; we use placeholders during generation and restore your details in the final output.
+                </p>
+            </div>
+        </div>
 
-    <!-- Region-conditional fields -->
-    {% if fields.photo %}
-    <div class="form-group">
-        <label>CV Photo
-            {% if fields.photo_level == 'required' %}
-            <span class="photo-level photo-required">Required in {{ region_config.name }}</span>
-            {% elif fields.photo_level == 'common' %}
-            <span class="photo-level photo-common">Common in {{ region_config.name }}</span>
-            {% else %}
-            <span class="photo-level photo-optional">Optional in {{ region_config.name }}</span>
-            {% endif %}
-        </label>
-        <div class="photo-drop-zone">
-            <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp"
-                   hx-post="/photos/upload"
-                   hx-target="#photo-result"
-                   hx-swap="innerHTML"
-                   hx-encoding="multipart/form-data"
-                   hx-indicator="#photo-spinner">
-            <p>Click or drag a photo here</p>
-            <span class="hint">JPEG, PNG, or WebP — max 5MB</span>
+        {% if pii_prefilled %}
+        <div class="vault-prefill-notice">
+            {# Tiny lock icon #}
+            <svg viewBox="0 0 14 16" width="12" height="13" fill="none" aria-hidden="true" style="flex-shrink:0">
+                <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z"
+                      stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8"
+                      stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+            </svg>
+            Pre-filled from your encrypted vault — edit freely, changes stay here only
         </div>
-        <div id="photo-spinner" class="htmx-indicator">
-            <div class="spinner" style="width:24px;height:24px;border-width:2px;"></div>
+        {% endif %}
+
+        {# ── Age Gate ────────────────────────────────────────────── #}
+        {% if not age_already_confirmed %}
+        <div class="consent-block{% if age_error %} consent-block--error{% endif %}">
+            <label class="consent-checkbox-label">
+                <input type="checkbox" name="age_confirmed" value="1"
+                       {% if age_error %}class="consent-input--error"{% endif %}
+                       required>
+                <span class="consent-checkbox-text">
+                    I confirm I am <strong>18 years of age or older</strong>
+                </span>
+            </label>
+            <p class="consent-hint">Required to comply with COPPA (US), LGPD Art. 14 (Brazil), and Ley 1581 (Colombia).</p>
         </div>
-        <div id="photo-result"></div>
+        {% else %}
+        <input type="hidden" name="age_confirmed" value="1">
+        {% endif %}
+
+        {% call form_group("Full Name", hint="Required — your name is replaced with a placeholder before your CV is sent to AI, and restored in the final output. This keeps your identity private during processing.", required=true) %}
+            {{ text_input("full_name", placeholder="e.g. Jane Doe", value=attempt.get('full_name', ''), required=true) }}
+        {% endcall %}
+
+        {% call form_group("Contact Email", hint="The email address to appear on your CV — can differ from your login email.", optional=true) %}
+            {{ text_input("email", type="email", placeholder="e.g. jane@example.com", value=attempt.get('email', '')) }}
+        {% endcall %}
+
+        {% call form_group("Phone Number", hint="Include country code, e.g. +61 400 123 456.", optional=true) %}
+            {{ phone_input("phone", value=attempt.get('phone', ''), placeholder="+61 400 123 456") }}
+        {% endcall %}
     </div>
-    {% endif %}
 
-    {% if fields.references %}
-    {% call form_group("References", hint=region_config.name ~ " expects references on the CV. Add 2-3 professional referees — this is something AI cannot fabricate.") %}
-        {% set refs = attempt.get('references', []) %}
-        <div id="references-list">
-            {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
-            {{ reference_entry(2, refs[1] if refs|length > 1 else {}) }}
+    {# ── Wavy divider ─────────────────────────────────────────── #}
+    <div class="wizard-section-wavy" aria-hidden="true">
+        <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+            <path d="M0 5 C25 1, 50 9, 75 5 S125 9, 150 4 S200 8, 225 5 S275 9, 300 4 S350 8, 375 5 S425 9, 450 4 S500 8, 525 5 S575 9, 600 5"
+                  stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+    </div>
+
+    {# ─────────────────────────────────────────────────────────
+       SECTION 2 — Regional Requirements (conditional)
+       ───────────────────────────────────────────────────────── #}
+    {% set has_regional = fields.photo or fields.dob or fields.nationality or fields.marital or fields.references or fields.visa or (region in ['BR', 'CO']) %}
+
+    <div class="wizard-section">
+        <div class="wizard-section-header">
+            <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                <path d="M18 3 C26 3, 33 9, 33 18 C32 27, 26 34, 18 33 C10 34, 3 27, 3 18 C3 9, 11 2, 18 3 Z"
+                      stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                      fill="var(--accent)" font-family="inherit">2</text>
+            </svg>
+            <div>
+                <h3 class="wizard-section-title">Regional Requirements</h3>
+                <p class="wizard-section-desc">
+                    Based on {{ region_config.flag }} {{ region_config.name }} CV conventions, these fields are expected by employers in your region.
+                    Including them shows you understand local norms.
+                </p>
+            </div>
         </div>
-    {% endcall %}
-    {% endif %}
 
-    {% if fields.visa %}
-    {% call form_group("Visa / Work Rights Status", hint=region_config.name ~ " expects work rights information on your CV.") %}
-        {{ text_input("visa_status", placeholder="e.g. Full working rights, PR, Visa subclass 482...", value=attempt.get('visa_status', '')) }}
-    {% endcall %}
-    {% endif %}
+        {% if has_regional %}
 
-    {% if not fields.photo and not fields.references and not fields.visa %}
-    {% call info_card() %}
-        <p>{{ region_config.flag }} {{ region_config.name }} doesn't require photo, references, or visa details on the CV — great, fewer things to fill in!</p>
-    {% endcall %}
-    {% endif %}
+        {% if fields.photo %}
+        <div class="form-group">
+            <label>CV Photo
+                {% if fields.photo_level == 'required' %}
+                <span class="photo-level photo-required">Required in {{ region_config.name }}</span>
+                {% elif fields.photo_level == 'common' %}
+                <span class="photo-level photo-common">Common in {{ region_config.name }}</span>
+                {% else %}
+                <span class="photo-level photo-optional">Optional in {{ region_config.name }}</span>
+                {% endif %}
+            </label>
+            <div class="photo-drop-zone">
+                <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp"
+                       hx-post="/photos/upload"
+                       hx-target="#photo-result"
+                       hx-swap="innerHTML"
+                       hx-encoding="multipart/form-data"
+                       hx-indicator="#photo-spinner">
+                <p>Click or drag a photo here</p>
+                <span class="hint">JPEG, PNG, or WebP — max 5MB</span>
+            </div>
+            <div id="photo-spinner" class="htmx-indicator">
+                <div class="spinner" style="width:24px;height:24px;border-width:2px;"></div>
+            </div>
+            <div id="photo-result"></div>
+            <div class="consent-block consent-block--inline{% if photo_consent_error %} consent-block--error{% endif %}">
+                <label class="consent-checkbox-label">
+                    <input type="checkbox" name="consent_photo" value="1" required>
+                    <span class="consent-checkbox-text">
+                        I consent to QuillCV processing my photo for CV generation
+                    </span>
+                </label>
+            </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="consent_photo" value="">
+        {% endif %}
 
-    {{ section_divider("Your Personal Voice") }}
+        {% if fields.dob %}
+        <div class="form-group">
+            <label>Date of Birth
+                <span class="photo-level photo-required">Expected in {{ region_config.name }}</span>
+            </label>
+            <p class="hint">Some regions include date of birth on CVs as a convention.</p>
+            {{ text_input("dob", type="date", value=attempt.get('dob', '')) }}
+            <div class="consent-block consent-block--inline{% if dob_consent_error %} consent-block--error{% endif %}">
+                <label class="consent-checkbox-label">
+                    <input type="checkbox" name="consent_dob" value="1" required>
+                    <span class="consent-checkbox-text">
+                        I consent to QuillCV processing my date of birth for CV generation
+                    </span>
+                </label>
+            </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="consent_dob" value="">
+        {% endif %}
 
-    <p class="hint" style="margin-bottom: 0.8rem;">These help the AI capture your authentic voice — not just your skills, but who you are. All optional, but they make a real difference in the output.</p>
+        {% if fields.nationality %}
+        {% call form_group("Nationality", hint="Your nationality as it would appear on your CV.") %}
+            {{ text_input("nationality", placeholder="e.g. Australian", value=attempt.get('nationality', '')) }}
+        {% endcall %}
+        {% else %}
+        <input type="hidden" name="nationality" value="">
+        {% endif %}
 
-    {% call form_group("How would you describe yourself as a professional?", hint="Your working style, strengths, what colleagues say about you.") %}
-        {{ text_area("self_description", rows=3, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems...", value=attempt.get('self_description', '')) }}
-    {% endcall %}
+        {% if fields.marital %}
+        <div class="form-group">
+            <label>Marital Status</label>
+            <p class="hint">Required for CVs in some countries.</p>
+            <select name="marital_status" class="input-field">
+                <option value="">— Select —</option>
+                {% for opt in ["Single", "Married", "Divorced", "Widowed", "Prefer not to say"] %}
+                <option value="{{ opt }}" {% if attempt.get('marital_status') == opt %}selected{% endif %}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% else %}
+        <input type="hidden" name="marital_status" value="">
+        {% endif %}
 
-    {% call form_group("What are your professional values?", hint="What matters to you in how you work and what you build.") %}
-        {{ text_area("values", rows=3, placeholder="e.g. Code quality, user-centric design, continuous learning, transparent communication...", value=attempt.get('values', '')) }}
-    {% endcall %}
+        {# Document ID consent — shown only for regions that collect national ID / cédula #}
+        {% if region in ['BR', 'CO'] %}
+        <div class="consent-block consent-block--inline">
+            <label class="consent-checkbox-label">
+                <input type="checkbox" name="consent_document_id" value="1">
+                <span class="consent-checkbox-text">
+                    I consent to QuillCV processing my national ID / cédula for CV generation
+                    <span class="optional-label">(optional — only if you choose to include it)</span>
+                </span>
+            </label>
+        </div>
+        {% else %}
+        <input type="hidden" name="consent_document_id" value="">
+        {% endif %}
 
-    {% call form_group("What attracts you to this role?", hint="What excites you about the job? This helps align the CV's tone with your genuine motivation.") %}
-        {{ text_area("offer_appeal", rows=3, placeholder="e.g. The chance to work on distributed systems at scale, the team's open-source culture...", value=attempt.get('offer_appeal', '')) }}
-    {% endcall %}
+        {% if fields.visa %}
+        {% call form_group("Visa / Work Rights Status", hint=region_config.name ~ " expects work rights information on your CV.") %}
+            {{ text_input("visa_status", placeholder="e.g. Full working rights, PR, Visa subclass 482...", value=attempt.get('visa_status', '')) }}
+        {% endcall %}
+        {% endif %}
+
+        {% if fields.references %}
+        {% call form_group("References", hint=region_config.name ~ " expects references on the CV. Add 2-3 professional referees — this is something AI cannot fabricate.") %}
+            {% set refs = attempt.get('references', []) %}
+            <div id="references-list">
+                {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
+                {{ reference_entry(2, refs[1] if refs|length > 1 else {}) }}
+            </div>
+        {% endcall %}
+        {% endif %}
+
+        {% else %}
+        {# No regional fields needed for this country #}
+        <input type="hidden" name="consent_photo" value="">
+        <input type="hidden" name="consent_dob" value="">
+        <input type="hidden" name="consent_document_id" value="">
+        <input type="hidden" name="nationality" value="">
+        <input type="hidden" name="marital_status" value="">
+        {% call info_card() %}
+            <p>{{ region_config.flag }} <strong>{{ region_config.name }}</strong> doesn't require extra personal details on CVs — great, fewer things to fill in!</p>
+        {% endcall %}
+        {% endif %}
+
+    </div>
+
+    {# ── Wavy divider ─────────────────────────────────────────── #}
+    <div class="wizard-section-wavy" aria-hidden="true">
+        <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+            <path d="M0 5 C25 9, 50 1, 75 5 S125 1, 150 6 S200 2, 225 5 S275 1, 300 6 S350 2, 375 5 S425 1, 450 6 S500 2, 525 5 S575 1, 600 5"
+                  stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+    </div>
+
+    {# ─────────────────────────────────────────────────────────
+       SECTION 3 — Your Professional Voice
+       ───────────────────────────────────────────────────────── #}
+    <div class="wizard-section">
+        <div class="wizard-section-header">
+            <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                <path d="M18 3 C27 2, 33 8, 33 18 C33 28, 27 34, 18 33 C9 33, 3 27, 3 18 C3 9, 10 3, 18 3 Z"
+                      stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                      fill="var(--accent)" font-family="inherit">3</text>
+            </svg>
+            <div>
+                <h3 class="wizard-section-title">Your Professional Voice</h3>
+                <p class="wizard-section-desc">
+                    These optional fields help AI capture <em>your</em> voice — not generic corporate speak.
+                    The more you share, the more authentic your CV will sound. Think of it as giving the AI a coffee chat about who you really are.
+                </p>
+            </div>
+        </div>
+
+        {% call form_group("How would you describe yourself as a professional?", hint="Your working style, strengths, what colleagues say about you.", optional=true) %}
+            {{ text_area("self_description", rows=3, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems...", value=attempt.get('self_description', '')) }}
+        {% endcall %}
+
+        {% call form_group("What are your professional values?", hint="What matters to you in how you work and what you build.", optional=true) %}
+            {{ text_area("values", rows=3, placeholder="e.g. Code quality, user-centric design, continuous learning, transparent communication...", value=attempt.get('values', '')) }}
+        {% endcall %}
+
+        {% call form_group("What attracts you to this role?", hint="What excites you about the job? This helps align the CV's tone with your genuine motivation.", optional=true) %}
+            {{ text_area("offer_appeal", rows=3, placeholder="e.g. The chance to work on distributed systems at scale, the team's open-source culture...", value=attempt.get('offer_appeal', '')) }}
+        {% endcall %}
+    </div>
 
     {{ wizard_nav(back_step=1, next_label="Continue") }}
 
@@ -93,6 +307,9 @@
     function devFillStep2() {
         const data = {
             full_name: "Alex Morgan",
+            email: "alex.morgan@example.com",
+            phone: "+61 400 555 123",
+            nationality: "Australian",
             visa_status: "Full working rights — Australian Citizen",
             self_description: "I'm a pragmatic full-stack developer with 8 years of experience who thrives on turning ambiguous requirements into clean, shipped products. Colleagues describe me as reliable, curious, and the person who quietly unblocks the team.",
             values: "Code quality over speed, user empathy, continuous learning, honest communication, keeping things simple.",
@@ -112,6 +329,13 @@
             const el = document.querySelector(`[name="${name}"]`);
             if (el) el.value = value;
         }
+        // Fill marital_status select if present
+        const maritalEl = document.querySelector('[name="marital_status"]');
+        if (maritalEl) maritalEl.value = "Single";
+        // Tick all consent / age-gate checkboxes
+        document.querySelectorAll('input[type="checkbox"][name^="consent_"], input[name="age_confirmed"]').forEach(cb => {
+            cb.checked = true;
+        });
     }
     </script>
     {% endif %}

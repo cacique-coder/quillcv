@@ -166,6 +166,98 @@
 {% endmacro %}
 
 
+{# ── Phone Input ───────────────────────────────────────────── #}
+{# Renders a tel input with international format hint, pattern validation,
+   a country-flag indicator, and a JS formatter that runs on blur.
+   Usage: {{ phone_input("phone", value=attempt.get('phone', ''), required=false) }}
+#}
+{% macro phone_input(name, value="", placeholder="+1 (555) 123-4567", required=false) %}
+<div class="phone-input-wrap">
+    <input type="tel"
+           name="{{ name }}"
+           value="{{ value }}"
+           placeholder="{{ placeholder }}"
+           class="input-field phone-input"
+           pattern="^\+?[\d\s\-\(\)\.]{7,20}$"
+           inputmode="tel"
+           autocomplete="tel"
+           {% if required %}required{% endif %}>
+    <span class="phone-input-flag" aria-hidden="true" data-phone-flag="{{ name }}"></span>
+    <span class="phone-input-hint">Include country code (e.g. +61, +44, +1)</span>
+</div>
+<script>
+(function () {
+    // Country code prefix → flag emoji + country name
+    var FLAG_MAP = [
+        ["+61",  "🇦🇺"],
+        ["+1",   "🇺🇸"],
+        ["+44",  "🇬🇧"],
+        ["+64",  "🇳🇿"],
+        ["+1",   "🇨🇦"],
+        ["+49",  "🇩🇪"],
+        ["+33",  "🇫🇷"],
+        ["+31",  "🇳🇱"],
+        ["+91",  "🇮🇳"],
+        ["+55",  "🇧🇷"],
+        ["+971", "🇦🇪"],
+        ["+81",  "🇯🇵"],
+        ["+57",  "🇨🇴"],
+        ["+58",  "🇻🇪"],
+        ["+34",  "🇪🇸"],
+        ["+39",  "🇮🇹"],
+        ["+7",   "🇷🇺"],
+        ["+86",  "🇨🇳"],
+        ["+82",  "🇰🇷"],
+        ["+65",  "🇸🇬"],
+        ["+60",  "🇲🇾"],
+        ["+27",  "🇿🇦"],
+        ["+20",  "🇪🇬"],
+        ["+52",  "🇲🇽"],
+        ["+54",  "🇦🇷"]
+    ];
+
+    function detectFlag(val) {
+        if (!val || val[0] !== "+") return "";
+        // Try longest prefix first for disambiguation (e.g. +971 before +9)
+        var sorted = FLAG_MAP.slice().sort(function (a, b) { return b[0].length - a[0].length; });
+        for (var i = 0; i < sorted.length; i++) {
+            if (val.startsWith(sorted[i][0])) return sorted[i][1];
+        }
+        return "";
+    }
+
+    function normalizeOnBlur(input) {
+        var val = input.value.trim();
+        if (!val) { updateFlag(input, ""); return; }
+        // Auto-prepend + when user started with digits only
+        if (val && /^\d/.test(val)) val = "+" + val;
+        // Strip non-phone characters
+        val = val.replace(/[^\d\s\+\-\(\)\.]/g, "");
+        // Collapse whitespace
+        val = val.replace(/\s+/g, " ").trim();
+        input.value = val;
+        updateFlag(input, val);
+    }
+
+    function updateFlag(input, val) {
+        var flagEl = document.querySelector("[data-phone-flag='" + input.name + "']");
+        if (flagEl) flagEl.textContent = detectFlag(val);
+    }
+
+    // Wire up this specific input (by name) — handles multiple phone inputs per page
+    var inputs = document.querySelectorAll("input[name='{{ name }}'].phone-input");
+    inputs.forEach(function (input) {
+        // Show flag immediately for pre-filled values
+        updateFlag(input, input.value);
+
+        input.addEventListener("blur", function () { normalizeOnBlur(input); });
+        input.addEventListener("input", function () { updateFlag(input, input.value); });
+    });
+})();
+</script>
+{% endmacro %}
+
+
 {# ── Reference Entry ──────────────────────────────────────── #}
 {# Renders a reference person form block.
    Usage: {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
@@ -179,7 +271,7 @@
     <div class="ref-row">
         {{ text_input("ref_company_" ~ index, placeholder="Company", value=ref.get('company', '') if ref else '') }}
         {{ text_input("ref_email_" ~ index, type="email", placeholder="Email", value=ref.get('email', '') if ref else '') }}
-        {{ text_input("ref_phone_" ~ index, type="tel", placeholder="Phone", value=ref.get('phone', '') if ref else '') }}
+        {{ phone_input("ref_phone_" ~ index, value=ref.get('phone', '') if ref else '', placeholder="+1 (555) 123-4567") }}
     </div>
 </div>
 {% endmacro %}

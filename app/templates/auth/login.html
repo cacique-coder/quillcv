@@ -9,6 +9,12 @@
         <h2>Welcome back</h2>
         <p class="auth-subtitle">Sign in to your QuillCV account</p>
 
+        {% if invite %}
+        <div class="invite-login-notice">
+          You have an invitation waiting. Sign in to claim your credits.
+        </div>
+        {% endif %}
+
         {% if errors %}
         <div class="auth-errors">
             {% for error in errors %}
@@ -17,7 +23,10 @@
         </div>
         {% endif %}
 
-        <form method="post" action="/login" class="auth-form">
+        <form method="post" action="/login{% if invite %}?invite={{ invite }}{% endif %}" class="auth-form">
+            {% if invite %}
+            <input type="hidden" name="invite_code" value="{{ invite }}">
+            {% endif %}
             <div class="form-field">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" value="{{ email|default('') }}"
@@ -57,8 +66,26 @@
         {% endif %}
 
         <p class="auth-footer">
-            Don't have an account? <a href="/signup">Register your interest</a>
+            Don't have an account?
+            {% if invite %}
+            <a href="/signup?invite={{ invite }}">Create an account</a>
+            {% else %}
+            <a href="/signup">Register your interest</a>
+            {% endif %}
         </p>
     </div>
 </section>
+
+<style>
+.invite-login-notice {
+  background: rgba(108, 99, 255, 0.08);
+  border: 1px solid rgba(108, 99, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--accent);
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+</style>
 {% endblock %}

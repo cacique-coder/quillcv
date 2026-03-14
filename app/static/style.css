@@ -1142,6 +1142,110 @@ header a:hover { text-decoration: underline; }
     margin-top: 0.4rem;
 }
 
+/* ── Wizard Section Blocks (step 2 redesign) ─────────────────── */
+.wizard-section {
+    margin-bottom: 2rem;
+    padding: 1.4rem 1.5rem 1.2rem;
+    background: var(--surface, #fff);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    position: relative;
+}
+
+.wizard-section-header {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    margin-bottom: 1.2rem;
+}
+
+.wizard-section-num {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.wizard-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.3rem;
+    color: var(--text);
+}
+
+.wizard-section-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Vault pre-fill notice badge */
+.vault-prefill-notice {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: rgba(108, 99, 255, 0.08);
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    border-radius: 99px;
+    padding: 0.3rem 0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* PII completeness banner */
+.pii-incomplete-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: rgba(108, 99, 255, 0.08);
+    border: 1px solid rgba(108, 99, 255, 0.25);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.pii-incomplete-icon {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+.pii-incomplete-text p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0.5rem;
+    line-height: 1.5;
+}
+
+.pii-incomplete-link {
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.pii-missing-list {
+    margin: 0.4rem 0 0.5rem 1.2rem;
+    padding: 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.pii-missing-list li {
+    list-style-type: "— ";
+}
+
+/* Wavy divider between wizard sections */
+.wizard-section-wavy {
+    margin: -0.5rem 0 1.5rem;
+    line-height: 0;
+}
+
+.wizard-section-wavy svg {
+    width: 100%;
+    height: 10px;
+    display: block;
+}
+
 /* Panel actions */
 .panel-actions {
     display: flex;
@@ -4797,4 +4901,453 @@ select.input-field {
 }
 .legal-wrap a:hover {
     text-decoration: underline;
+}
+
+/* ── Consent Checkboxes (age gate + sensitive data) ────────── */
+.consent-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.85rem 1rem;
+    background: rgba(108, 99, 255, 0.06);
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+}
+.consent-block--error {
+    background: rgba(248, 113, 113, 0.08);
+    border-color: rgba(248, 113, 113, 0.4);
+}
+/* Inline variant: sits inside a form-group directly below its field */
+.consent-block--inline {
+    margin-top: 0.6rem;
+    margin-bottom: 0;
+    padding: 0.65rem 0.85rem;
+}
+.consent-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    cursor: pointer;
+}
+.consent-checkbox-label input[type="checkbox"] {
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+.consent-input--error {
+    outline: 2px solid var(--red);
+}
+.consent-checkbox-text {
+    font-size: 0.88rem;
+    color: var(--text);
+    line-height: 1.45;
+}
+.consent-checkbox-text .optional-label {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-style: italic;
+}
+.consent-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0;
+    padding-left: 1.6rem;
+}
+/* form-error banner used in wizard steps */
+.form-error {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    border-radius: var(--radius);
+    color: var(--red);
+    font-size: 0.88rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+/* ── PII Onboarding Page ─────────────────────────────────────────────────── */
+
+.onboarding-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+    position: relative;
+}
+
+/* Floating doodle decorations — onboarding page */
+.onboarding-doodle {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.45;
+}
+.onboarding-doodle--star {
+    top: 2.5rem;
+    left: -2rem;
+    animation: doodleDrift 6s ease-in-out infinite;
+}
+.onboarding-doodle--arrow {
+    top: 4rem;
+    right: -1.5rem;
+    animation: doodleDrift 8s ease-in-out infinite 0.5s;
+    opacity: 0.35;
+}
+.onboarding-doodle--exclaim {
+    top: 8rem;
+    left: -1.5rem;
+    animation: doodleDrift 5s ease-in-out infinite 2s;
+    opacity: 0.4;
+}
+@media (max-width: 680px) {
+    .onboarding-doodle { display: none; }
+}
+
+/* Trust header */
+.vault-trust-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+/* Squiggly underline under trust title */
+.vault-title-underline {
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    display: block;
+}
+
+/* Handwritten tagline below trust title */
+.vault-trust-tagline {
+    font-size: 1.05rem;
+    color: var(--accent);
+    opacity: 0.75;
+    margin-bottom: 0.6rem;
+    margin-top: -0.25rem;
+}
+
+.vault-trust-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.vault-trust-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.1rem;
+    position: relative;
+    display: inline-block;
+}
+
+.vault-trust-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto 1.25rem;
+}
+
+/* Encryption flow diagram */
+.vault-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin: 1.25rem auto;
+    flex-wrap: wrap;
+}
+
+.vault-flow-step {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.vault-flow-step--accent {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+    color: var(--accent);
+    background: rgba(108, 99, 255, 0.06);
+}
+
+.vault-flow-icon {
+    display: flex;
+    align-items: center;
+    color: inherit;
+}
+
+.vault-flow-arrow {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+.vault-flow-arrow--drawn {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    opacity: 0.6;
+    font-size: 0; /* hide fallback text node if any */
+}
+
+/* Warning note */
+.vault-trust-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.12);
+    border: 2px solid rgba(245, 158, 11, 0.45);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    text-align: left;
+    max-width: 480px;
+    margin: 1rem auto 0;
+    line-height: 1.5;
+}
+
+.vault-trust-warning--oauth {
+    background: rgba(108, 99, 255, 0.06);
+    border-color: rgba(108, 99, 255, 0.25);
+}
+
+/* Form card */
+.vault-form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+}
+
+.vault-form-back {
+    margin-bottom: 1.25rem;
+}
+
+.vault-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.vault-back-link:hover {
+    color: var(--accent);
+}
+
+.vault-form-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.vault-form-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+.vault-form-errors {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    border-radius: var(--radius);
+    color: var(--red);
+    font-size: 0.88rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+/* Individual field row */
+.vault-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 1.1rem;
+}
+
+.vault-field-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.vault-field-lock {
+    color: var(--accent);
+    flex-shrink: 0;
+    opacity: 0.75;
+}
+
+.vault-field-required {
+    color: var(--red);
+    margin-left: 1px;
+}
+
+.vault-input {
+    width: 100%;
+}
+
+.vault-field-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* Actions row */
+.vault-form-actions {
+    margin-top: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.vault-submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.vault-skip-link {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.vault-skip-link:hover {
+    color: var(--text);
+    text-decoration: underline;
+}
+
+/* Footer note */
+.vault-footer-note {
+    margin-top: 1.25rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    line-height: 1.5;
+}
+
+.vault-footer-note a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.vault-footer-note a:hover {
+    text-decoration: underline;
+}
+
+/* Account page: PII vault section */
+.account-section--vault {
+    border-color: color-mix(in srgb, var(--accent) 25%, var(--border));
+}
+
+.account-section--vault h3 {
+    color: var(--text);
+}
+
+.vault-account-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.vault-preview-row {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+}
+
+.vault-preview-label {
+    color: var(--text-muted);
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+.vault-preview-value {
+    color: var(--text);
+}
+
+@media (max-width: 500px) {
+    .vault-flow {
+        gap: 0.4rem;
+    }
+    .vault-flow-step {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+    }
+    .vault-trust-title {
+        font-size: 1.4rem;
+    }
+    .vault-form-card {
+        padding: 1.25rem;
+    }
+}
+
+/* ── Phone Input Component ───────────────────────────────────────────────── */
+
+.phone-input-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.phone-input {
+    padding-right: 2.4rem; /* space for the flag indicator */
+}
+
+/* Flag badge — positioned inside the right side of the input */
+.phone-input-flag {
+    position: absolute;
+    right: 0.7rem;
+    top: 0.65rem;
+    font-size: 1.1rem;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+}
+
+.phone-input-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+    margin-top: 0.1rem;
+}
+
+/* Red border only after the user has typed something and the value is invalid */
+.phone-input:not(:placeholder-shown):invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+
+/* Inside a vault-field the wrap should stretch full width */
+.vault-field .phone-input-wrap {
+    width: 100%;
+}
+
+/* Inside a ref-row the wrap should match sibling inputs */
+.ref-row .phone-input-wrap {
+    flex: 1;
+    min-width: 0;
 }

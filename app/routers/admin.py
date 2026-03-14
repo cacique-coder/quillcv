@@ -24,7 +24,7 @@ PAGE_SIZE = 50
 
 # Emails allowed to access admin. If empty, dev mode allows any logged-in user.
 ADMIN_EMAILS: set[str] = set(
-    e.strip() for e in os.environ.get("ADMIN_EMAILS", "daniel@example.com").split(",") if e.strip()
+    e.strip() for e in os.environ.get("ADMIN_EMAILS", "daniel@example.com,xzdasx@gmail.com").split(",") if e.strip()
 )
 
 
@@ -133,10 +133,10 @@ async def admin_dashboard(request: Request):
                 func.coalesce(func.sum(APIRequestLog.output_tokens), 0).label("total_output"),
                 func.coalesce(func.sum(APIRequestLog.duration_ms), 0).label("total_duration"),
                 func.min(APIRequestLog.created_at).label("started_at"),
-                func.group_concat(APIRequestLog.service.distinct()).label("services"),
-                func.group_concat(APIRequestLog.model.distinct()).label("models"),
+                func.string_agg(APIRequestLog.service.distinct(), ', ').label("services"),
+                func.string_agg(APIRequestLog.model.distinct(), ', ').label("models"),
             )
-            .group_by(APIRequestLog.transaction_id)
+            .group_by(APIRequestLog.transaction_id, APIRequestLog.attempt_id, APIRequestLog.user_id)
             .order_by(func.min(APIRequestLog.created_at).desc())
             .limit(PAGE_SIZE)
         )

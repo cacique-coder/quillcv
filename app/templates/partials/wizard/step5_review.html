@@ -53,11 +53,34 @@
             <p>Your uploaded CV will be parsed and combined with your personal details to generate an ATS-optimized CV for {{ region_config.name }}. No need to re-upload — your documents are saved.</p>
         </div>
 
+        {% if pii_incomplete %}
+        <div class="pii-incomplete-banner">
+            <div class="pii-incomplete-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+                    <path d="M12 3 C17 2, 22 7, 21 12 C22 17, 17 22, 12 21 C7 22, 2 17, 3 12 C2 7, 7 2, 12 3" stroke="var(--warning, #fbbf24)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <path d="M12 8 C12 8, 12 12, 12 13" stroke="var(--warning, #fbbf24)" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="16.5" r="1" fill="var(--warning, #fbbf24)"/>
+                </svg>
+            </div>
+            <div class="pii-incomplete-text">
+                <strong>Cannot generate — missing required details for {{ region_config.name }}</strong>
+                {% if pii_missing %}
+                <ul class="pii-missing-list">
+                    {% for field in pii_missing %}
+                    <li>{{ field }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <p>Go back to <a href="#" onclick="htmx.ajax('GET','/wizard/step/2',{target:'#wizard-container',swap:'innerHTML'});return false" class="pii-incomplete-link">Step 2: Details</a> or <a href="/account/pii" class="pii-incomplete-link">update your vault</a> to fill these in.</p>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="panel-actions panel-actions-center">
             <button type="button" class="btn-back"
                     hx-get="/wizard/step/4" hx-target="#wizard-container" hx-swap="innerHTML">Back</button>
             <button type="button" class="btn-generate" id="btn-generate"
-                    onclick="startGenerate()">
+                    onclick="startGenerate()" {% if pii_incomplete %}disabled title="Complete your profile first"{% endif %}>
                 Generate CV
             </button>
         </div>
@@ -101,13 +124,13 @@ function addProgressStep(text, detail) {
     el.innerHTML = '\
         <div class="gen-step-node">\
             <svg viewBox="0 0 24 24" width="20" height="20" class="gen-step-circle">\
-                <circle cx="12" cy="12" r="9" fill="none" stroke-width="2"\
-                        stroke="var(--border)" class="gen-circle-bg"/>\
-                <circle cx="12" cy="12" r="9" fill="none" stroke-width="2"\
+                <path d="M12 3.2 C9 3, 6.5 4.5, 5 7 C3.5 9.5, 3.2 12.8, 4.5 15.5 C5.8 18.2, 8.5 20.2, 11.5 20.8 C14.5 21.4, 17.8 20.2, 20 17.8 C22.2 15.4, 22.8 11.8, 21.5 9 C20.2 6.2, 17.5 4, 14.5 3.5 C13.7 3.3, 12.8 3.2, 12 3.2" fill="none" stroke-width="2"\
+                        stroke="var(--border)" class="gen-circle-bg" stroke-linecap="round"/>\
+                <path d="M12 3.2 C9 3, 6.5 4.5, 5 7 C3.5 9.5, 3.2 12.8, 4.5 15.5 C5.8 18.2, 8.5 20.2, 11.5 20.8 C14.5 21.4, 17.8 20.2, 20 17.8 C22.2 15.4, 22.8 11.8, 21.5 9 C20.2 6.2, 17.5 4, 14.5 3.5 C13.7 3.3, 12.8 3.2, 12 3.2" fill="none" stroke-width="2"\
                         stroke="var(--accent)" class="gen-circle-draw"\
                         stroke-dasharray="56.5" stroke-dashoffset="56.5"\
                         stroke-linecap="round"/>\
-                <path d="M8 12.5l2.5 2.5 5-5" fill="none" stroke="var(--accent)"\
+                <path d="M8 12.5 C9.2 13.8, 10 14.8, 10.5 15 C12 13, 14.5 10.5, 16 10" fill="none" stroke="var(--accent)"\
                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round"\
                       class="gen-check-draw" stroke-dasharray="14" stroke-dashoffset="14"/>\
             </svg>\

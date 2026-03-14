@@ -5,6 +5,8 @@ from pathlib import Path
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.templating import Jinja2Templates
 
+from app.auth.dependencies import get_current_user
+from app.database import async_session
 from app.services.attempt_store import (
     create_attempt,
     get_attempt,
@@ -12,6 +14,14 @@ from app.services.attempt_store import (
     save_document,
     update_attempt,
 )
+from app.services.consent_service import (
+    CURRENT_POLICY_VERSION,
+    get_client_ip,
+    get_user_agent,
+    record_age_confirmation,
+    record_consent,
+)
+from app.services.phone_utils import normalize_phone
 from app.services.template_registry import REGIONS, list_regions, list_templates, list_templates_by_category
 
 logger = logging.getLogger(__name__)
@@ -34,6 +44,49 @@ def _region_fields(code: str) -> dict:
         "nationality": r.include_nationality,
         "marital": r.include_marital_status,
     }
+
+
+def _check_pii_completeness(attempt: dict, pii: dict, region_code: str) -> tuple[bool, list[str]]:
+    """Check if all required PII fields are filled based on the region.
+
+    Returns (is_complete, missing_fields) where missing_fields is a list of
+    human-readable field names that are still needed.
+    """
+    fields = _region_fields(region_code)
+    missing = []
+
+    # Helper: check attempt first, then vault
+    def _has(key: str) -> bool:
+        return bool((attempt.get(key) or "").strip() or (pii.get(key) or "").strip())
+
+    # Always required
+    if not _has("full_name"):
+        missing.append("Full name")
+    if not _has("email"):
+        missing.append("Contact email")
+    if not _has("phone"):
+        missing.append("Phone number")
+
+    # Region-conditional
+    if fields.get("dob") and not _has("dob"):
+        missing.append("Date of birth")
+    if fields.get("nationality") and not _has("nationality"):
+        missing.append("Nationality")
+    if fields.get("marital") and not _has("marital_status"):
+        missing.append("Marital status")
+    if fields.get("visa") and not _has("visa_status"):
+        missing.append("Visa / work rights")
+    if fields.get("references"):
+        refs = attempt.get("references") or pii.get("references") or []
+        has_ref = any(r.get("name", "").strip() for r in refs) if refs else False
+        if not has_ref:
+            missing.append("At least one reference")
+
+    # Document ID: only required for CO/VE
+    if region_code in ("CO", "VE") and not _has("document_id"):
+        missing.append("Cédula / National ID")
+
+    return (len(missing) == 0, missing)
 
 
 def _get_or_create_attempt(request: Request) -> dict:
@@ -89,6 +142,24 @@ async def step2(request: Request):
     region = attempt.get("region", "AU")
     region_config = REGIONS.get(region, REGIONS["AU"])
     fields = _region_fields(region)
+    current_user = await get_current_user(request)
+    age_already_confirmed = bool(current_user and current_user.age_confirmed_at)
+
+    # Merge PII vault values as defaults — attempt values always take priority
+    pii = request.session.get("pii") or {}
+    pii_prefilled = bool(pii)
+    for key in ("full_name", "email", "phone", "dob", "document_id", "nationality", "marital_status"):
+        if not attempt.get(key) and pii.get(key):
+            attempt[key] = pii[key]
+
+    # Merge vault references as defaults when the attempt has none yet
+    if not attempt.get("references") and pii.get("references"):
+        attempt["references"] = pii["references"]
+
+    # Check PII completeness based on region requirements
+    pii_complete, pii_missing = _check_pii_completeness(attempt, pii, region)
+    pii_incomplete = not pii_complete
+
     return templates.TemplateResponse("partials/wizard/step2_details.html", {
         "request": request,
         "attempt": attempt,
@@ -96,6 +167,10 @@ async def step2(request: Request):
         "region_config": region_config,
         "fields": fields,
         "dev_mode": request.app.state.dev_mode,
+        "age_already_confirmed": age_already_confirmed,
+        "pii_prefilled": pii_prefilled,
+        "pii_incomplete": pii_incomplete,
+        "pii_missing": pii_missing,
     })
 
 
@@ -103,7 +178,11 @@ async def step2(request: Request):
 async def step2_save(
     request: Request,
     full_name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
     visa_status: str = Form(""),
+    nationality: str = Form(""),
+    marital_status: str = Form(""),
     self_description: str = Form(""),
     values: str = Form(""),
     offer_appeal: str = Form(""),
@@ -117,47 +196,180 @@ async def step2_save(
     ref_company_2: str = Form(""),
     ref_email_2: str = Form(""),
     ref_phone_2: str = Form(""),
+    # Age gate — required for all users
+    age_confirmed: str = Form(""),
+    # Sensitive data consents — only required when the respective field is submitted
+    consent_photo: str = Form(""),
+    consent_dob: str = Form(""),
+    consent_document_id: str = Form(""),
 ):
-    """Save step 2 and move to step 3."""
+    """Save step 2 and move to step 3.
+
+    Enforces age gate (18+) and validates sensitive data consent checkboxes.
+    For authenticated users who have already confirmed their age on a previous
+    visit, the age gate check is skipped and the checkbox is pre-ticked in the
+    template. Consent events are recorded in the consent_records audit table.
+    """
     attempt = _get_or_create_attempt(request)
+    region = attempt.get("region", "AU")
+    region_config = REGIONS.get(region, REGIONS["AU"])
+    fields = _region_fields(region)
 
-    # Build references list from form fields
-    references = []
-    for _i, (name, title, company, email, phone) in enumerate([
-        (ref_name_1, ref_title_1, ref_company_1, ref_email_1, ref_phone_1),
-        (ref_name_2, ref_title_2, ref_company_2, ref_email_2, ref_phone_2),
-    ], 1):
-        if name.strip():
-            references.append({
-                "name": name, "title": title, "company": company,
-                "email": email, "phone": phone,
-            })
+    pii_prefilled = bool(request.session.get("pii"))
 
-    if not full_name.strip():
-        # Re-render step 2 with validation error
-        region = attempt.get("region", "AU")
-        region_config = REGIONS.get(region, REGIONS["AU"])
-        fields = _region_fields(region)
-        return templates.TemplateResponse("partials/wizard/step2_details.html", {
+    def _render_error(error: str, extra: dict | None = None) -> templates.TemplateResponse:
+        ctx = {
             "request": request,
-            "attempt": {**attempt, "full_name": full_name},
+            "attempt": {
+                **attempt,
+                "full_name": full_name,
+                "email": email,
+                "phone": phone,
+                "nationality": nationality,
+                "marital_status": marital_status,
+            },
             "region": region,
             "region_config": region_config,
             "fields": fields,
             "dev_mode": request.app.state.dev_mode,
-            "error": "Your full name is required — we use it to protect your privacy during AI generation.",
-        })
+            "error": error,
+            # Must be re-passed so the template knows whether to show the checkbox
+            "age_already_confirmed": already_age_confirmed,
+            "pii_prefilled": pii_prefilled,
+        }
+        if extra:
+            ctx.update(extra)
+        return templates.TemplateResponse("partials/wizard/step2_details.html", ctx)
+
+    # ------------------------------------------------------------------
+    # Age gate validation
+    # ------------------------------------------------------------------
+    current_user = await get_current_user(request)
+
+    # If the authenticated user has already confirmed their age in a previous
+    # session, we skip the checkbox requirement — they've already consented.
+    already_age_confirmed = bool(
+        current_user and current_user.age_confirmed_at
+    )
+
+    if not already_age_confirmed and not age_confirmed:
+        return _render_error(
+            "You must confirm you are 18 years of age or older to continue.",
+            {"age_error": True},
+        )
+
+    # ------------------------------------------------------------------
+    # Sensitive data consent validation
+    # ------------------------------------------------------------------
+    # Photo consent: required when a photo is relevant for this region
+    # and the user is providing one (we cannot know server-side whether
+    # they actually uploaded a photo since photos use a separate HTMX
+    # endpoint, so we validate consent when the region shows the field).
+    if fields.get("photo") and not consent_photo:
+        return _render_error(
+            "Please provide your consent to process your CV photo before continuing.",
+            {"photo_consent_error": True},
+        )
+
+    # DOB consent: required when region collects date of birth
+    if fields.get("dob") and not consent_dob:
+        return _render_error(
+            "Please provide your consent to process your date of birth before continuing.",
+            {"dob_consent_error": True},
+        )
+
+    # ------------------------------------------------------------------
+    # Full name validation
+    # ------------------------------------------------------------------
+    if not full_name.strip():
+        return _render_error(
+            "Your full name is required — we use it to protect your privacy during AI generation.",
+        )
+
+    # ------------------------------------------------------------------
+    # Persist consent records for authenticated users
+    # ------------------------------------------------------------------
+    if current_user:
+        from sqlalchemy import select
+        from app.models import User as UserModel
+
+        ip = get_client_ip(request)
+        ua = get_user_agent(request)
+
+        async with async_session() as db:
+            # Re-load the user inside this session so we can mutate it
+            db_user = await db.scalar(select(UserModel).where(UserModel.id == current_user.id))
+
+            if not already_age_confirmed and age_confirmed and db_user:
+                # Record age confirmation and stamp the user row
+                await record_age_confirmation(db, db_user, ip_address=ip, user_agent=ua)
+                # Sync back to request state so downstream checks see the updated flag
+                current_user.age_confirmed_at = db_user.age_confirmed_at
+
+            # Record sensitive data consents submitted this step
+            for consent_type, submitted in [
+                ("sensitive_data_photo", consent_photo),
+                ("sensitive_data_dob", consent_dob),
+                ("sensitive_data_document_id", consent_document_id),
+            ]:
+                if submitted:
+                    await record_consent(
+                        db,
+                        user_id=current_user.id,
+                        consent_type=consent_type,
+                        granted=True,
+                        email=current_user.email,
+                        ip_address=ip,
+                        user_agent=ua,
+                        policy_version=CURRENT_POLICY_VERSION,
+                    )
+
+            await db.commit()
+
+    # ------------------------------------------------------------------
+    # Build references list from form fields
+    # ------------------------------------------------------------------
+    references = []
+    for _i, (ref_n, ref_t, ref_c, ref_e, ref_p) in enumerate([
+        (ref_name_1, ref_title_1, ref_company_1, ref_email_1, ref_phone_1),
+        (ref_name_2, ref_title_2, ref_company_2, ref_email_2, ref_phone_2),
+    ], 1):
+        if ref_n.strip():
+            references.append({
+                "name": ref_n.strip(),
+                "title": ref_t.strip(),
+                "company": ref_c.strip(),
+                "email": ref_e.strip(),
+                "phone": normalize_phone(ref_p),
+            })
 
     update_attempt(
         attempt["id"],
         full_name=full_name.strip(),
+        email=email.strip(),
+        phone=normalize_phone(phone),
         visa_status=visa_status,
+        nationality=nationality.strip(),
+        marital_status=marital_status,
         self_description=self_description,
         values=values,
         offer_appeal=offer_appeal,
         references=references,
         step=3,
     )
+
+    # ------------------------------------------------------------------
+    # Persist references to the PII vault so they pre-fill on future visits
+    # ------------------------------------------------------------------
+    if current_user:
+        from app.services.pii_vault import upsert_vault
+        pii = request.session.get("pii") or {}
+        pii["references"] = references
+        password = request.session.get("_pii_password")
+        async with async_session() as db:
+            await upsert_vault(db, user_id=current_user.id, pii=pii, password=password or None)
+        request.session["pii"] = pii
+
     return await step3(request)
 
 
@@ -297,11 +509,18 @@ async def step5(request: Request):
     region_config = REGIONS.get(region, REGIONS["AU"])
     cv_filename = get_document_filename(attempt["id"], "cv_file")
 
+    # Check PII completeness based on region requirements
+    pii = request.session.get("pii") or {}
+    pii_complete, pii_missing = _check_pii_completeness(attempt, pii, region)
+    pii_incomplete = not pii_complete
+
     return templates.TemplateResponse("partials/wizard/step5_review.html", {
         "request": request,
         "attempt": attempt,
         "region_config": region_config,
         "cv_filename": cv_filename,
+        "pii_incomplete": pii_incomplete,
+        "pii_missing": pii_missing,
     })
 
 

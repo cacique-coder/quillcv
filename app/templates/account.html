@@ -55,6 +55,53 @@
         <a href="/pricing" class="btn-secondary btn-sm">Buy More Credits</a>
     </div>
 
+    <!-- Personal Information (PII Vault) Section -->
+    <div class="account-section account-section--vault">
+        <h3>
+            <!-- Hand-drawn wobbly lock icon (matches onboarding.html pattern) -->
+            <svg viewBox="0 0 14 16" width="13" height="14" fill="none" aria-hidden="true" style="vertical-align:-2px; margin-right:6px">
+                <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+            </svg>
+            Personal Information (Encrypted)
+        </h3>
+        {% set pii = request.session.get("pii", {}) if request.session else {} %}
+        {% if pii and pii.get("full_name") %}
+        <div class="vault-account-preview">
+            <div class="vault-preview-row">
+                <span class="vault-preview-label">Name</span>
+                <span class="vault-preview-value">{{ pii.full_name }}</span>
+            </div>
+            {% if pii.get("email") %}
+            <div class="vault-preview-row">
+                <span class="vault-preview-label">CV Email</span>
+                <span class="vault-preview-value">{{ pii.email }}</span>
+            </div>
+            {% endif %}
+            {% if pii.get("phone") %}
+            <div class="vault-preview-row">
+                <span class="vault-preview-label">Phone</span>
+                <span class="vault-preview-value">{{ pii.phone }}</span>
+            </div>
+            {% endif %}
+            {% if pii.get("dob") %}
+            <div class="vault-preview-row">
+                <span class="vault-preview-label">Date of Birth</span>
+                <span class="vault-preview-value">{{ pii.dob }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="account-hint">No personal information saved yet.</p>
+        {% endif %}
+        <p class="account-hint" style="margin-top:0.75rem">
+            This data is encrypted with your password — only you can see it.
+        </p>
+        <a href="/account/pii" class="btn-secondary btn-sm" style="margin-top:1rem; display:inline-block">
+            Update Personal Information
+        </a>
+    </div>
+
     <!-- Security Section -->
     <div class="account-section">
         <h3>Security</h3>

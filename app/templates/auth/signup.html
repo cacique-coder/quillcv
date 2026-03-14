@@ -5,33 +5,179 @@
 
 {% block content %}
 <section class="auth-page">
-    <div class="auth-card eoi-card">
-        <!-- Hand-drawn sparkle doodle -->
-        <svg class="eoi-doodle" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <path d="M16 2 L18 12 L28 14 L18 16 L16 26 L14 16 L4 14 L14 12 Z" stroke="var(--accent)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
-        </svg>
 
-        <h2>We're launching soon</h2>
-        <p class="auth-subtitle">QuillCV is almost ready. Register your interest and be first in line when we open the doors.</p>
-
-        <div id="eoi-form-area">
-            <form method="post" action="/signup" class="auth-form"
-                  hx-post="/signup" hx-target="#eoi-form-area" hx-swap="innerHTML">
-                <div class="form-field">
-                    <label for="name">Name <span class="optional-hint">(optional)</span></label>
-                    <input type="text" id="name" name="name" placeholder="Your name" autocomplete="name">
-                </div>
-                <div class="form-field">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
-                </div>
-                <button type="submit" class="btn-cta btn-cta--full">Register Interest</button>
-            </form>
-        </div>
-
-        <p class="auth-footer">
-            Already have an account? <a href="/login">Sign in</a>
-        </p>
+  {% if invitation %}
+  {# ── Invited signup — real account creation ──────────────────────────── #}
+  <div class="auth-card">
+    <div class="invite-banner">
+      <span class="invite-banner__icon">&#127881;</span>
+      <div>
+        <p class="invite-banner__headline">You've been invited!</p>
+        <p class="invite-banner__sub">Claim your <strong>{{ invitation.credits }} free credits</strong> and start building ATS-optimized CVs.</p>
+        {% if invitation.note %}
+        <p class="invite-banner__note">"{{ invitation.note }}"</p>
+        {% endif %}
+      </div>
     </div>
+
+    <h2>Create your account</h2>
+    <p class="auth-subtitle">Fill in the details below to claim your credits.</p>
+
+    {% if errors %}
+    <div class="auth-errors">
+      {% for error in errors %}
+      <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/signup" class="auth-form">
+      <input type="hidden" name="invite_code" value="{{ invitation.code }}">
+
+      <div class="form-field">
+        <label for="name">Full name <span class="optional-hint">(optional)</span></label>
+        <input type="text" id="name" name="name" value="{{ name_value|default('') }}"
+               placeholder="Your name" autocomplete="name">
+      </div>
+
+      <div class="form-field">
+        <label for="email">Email</label>
+        {% if invitation.email %}
+        {# Invitation is locked to a specific email — pre-fill and disable #}
+        <input type="email" id="email" name="email" value="{{ invitation.email }}"
+               placeholder="you@example.com" required autocomplete="email" disabled>
+        {# Send the value as a hidden field since disabled inputs are not submitted #}
+        <input type="hidden" name="email" value="{{ invitation.email }}">
+        {% else %}
+        <input type="email" id="email" name="email" value="{{ email_value|default('') }}"
+               placeholder="you@example.com" required autocomplete="email">
+        {% endif %}
+      </div>
+
+      <div class="form-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               placeholder="At least 8 characters" required autocomplete="new-password" minlength="8">
+      </div>
+
+      <div class="form-field">
+        <label for="confirm_password">Confirm password</label>
+        <input type="password" id="confirm_password" name="confirm_password"
+               placeholder="Repeat your password" required autocomplete="new-password" minlength="8">
+      </div>
+
+      <div class="form-field form-field--checkbox">
+        <label class="checkbox-label">
+          <input type="checkbox" name="age_confirmed" value="1" required>
+          I confirm I am 18 years of age or older
+        </label>
+      </div>
+
+      <button type="submit" class="btn-cta btn-cta--full">
+        Create Account &amp; Claim {{ invitation.credits }} Credits
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Already have an account? <a href="/login?invite={{ invitation.code }}">Sign in</a>
+    </p>
+  </div>
+
+  {% elif invite_error %}
+  {# ── Invalid or already-redeemed invite code ─────────────────────────── #}
+  <div class="auth-card eoi-card">
+    <div class="auth-errors">
+      <p>{{ invite_error }}</p>
+    </div>
+    <p class="auth-footer" style="margin-top:1rem">
+      Already have an account? <a href="/login">Sign in</a>
+    </p>
+  </div>
+
+  {% else %}
+  {# ── Expression of Interest (no invite) ───────────────────────────────── #}
+  <div class="auth-card eoi-card">
+    <!-- Hand-drawn sparkle doodle -->
+    <svg class="eoi-doodle" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path d="M16 2 L18 12 L28 14 L18 16 L16 26 L14 16 L4 14 L14 12 Z" stroke="var(--accent)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+    </svg>
+
+    <h2>We're launching soon</h2>
+    <p class="auth-subtitle">QuillCV is almost ready. Register your interest and be first in line when we open the doors.</p>
+
+    <div id="eoi-form-area">
+      <form method="post" action="/signup" class="auth-form"
+            hx-post="/signup" hx-target="#eoi-form-area" hx-swap="innerHTML">
+        <div class="form-field">
+          <label for="name">Name <span class="optional-hint">(optional)</span></label>
+          <input type="text" id="name" name="name" placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <button type="submit" class="btn-cta btn-cta--full">Register Interest</button>
+      </form>
+    </div>
+
+    <p class="auth-footer">
+      Already have an account? <a href="/login">Sign in</a>
+    </p>
+  </div>
+  {% endif %}
+
 </section>
+
+<style>
+.invite-banner {
+  display: flex;
+  gap: 0.875rem;
+  align-items: flex-start;
+  background: rgba(108, 99, 255, 0.08);
+  border: 1px solid rgba(108, 99, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 1rem 1.125rem;
+  margin-bottom: 1.5rem;
+}
+.invite-banner__icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.invite-banner__headline {
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+}
+.invite-banner__sub {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.4;
+}
+.invite-banner__note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+  margin: 0.35rem 0 0;
+}
+.form-field--checkbox {
+  margin-top: 0.25rem;
+}
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.checkbox-label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+</style>
 {% endblock %}
