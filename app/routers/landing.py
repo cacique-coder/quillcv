@@ -24,12 +24,12 @@ async def landing(request: Request):
 
     async with async_session() as db:
         alpha_count = await count_alpha_users(db)
-    spots_remaining = max(0, 100 - alpha_count)
+    spots_remaining = max(0, 200 - alpha_count)
 
     return templates.TemplateResponse("landing.html", {
         "request": request,
         "spots_remaining": spots_remaining,
-        "page_description": "Build ATS-optimized CVs tailored to job descriptions. 12 country formats, keyword matching, and AI-powered quality review. Alpha pricing: $29 for 50 generations.",
+        "page_description": "Build ATS-optimized CVs tailored to job descriptions. Multiple country formats, keyword matching, and AI-powered quality review. Alpha pricing: $14.99 for 20 generations.",
     })
 
 
@@ -40,7 +40,7 @@ async def app_page(request: Request):
     if not user:
         return templates.TemplateResponse("landing.html", {
             "request": request,
-            "spots_remaining": 100,
+            "spots_remaining": 200,
         })
 
     from app.services.template_registry import list_regions, list_templates

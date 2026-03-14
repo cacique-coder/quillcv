@@ -41,7 +41,7 @@ async def pricing_page(request: Request):
     async with async_session() as db:
         alpha_count = await count_alpha_users(db)
 
-    spots_remaining = max(0, 100 - alpha_count)
+    spots_remaining = max(0, 200 - alpha_count)
 
     return templates.TemplateResponse("pricing.html", {
         "request": request,
