@@ -815,7 +815,7 @@ button[type="submit"]:active {
 }
 
 /* Nav link to demo */
-.site-header a { color: var(--accent); text-decoration: none; }
+.site-header a:not(.btn-cta) { color: var(--accent); text-decoration: none; }
 header a:hover { text-decoration: underline; }
 
 /* Photo Upload */
