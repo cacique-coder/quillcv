@@ -44,6 +44,8 @@ aliases:
   console: app exec -i 'python -i console.py'
   dbconsole: app exec -i 'python -c "import asyncio; from app.database import engine; from sqlalchemy import text; asyncio.run(engine.dispose())" && psql $DATABASE_URL'
   logs: app logs -f
+  migrate: app exec 'python -c "from alembic.config import Config; from alembic import command; command.upgrade(Config(\"alembic.ini\"), \"head\")"'
+  migrate-status: app exec 'python -c "from alembic.config import Config; from alembic import command; command.current(Config(\"alembic.ini\"), verbose=True)"'
 
 accessories:
   db:

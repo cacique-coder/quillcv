@@ -1,9 +1,14 @@
 """SQLAlchemy async database setup."""
 
+import asyncio
+import logging
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from config.settings import database_config
+
+logger = logging.getLogger(__name__)
 
 _config = database_config()
 
@@ -20,10 +25,21 @@ class Base(DeclarativeBase):
 
 
 async def init_db():
-    """Create all tables. Call on app startup."""
-    from app.models import APIRequestLog, ConsentRecord, Credit, ExpressionOfInterest, Invitation, Payment, PIIVault, SavedCV, User, WebAuthnCredential  # noqa: F401
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    """Run Alembic migrations on app startup.
+
+    Uses asyncio.to_thread because Alembic's upgrade() is synchronous.
+    Any pending migrations are applied before the app begins serving requests.
+    """
+    from alembic import command
+    from alembic.config import Config
+
+    def _run_upgrade():
+        alembic_cfg = Config("alembic.ini")
+        logger.info("Running Alembic migrations to head...")
+        command.upgrade(alembic_cfg, "head")
+        logger.info("Alembic migrations complete.")
+
+    await asyncio.to_thread(_run_upgrade)
 
 
 async def get_db() -> AsyncSession:
