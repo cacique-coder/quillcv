@@ -1516,7 +1516,7 @@ header a:hover { text-decoration: underline; }
 .ref-row {
     display: flex;
     gap: 0.5rem;
-    align-items: center;
+    align-items: flex-start;
 }
 @media (max-width: 600px) {
     .ref-row { flex-direction: column; }
@@ -5421,10 +5421,14 @@ select.input-field {
     width: 100%;
 }
 
-/* Inside a ref-row the wrap should match sibling inputs */
+/* Inside a ref-row the phone wrap should match sibling inputs — hide hint and flag to save space */
 .ref-row .phone-input-wrap {
     flex: 1;
     min-width: 0;
+}
+.ref-row .phone-input-hint,
+.ref-row .phone-input-flag {
+    display: none;
 }
 
 /* ============================================================
