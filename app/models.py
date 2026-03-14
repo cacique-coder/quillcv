@@ -107,6 +107,20 @@ class ExpressionOfInterest(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
+class Invitation(Base):
+    """Admin-issued invitation codes that grant credits on redemption."""
+    __tablename__ = "invitations"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    code: Mapped[str] = mapped_column(String(16), unique=True, nullable=False, index=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    credits: Mapped[int] = mapped_column(Integer, nullable=False)
+    note: Mapped[str] = mapped_column(String(255), default="")
+    redeemed_by: Mapped[str | None] = mapped_column(String(32), ForeignKey("users.id"), nullable=True)
+    redeemed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
 class APIRequestLog(Base):
     """Log of every LLM API call for cost tracking and debugging."""
     __tablename__ = "api_request_logs"

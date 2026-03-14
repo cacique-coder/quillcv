@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}You're invited to QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<style>
+  .invite-wrap {
+    max-width: 480px;
+    margin: 4rem auto;
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+  .invite-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2.5rem 2rem;
+  }
+  .invite-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  .invite-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .invite-sub {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
+    line-height: 1.5;
+  }
+  .credit-pill {
+    display: inline-block;
+    background: rgba(108, 99, 255, 0.12);
+    color: var(--accent);
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.4rem 1.2rem;
+    border-radius: 2rem;
+    margin-bottom: 1.75rem;
+  }
+  .invite-note {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-style: italic;
+    margin-bottom: 1.75rem;
+  }
+  .btn-primary {
+    display: block;
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    text-decoration: none;
+    margin-bottom: 0.75rem;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .auth-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+  .auth-links a {
+    display: block;
+    color: var(--accent);
+    font-size: 0.9rem;
+    text-decoration: none;
+    padding: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .auth-links a:hover {
+    border-color: var(--accent);
+  }
+  .already-claimed {
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    color: var(--green);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+  .error-banner {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: var(--radius);
+    padding: 1rem;
+    color: var(--red);
+    font-size: 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+</style>
+
+<div class="invite-wrap">
+  <div class="invite-card">
+    <div class="invite-icon">&#127881;</div>
+    <h1 class="invite-heading">You've been invited</h1>
+
+    {% if invitation.redeemed_by %}
+      <div class="already-claimed">
+        This invitation has already been claimed.
+      </div>
+      <p class="invite-sub">
+        Head to <a href="/login" style="color:var(--accent)">sign in</a> or <a href="/signup" style="color:var(--accent)">create an account</a>.
+      </p>
+
+    {% else %}
+      <p class="invite-sub">
+        Claim your free credits and start building ATS-optimized CVs tailored to any job.
+      </p>
+
+      <div class="credit-pill">{{ invitation.credits }} free credits</div>
+
+      {% if invitation.note %}
+      <p class="invite-note">"{{ invitation.note }}"</p>
+      {% endif %}
+
+      {% if error %}
+      <div class="error-banner">{{ error }}</div>
+      {% endif %}
+
+      {% if user %}
+        {# Logged in — show the claim button #}
+        <p class="invite-sub" style="margin-bottom:1rem">
+          Signed in as <strong>{{ user.email }}</strong>.
+          {% if invitation.email and invitation.email != user.email %}
+            This invitation is locked to a different email address.
+          {% endif %}
+        </p>
+        {% if not invitation.email or invitation.email == user.email %}
+        <form method="post" action="/invite/{{ code }}/redeem">
+          <button type="submit" class="btn-primary">
+            Claim {{ invitation.credits }} credits &rarr;
+          </button>
+        </form>
+        {% endif %}
+
+      {% else %}
+        {# Not logged in — show sign up / sign in options #}
+        <div class="auth-links">
+          <a href="/signup?invite={{ code }}">Create account and claim credits &rarr;</a>
+          <a href="/login?invite={{ code }}">Already have an account? Sign in</a>
+        </div>
+      {% endif %}
+
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

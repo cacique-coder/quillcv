@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %}Admin — Invitations | QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .admin-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+  .admin-sub {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  .admin-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+  }
+  .admin-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .admin-nav a:hover, .admin-nav a.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 2rem 0 0.75rem;
+  }
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: auto;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .data-table td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(108, 99, 255, 0.05); }
+  .status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .badge-pending  { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .badge-redeemed { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .badge-locked   { background: rgba(108, 99, 255, 0.15); color: var(--accent); }
+  .code-mono {
+    font-family: monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .invite-link-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .invite-link-text {
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Create form */
+  .create-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .create-card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 1rem;
+    color: var(--text);
+  }
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .form-group label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .form-group input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    min-width: 180px;
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .form-group input[type="number"] { min-width: 100px; }
+  .btn-create {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.55rem 1.25rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-create:hover { opacity: 0.9; }
+</style>
+
+<div class="admin-wrap">
+  <div class="admin-nav">
+    <a href="/admin">Dashboard</a>
+    <a href="/admin/requests">All Requests</a>
+    <a href="/admin/invitations" class="active">Invitations</a>
+  </div>
+
+  <h1 class="admin-heading">Admin — Invitations</h1>
+  <p class="admin-sub">Logged as {{ user.email }}</p>
+
+  <div class="create-card">
+    <h2>Create Invitation</h2>
+    <form method="post" action="/admin/invitations">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="inv-email">Email (optional — lock to one address)</label>
+          <input type="email" id="inv-email" name="email" placeholder="e.g. john@example.com">
+        </div>
+        <div class="form-group">
+          <label for="inv-credits">Credits <span style="color:var(--red)">*</span></label>
+          <input type="number" id="inv-credits" name="credits" min="1" max="9999" required placeholder="40">
+        </div>
+        <div class="form-group">
+          <label for="inv-note">Note (admin only)</label>
+          <input type="text" id="inv-note" name="note" placeholder="e.g. Alpha tester — John Smith" style="min-width:240px">
+        </div>
+        <button type="submit" class="btn-create">Create &rarr;</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="section-title">All Invitations ({{ invitations | length }})</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Credits</th>
+          <th>Locked to</th>
+          <th>Note</th>
+          <th>Status</th>
+          <th>Redeemed by</th>
+          <th>Date</th>
+          <th>Invite Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invitations %}
+        <tr>
+          <td><span class="code-mono">{{ inv.code }}</span></td>
+          <td style="font-weight:600">{{ inv.credits }}</td>
+          <td style="font-family:monospace;font-size:0.8rem">{{ inv.email or "—" }}</td>
+          <td style="font-size:0.82rem;color:var(--text-muted)">{{ inv.note or "—" }}</td>
+          <td>
+            {% if inv.redeemed_by %}
+              <span class="status-badge badge-redeemed">Redeemed</span>
+            {% elif inv.email %}
+              <span class="status-badge badge-locked">Locked</span>
+            {% else %}
+              <span class="status-badge badge-pending">Pending</span>
+            {% endif %}
+          </td>
+          <td style="font-family:monospace;font-size:0.8rem">
+            {% if inv.redeemed_by %}
+              {{ redeemer_map.get(inv.redeemed_by, inv.redeemed_by[:8] ~ "…") }}
+              {% if inv.redeemed_at %}
+                <br><span style="color:var(--text-muted);font-size:0.75rem">{{ inv.redeemed_at.strftime("%Y-%m-%d") }}</span>
+              {% endif %}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;font-size:0.8rem;color:var(--text-muted)">
+            {{ inv.created_at.strftime("%Y-%m-%d") }}
+          </td>
+          <td>
+            {% if not inv.redeemed_by %}
+            <div class="invite-link-wrap">
+              <span class="invite-link-text" id="link-{{ inv.code }}">https://quillcv.com/invite/{{ inv.code }}</span>
+              <button
+                class="copy-btn"
+                onclick="copyLink('{{ inv.code }}')"
+                id="copybtn-{{ inv.code }}"
+              >Copy</button>
+            </div>
+            {% else %}
+              <span style="color:var(--text-muted);font-size:0.8rem">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" style="color:var(--text-muted);text-align:center;padding:2rem">
+            No invitations yet — create one above.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function copyLink(code) {
+  var url = 'https://quillcv.com/invite/' + code;
+  navigator.clipboard.writeText(url).then(function() {
+    var btn = document.getElementById('copybtn-' + code);
+    btn.textContent = 'Copied!';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(function() {
+      btn.textContent = 'Copy';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+</script>
+{% endblock %}

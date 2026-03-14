@@ -2,17 +2,18 @@
 
 import logging
 import os
+import secrets
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, literal_column, select, text
 
 from app.auth.dependencies import get_current_user
 from app.database import async_session
-from app.models import APIRequestLog, ExpressionOfInterest
+from app.models import APIRequestLog, ExpressionOfInterest, Invitation, User
 
 logger = logging.getLogger(__name__)
 
@@ -236,3 +237,68 @@ async def admin_transaction_detail(request: Request, transaction_id: str):
             "total_duration": total_duration,
         },
     )
+
+
+# ── Admin: Invitations ─────────────────────────────────────
+
+
+@router.get("/admin/invitations")
+async def admin_invitations(request: Request):
+    """List all invitations and show the create form."""
+    user = await get_current_user(request)
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    async with async_session() as db:
+        rows = await db.execute(
+            select(Invitation).order_by(Invitation.created_at.desc())
+        )
+        invitations = rows.scalars().all()
+
+        # Fetch redeemer emails for display
+        redeemer_ids = [inv.redeemed_by for inv in invitations if inv.redeemed_by]
+        redeemer_map: dict[str, str] = {}
+        if redeemer_ids:
+            user_rows = await db.execute(
+                select(User.id, User.email).where(User.id.in_(redeemer_ids))
+            )
+            redeemer_map = {row.id: row.email for row in user_rows.all()}
+
+    return templates.TemplateResponse(
+        "admin_invitations.html",
+        {
+            "request": request,
+            "user": user,
+            "invitations": invitations,
+            "redeemer_map": redeemer_map,
+        },
+    )
+
+
+@router.post("/admin/invitations")
+async def admin_create_invitation(
+    request: Request,
+    email: str = Form(""),
+    credits: int = Form(...),
+    note: str = Form(""),
+):
+    """Create a new invitation code."""
+    user = await get_current_user(request)
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    # Generate a short URL-safe code (~8 printable chars)
+    code = secrets.token_urlsafe(6)
+
+    invitation = Invitation(
+        code=code,
+        email=email.lower().strip() if email.strip() else None,
+        credits=credits,
+        note=note.strip(),
+    )
+
+    async with async_session() as db:
+        db.add(invitation)
+        await db.commit()
+
+    return RedirectResponse("/admin/invitations", status_code=303)

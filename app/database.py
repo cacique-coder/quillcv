@@ -21,7 +21,7 @@ class Base(DeclarativeBase):
 
 async def init_db():
     """Create all tables. Call on app startup."""
-    from app.models import APIRequestLog, Credit, ExpressionOfInterest, Payment, SavedCV, User, WebAuthnCredential  # noqa: F401
+    from app.models import APIRequestLog, Credit, ExpressionOfInterest, Invitation, Payment, SavedCV, User, WebAuthnCredential  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
