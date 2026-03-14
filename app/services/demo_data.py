@@ -1434,6 +1434,7 @@ _REGION_PHONES = {
     "CA": "+1 (416) 555-0123", "NZ": "+64 21 123 4567", "DE": "+49 170 1234567",
     "FR": "+33 6 12 34 56 78", "NL": "+31 6 1234 5678", "IN": "+91 98765 43210",
     "BR": "+55 11 98765-4321", "AE": "+971 50 123 4567", "JP": "+81 90-1234-5678",
+    "CO": "+57 310 456 7890", "VE": "+58 412 345 6789",
 }
 
 _REGION_CITIES = {
@@ -1449,12 +1450,15 @@ _REGION_CITIES = {
     "BR": ["São Paulo", "Rio de Janeiro", "Belo Horizonte"],
     "AE": ["Dubai", "Abu Dhabi", "Sharjah"],
     "JP": ["Tokyo", "Osaka", "Fukuoka"],
+    "CO": ["Bogotá", "Medellín", "Cali"],
+    "VE": ["Caracas", "Valencia", "Maracaibo"],
 }
 
 _REGION_COUNTRY = {
     "AU": "Australia", "US": "USA", "UK": "UK", "CA": "Canada", "NZ": "New Zealand",
     "DE": "Germany", "FR": "France", "NL": "Netherlands", "IN": "India",
     "BR": "Brazil", "AE": "UAE", "JP": "Japan",
+    "CO": "Colombia", "VE": "Venezuela",
 }
 
 _REGION_UNIS = {
@@ -1470,6 +1474,8 @@ _REGION_UNIS = {
     "BR": ["Universidade de São Paulo (USP)", "Unicamp", "UFRJ"],
     "AE": ["American University of Sharjah", "University of Dubai", "NYU Abu Dhabi"],
     "JP": ["University of Tokyo", "Kyoto University", "Osaka University"],
+    "CO": ["Universidad de los Andes", "Universidad Nacional de Colombia", "Universidad EAFIT"],
+    "VE": ["Universidad Central de Venezuela (UCV)", "Universidad Simón Bolívar (USB)", "Universidad de Carabobo"],
 }
 
 
@@ -1499,12 +1505,15 @@ def _apply_region(data: dict, region_code: str) -> dict:
 
     # References for AU, NZ, NL, IN, AE
     if region_code in ("AU", "NZ", "NL", "IN", "AE"):
-        data["references"] = [
-            {"name": "Jane Smith", "title": "Director", "company": data["experience"][0]["company"],
-             "contact": f"jane.smith@company.com | {_REGION_PHONES.get(region_code, '')}"},
-            {"name": "John Doe", "title": "CTO", "company": data["experience"][1]["company"],
-             "contact": f"john.doe@company.com | {_REGION_PHONES.get(region_code, '')}"},
-        ]
+        exp = data.get("experience", [])
+        refs = []
+        if len(exp) >= 1:
+            refs.append({"name": "Jane Smith", "title": "Director", "company": exp[0]["company"],
+                         "contact": f"jane.smith@company.com | {_REGION_PHONES.get(region_code, '')}"})
+        if len(exp) >= 2:
+            refs.append({"name": "John Doe", "title": "CTO", "company": exp[1]["company"],
+                         "contact": f"john.doe@company.com | {_REGION_PHONES.get(region_code, '')}"})
+        data["references"] = refs
 
     # DOB for DE, NL, IN, BR, AE, JP
     if region_code == "DE":
@@ -1534,10 +1543,27 @@ def _apply_region(data: dict, region_code: str) -> dict:
         data["marital_status"] = "Unmarried"
         data["dependents"] = "0"
         data["visa_status"] = "Engineer/Specialist in Humanities Visa"
+    elif region_code == "CO":
+        data["dob"] = "15/03/1990"
+        data["nationality"] = "Colombiano(a)"
+        data["marital_status"] = "Soltero(a)"
+        data["cedula"] = "1.023.456.789"
+        data["languages"] = ["Español (Nativo)", "Inglés (B2 — Upper Intermediate)"]
+    elif region_code == "VE":
+        data["dob"] = "15/03/1990"
+        data["nationality"] = "Venezolano(a)"
+        data["marital_status"] = "Soltero(a)"
+        data["cedula"] = "V-18.456.321"
+        data["languages"] = ["Español (Nativo)", "Inglés (B1 — Intermedio)"]
     elif region_code == "FR":
         data["languages"] = ["English (Native)", "French (B2)"]
     elif region_code == "CA":
         data["languages"] = ["English (Native)", "French (Professional)"]
+
+    # Localise text content for non-English regions
+    lang = _REGION_LANG.get(region_code)
+    if lang:
+        _localize(data, lang)
 
     return data
 
@@ -1577,6 +1603,783 @@ def _americanize(data: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Localisation
+# ---------------------------------------------------------------------------
+
+# Maps region code → ISO language code for non-English locales.
+_REGION_LANG = {
+    "CO": "es",
+    "VE": "es",
+    "BR": "pt",
+    "JP": "ja",
+    "DE": "de",
+    "FR": "fr",
+    "NL": "nl",
+}
+
+# ---------------------------------------------------------------------------
+# Common structural translations — category labels, degree names, job titles,
+# certifications, and skills that appear across multiple roles.
+# Technical terms (Python, AWS, Docker, etc.) are intentionally kept in English.
+# ---------------------------------------------------------------------------
+
+_TRANSLATIONS: dict[str, dict[str, str]] = {
+    # ---- skill / skills_grouped category labels ----
+    "es": {
+        # Category labels
+        "Languages": "Lenguajes",
+        "Frameworks": "Frameworks",
+        "Databases": "Bases de Datos",
+        "Infrastructure": "Infraestructura",
+        "Analysis": "Análisis",
+        "Compliance": "Cumplimiento Normativo",
+        "Tools": "Herramientas",
+        "Soft Skills": "Habilidades Blandas",
+        "Leadership": "Liderazgo",
+        "Strategy": "Estrategia",
+        "Technical": "Técnico",
+        "Research": "Investigación",
+        "Academic": "Académico",
+        "Clinical": "Clínico",
+        "Procedures": "Procedimientos",
+        "Professional": "Profesional",
+        "Transactional": "Transaccional",
+        "Advisory": "Asesoría",
+        "Drafting": "Redacción Jurídica",
+        "Channels": "Canales",
+        "Methods": "Métodos",
+        "Design": "Diseño",
+        "Print": "Impresión",
+        "Sales": "Ventas",
+        "Management": "Gestión",
+        "Domains": "Áreas",
+        "Methodologies": "Metodologías",
+        "Frontend": "Frontend",
+        "Backend": "Backend",
+        "Integrations": "Integraciones",
+        "Transferable": "Habilidades Transferibles",
+        "UX Design": "Diseño UX",
+        "Adobe Suite": "Suite Adobe",
+        "Digital": "Digital",
+        # Degree names
+        "Bachelor of Computer Science": "Licenciatura en Ciencias de la Computación",
+        "Master of Computer Science": "Máster en Ciencias de la Computación",
+        "PhD in Computer Science": "Doctorado en Ciencias de la Computación",
+        "Bachelor of Business (Marketing)": "Licenciatura en Administración de Empresas (Marketing)",
+        "Bachelor of Commerce (Accounting & Finance)": "Licenciatura en Comercio (Contabilidad y Finanzas)",
+        "Master of Applied Finance": "Máster en Finanzas Aplicadas",
+        "MBA (Technology Management)": "MBA (Gestión Tecnológica)",
+        "Bachelor of Software Engineering": "Licenciatura en Ingeniería de Software",
+        "Bachelor of Design (Interaction Design)": "Licenciatura en Diseño (Diseño de Interacción)",
+        "Master of Project Management": "Máster en Gestión de Proyectos",
+        "Bachelor of Information Technology": "Licenciatura en Tecnología de la Información",
+        "Bachelor of Nursing": "Licenciatura en Enfermería",
+        "Juris Doctor": "Doctorado en Derecho (J.D.)",
+        "Bachelor of Commerce (Finance)": "Licenciatura en Comercio (Finanzas)",
+        "Bachelor of Design (Visual Communication)": "Licenciatura en Diseño (Comunicación Visual)",
+        "UX Design Immersive Bootcamp": "Bootcamp Intensivo de Diseño UX",
+        "Master of Teaching (Secondary)": "Máster en Educación (Secundaria)",
+        "Bachelor of Arts (English & Psychology)": "Licenciatura en Artes (Inglés y Psicología)",
+        # Common job title words
+        "Senior": "Senior",
+        "Junior": "Junior",
+        "Manager": "Gerente",
+        "Director": "Director",
+        "Engineer": "Ingeniero",
+        "Designer": "Diseñador",
+        "Analyst": "Analista",
+        "Associate": "Asociado",
+        "Graduate": "Recién Graduado",
+        "Freelancer": "Freelancer",
+    },
+    "pt": {
+        # Category labels
+        "Languages": "Linguagens",
+        "Frameworks": "Frameworks",
+        "Databases": "Bancos de Dados",
+        "Infrastructure": "Infraestrutura",
+        "Analysis": "Análise",
+        "Compliance": "Conformidade",
+        "Tools": "Ferramentas",
+        "Soft Skills": "Habilidades Interpessoais",
+        "Leadership": "Liderança",
+        "Strategy": "Estratégia",
+        "Technical": "Técnico",
+        "Research": "Pesquisa",
+        "Academic": "Acadêmico",
+        "Clinical": "Clínico",
+        "Procedures": "Procedimentos",
+        "Professional": "Profissional",
+        "Transactional": "Transacional",
+        "Advisory": "Consultoria",
+        "Drafting": "Redação Jurídica",
+        "Channels": "Canais",
+        "Methods": "Métodos",
+        "Design": "Design",
+        "Print": "Impressão",
+        "Sales": "Vendas",
+        "Management": "Gestão",
+        "Domains": "Domínios",
+        "Methodologies": "Metodologias",
+        "Frontend": "Frontend",
+        "Backend": "Backend",
+        "Integrations": "Integrações",
+        "Transferable": "Habilidades Transferíveis",
+        "UX Design": "Design UX",
+        "Adobe Suite": "Suite Adobe",
+        "Digital": "Digital",
+        # Degree names
+        "Bachelor of Computer Science": "Bacharelado em Ciência da Computação",
+        "Master of Computer Science": "Mestrado em Ciência da Computação",
+        "PhD in Computer Science": "Doutorado em Ciência da Computação",
+        "Bachelor of Business (Marketing)": "Bacharelado em Administração (Marketing)",
+        "Bachelor of Commerce (Accounting & Finance)": "Bacharelado em Comércio (Contabilidade e Finanças)",
+        "Master of Applied Finance": "Mestrado em Finanças Aplicadas",
+        "MBA (Technology Management)": "MBA (Gestão de Tecnologia)",
+        "Bachelor of Software Engineering": "Bacharelado em Engenharia de Software",
+        "Bachelor of Design (Interaction Design)": "Bacharelado em Design (Design de Interação)",
+        "Master of Project Management": "Mestrado em Gestão de Projetos",
+        "Bachelor of Information Technology": "Bacharelado em Tecnologia da Informação",
+        "Bachelor of Nursing": "Bacharelado em Enfermagem",
+        "Juris Doctor": "Doutorado em Direito (J.D.)",
+        "Bachelor of Commerce (Finance)": "Bacharelado em Comércio (Finanças)",
+        "Bachelor of Design (Visual Communication)": "Bacharelado em Design (Comunicação Visual)",
+        "UX Design Immersive Bootcamp": "Bootcamp Intensivo de Design UX",
+        "Master of Teaching (Secondary)": "Mestrado em Educação (Ensino Médio)",
+        "Bachelor of Arts (English & Psychology)": "Bacharelado em Artes (Inglês e Psicologia)",
+    },
+    "ja": {
+        # Category labels
+        "Languages": "プログラミング言語",
+        "Frameworks": "フレームワーク",
+        "Databases": "データベース",
+        "Infrastructure": "インフラ",
+        "Analysis": "分析",
+        "Compliance": "コンプライアンス",
+        "Tools": "ツール",
+        "Soft Skills": "ソフトスキル",
+        "Leadership": "リーダーシップ",
+        "Strategy": "戦略",
+        "Technical": "技術",
+        "Research": "研究",
+        "Academic": "学術",
+        "Clinical": "臨床",
+        "Procedures": "処置",
+        "Professional": "専門",
+        "Transactional": "取引",
+        "Advisory": "助言",
+        "Drafting": "起草",
+        "Channels": "チャネル",
+        "Methods": "手法",
+        "Design": "デザイン",
+        "Print": "印刷",
+        "Sales": "営業",
+        "Management": "マネジメント",
+        "Domains": "領域",
+        "Methodologies": "方法論",
+        "Frontend": "フロントエンド",
+        "Backend": "バックエンド",
+        "Integrations": "インテグレーション",
+        "Transferable": "転用可能スキル",
+        "UX Design": "UXデザイン",
+        "Adobe Suite": "Adobeスイート",
+        "Digital": "デジタル",
+        # Degree names
+        "Bachelor of Computer Science": "コンピュータサイエンス学士",
+        "Master of Computer Science": "コンピュータサイエンス修士",
+        "PhD in Computer Science": "コンピュータサイエンス博士",
+        "Bachelor of Business (Marketing)": "経営学士（マーケティング）",
+        "Bachelor of Commerce (Accounting & Finance)": "商学士（会計・財務）",
+        "Master of Applied Finance": "応用ファイナンス修士",
+        "MBA (Technology Management)": "MBA（テクノロジーマネジメント）",
+        "Bachelor of Software Engineering": "ソフトウェア工学学士",
+        "Bachelor of Design (Interaction Design)": "デザイン学士（インタラクションデザイン）",
+        "Master of Project Management": "プロジェクトマネジメント修士",
+        "Bachelor of Information Technology": "情報技術学士",
+        "Bachelor of Nursing": "看護学士",
+        "Juris Doctor": "法務博士（J.D.）",
+        "Bachelor of Commerce (Finance)": "商学士（ファイナンス）",
+        "Bachelor of Design (Visual Communication)": "デザイン学士（ビジュアルコミュニケーション）",
+        "UX Design Immersive Bootcamp": "UXデザイン集中ブートキャンプ",
+        "Master of Teaching (Secondary)": "教育修士（中等教育）",
+        "Bachelor of Arts (English & Psychology)": "文学士（英語・心理学）",
+    },
+    "de": {
+        # Category labels
+        "Languages": "Programmiersprachen",
+        "Frameworks": "Frameworks",
+        "Databases": "Datenbanken",
+        "Infrastructure": "Infrastruktur",
+        "Analysis": "Analyse",
+        "Compliance": "Compliance",
+        "Tools": "Werkzeuge",
+        "Soft Skills": "Soft Skills",
+        "Leadership": "Führung",
+        "Strategy": "Strategie",
+        "Technical": "Technisch",
+        "Research": "Forschung",
+        "Academic": "Akademisch",
+        "Clinical": "Klinisch",
+        "Procedures": "Verfahren",
+        "Professional": "Fachlich",
+        "Transactional": "Transaktional",
+        "Advisory": "Beratung",
+        "Drafting": "Vertragsgestaltung",
+        "Channels": "Kanäle",
+        "Methods": "Methoden",
+        "Design": "Design",
+        "Print": "Druck",
+        "Sales": "Vertrieb",
+        "Management": "Management",
+        "Domains": "Bereiche",
+        "Methodologies": "Methodologien",
+        "Frontend": "Frontend",
+        "Backend": "Backend",
+        "Integrations": "Integrationen",
+        "Transferable": "Übertragbare Fähigkeiten",
+        "UX Design": "UX-Design",
+        "Adobe Suite": "Adobe Suite",
+        "Digital": "Digital",
+        # Degree names
+        "Bachelor of Computer Science": "Bachelor of Science Informatik",
+        "Master of Computer Science": "Master of Science Informatik",
+        "PhD in Computer Science": "Promotion Informatik (Dr. rer. nat.)",
+        "Bachelor of Business (Marketing)": "Bachelor of Business Administration (Marketing)",
+        "Bachelor of Commerce (Accounting & Finance)": "Bachelor of Commerce (Rechnungswesen & Finanzen)",
+        "Master of Applied Finance": "Master of Finance",
+        "MBA (Technology Management)": "MBA (Technologiemanagement)",
+        "Bachelor of Software Engineering": "Bachelor of Science Software Engineering",
+        "Bachelor of Design (Interaction Design)": "Bachelor of Arts Design (Interaktionsdesign)",
+        "Master of Project Management": "Master of Science Projektmanagement",
+        "Bachelor of Information Technology": "Bachelor of Science Informatik",
+        "Bachelor of Nursing": "Bachelor of Science Pflege",
+        "Juris Doctor": "Erste Juristische Prüfung (Staatsexamen)",
+        "Bachelor of Commerce (Finance)": "Bachelor of Commerce (Finanzen)",
+        "Bachelor of Design (Visual Communication)": "Bachelor of Arts Kommunikationsdesign",
+        "UX Design Immersive Bootcamp": "UX-Design Intensiv-Bootcamp",
+        "Master of Teaching (Secondary)": "Master of Education (Sekundarstufe)",
+        "Bachelor of Arts (English & Psychology)": "Bachelor of Arts (Englisch & Psychologie)",
+    },
+    "fr": {
+        # Category labels
+        "Languages": "Langages",
+        "Frameworks": "Frameworks",
+        "Databases": "Bases de Données",
+        "Infrastructure": "Infrastructure",
+        "Analysis": "Analyse",
+        "Compliance": "Conformité",
+        "Tools": "Outils",
+        "Soft Skills": "Compétences Relationnelles",
+        "Leadership": "Leadership",
+        "Strategy": "Stratégie",
+        "Technical": "Technique",
+        "Research": "Recherche",
+        "Academic": "Académique",
+        "Clinical": "Clinique",
+        "Procedures": "Procédures",
+        "Professional": "Professionnel",
+        "Transactional": "Transactionnel",
+        "Advisory": "Conseil",
+        "Drafting": "Rédaction Juridique",
+        "Channels": "Canaux",
+        "Methods": "Méthodes",
+        "Design": "Design",
+        "Print": "Impression",
+        "Sales": "Ventes",
+        "Management": "Management",
+        "Domains": "Domaines",
+        "Methodologies": "Méthodologies",
+        "Frontend": "Frontend",
+        "Backend": "Backend",
+        "Integrations": "Intégrations",
+        "Transferable": "Compétences Transférables",
+        "UX Design": "Design UX",
+        "Adobe Suite": "Suite Adobe",
+        "Digital": "Numérique",
+        # Degree names
+        "Bachelor of Computer Science": "Licence en Informatique",
+        "Master of Computer Science": "Master en Informatique",
+        "PhD in Computer Science": "Doctorat en Informatique",
+        "Bachelor of Business (Marketing)": "Licence en Gestion (Marketing)",
+        "Bachelor of Commerce (Accounting & Finance)": "Licence en Commerce (Comptabilité et Finance)",
+        "Master of Applied Finance": "Master en Finance Appliquée",
+        "MBA (Technology Management)": "MBA (Management des Technologies)",
+        "Bachelor of Software Engineering": "Licence en Génie Logiciel",
+        "Bachelor of Design (Interaction Design)": "Licence en Design (Design d'Interaction)",
+        "Master of Project Management": "Master en Management de Projet",
+        "Bachelor of Information Technology": "Licence en Technologie de l'Information",
+        "Bachelor of Nursing": "Licence en Sciences Infirmières",
+        "Juris Doctor": "Master en Droit (M1/M2)",
+        "Bachelor of Commerce (Finance)": "Licence en Commerce (Finance)",
+        "Bachelor of Design (Visual Communication)": "Licence en Design (Communication Visuelle)",
+        "UX Design Immersive Bootcamp": "Formation Intensive UX Design",
+        "Master of Teaching (Secondary)": "Master MEEF (Enseignement Secondaire)",
+        "Bachelor of Arts (English & Psychology)": "Licence en Lettres (Anglais et Psychologie)",
+    },
+    "nl": {
+        # Category labels
+        "Languages": "Programmeertalen",
+        "Frameworks": "Frameworks",
+        "Databases": "Databases",
+        "Infrastructure": "Infrastructuur",
+        "Analysis": "Analyse",
+        "Compliance": "Compliance",
+        "Tools": "Gereedschappen",
+        "Soft Skills": "Soft Skills",
+        "Leadership": "Leiderschap",
+        "Strategy": "Strategie",
+        "Technical": "Technisch",
+        "Research": "Onderzoek",
+        "Academic": "Academisch",
+        "Clinical": "Klinisch",
+        "Procedures": "Procedures",
+        "Professional": "Professioneel",
+        "Transactional": "Transactioneel",
+        "Advisory": "Advies",
+        "Drafting": "Juridisch Opstellen",
+        "Channels": "Kanalen",
+        "Methods": "Methoden",
+        "Design": "Design",
+        "Print": "Druk",
+        "Sales": "Verkoop",
+        "Management": "Management",
+        "Domains": "Domeinen",
+        "Methodologies": "Methodologieën",
+        "Frontend": "Frontend",
+        "Backend": "Backend",
+        "Integrations": "Integraties",
+        "Transferable": "Overdraagbare Vaardigheden",
+        "UX Design": "UX-ontwerp",
+        "Adobe Suite": "Adobe Suite",
+        "Digital": "Digitaal",
+        # Degree names
+        "Bachelor of Computer Science": "Bachelor Informatica",
+        "Master of Computer Science": "Master Informatica",
+        "PhD in Computer Science": "Promotie Informatica",
+        "Bachelor of Business (Marketing)": "Bachelor Bedrijfskunde (Marketing)",
+        "Bachelor of Commerce (Accounting & Finance)": "Bachelor Commerce (Accounting & Finance)",
+        "Master of Applied Finance": "Master Finance",
+        "MBA (Technology Management)": "MBA (Technologiemanagement)",
+        "Bachelor of Software Engineering": "Bachelor Software Engineering",
+        "Bachelor of Design (Interaction Design)": "Bachelor Design (Interactieontwerp)",
+        "Master of Project Management": "Master Projectmanagement",
+        "Bachelor of Information Technology": "Bachelor Informatica",
+        "Bachelor of Nursing": "Bachelor Verpleegkunde",
+        "Juris Doctor": "Master Rechtsgeleerdheid",
+        "Bachelor of Commerce (Finance)": "Bachelor Commerce (Finance)",
+        "Bachelor of Design (Visual Communication)": "Bachelor Design (Visuele Communicatie)",
+        "UX Design Immersive Bootcamp": "Intensieve UX Design Bootcamp",
+        "Master of Teaching (Secondary)": "Master Leraar Voortgezet Onderwijs",
+        "Bachelor of Arts (English & Psychology)": "Bachelor Letteren (Engels & Psychologie)",
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Full content translations for the software-engineer role (most previewed).
+# Other roles receive structural translations only (titles, categories, degrees).
+# ---------------------------------------------------------------------------
+
+_SOFTWARE_ENGINEER_CONTENT: dict[str, dict] = {
+    "es": {
+        "title": "Ingeniero de Software Senior",
+        "summary": (
+            "Ingeniero de software orientado a resultados con más de 8 años de experiencia "
+            "desarrollando aplicaciones web escalables y sistemas distribuidos. Historial "
+            "comprobado liderando equipos multifuncionales, entregando proyectos a tiempo y "
+            "reduciendo costos de infraestructura en un 40%. Apasionado por el código limpio, "
+            "la mentoría de desarrolladores junior y la mejora continua."
+        ),
+        "experience": [
+            {
+                "title": "Ingeniero de Software Senior",
+                "bullets": [
+                    "Lideré la migración de una aplicación monolítica a microservicios, reduciendo el tiempo de despliegue en un 75%",
+                    "Diseñé e implementé un pipeline de datos en tiempo real que procesa más de 2 millones de eventos por día",
+                    "Mentoreé a un equipo de 5 desarrolladores junior mediante revisiones de código y programación en pareja",
+                    "Reduje los costos de infraestructura en AWS en un 40% mediante optimización de la arquitectura",
+                ],
+            },
+            {
+                "title": "Ingeniero de Software",
+                "bullets": [
+                    "Desarrollé un panel de análisis para clientes con más de 50.000 usuarios activos mensuales",
+                    "Implementé un pipeline CI/CD reduciendo el ciclo de lanzamiento de 2 semanas a despliegues diarios",
+                    "Optimicé las consultas de base de datos logrando una mejora del 60% en los tiempos de respuesta de la API",
+                ],
+            },
+            {
+                "title": "Desarrollador Junior",
+                "bullets": [
+                    "Desarrollé APIs RESTful para una aplicación móvil con más de 10.000 descargas",
+                    "Escribí suites de pruebas integrales logrando más del 90% de cobertura de código",
+                    "Colaboré con el equipo de UX para implementar diseño responsivo en 3 productos",
+                ],
+            },
+        ],
+        "skills_grouped_categories": {
+            "Languages": "Lenguajes",
+            "Frameworks": "Frameworks",
+            "Databases": "Bases de Datos",
+            "Infrastructure": "Infraestructura",
+        },
+        "education": [
+            {"degree": "Licenciatura en Ciencias de la Computación"},
+        ],
+        "certifications": [
+            "AWS Solutions Architect – Asociado (2023)",
+            "Certified Kubernetes Administrator (2022)",
+        ],
+        "key_achievements": [
+            "Reducción de costos de infraestructura en $250K/año mediante rediseño de arquitectura cloud",
+            "Lideré un equipo de 8 ingenieros entregando un producto desde cero en 6 meses",
+            "Logré el 99,99% de disponibilidad para el sistema crítico de procesamiento de pagos",
+        ],
+        "projects": [
+            {
+                "description": "Herramienta de visualización de métricas en tiempo real de código abierto para clústeres de Kubernetes",
+            },
+        ],
+    },
+    "pt": {
+        "title": "Engenheiro de Software Sênior",
+        "summary": (
+            "Engenheiro de software orientado a resultados com mais de 8 anos de experiência "
+            "desenvolvendo aplicações web escaláveis e sistemas distribuídos. Histórico comprovado "
+            "de liderança de equipes multifuncionais, entrega de projetos dentro do prazo e "
+            "redução de custos de infraestrutura em 40%. Apaixonado por código limpo, "
+            "mentoria de desenvolvedores júnior e melhoria contínua."
+        ),
+        "experience": [
+            {
+                "title": "Engenheiro de Software Sênior",
+                "bullets": [
+                    "Liderei a migração de aplicação monolítica para microsserviços, reduzindo o tempo de deploy em 75%",
+                    "Projetei e implementei pipeline de dados em tempo real processando mais de 2 milhões de eventos/dia",
+                    "Orientei equipe de 5 desenvolvedores júnior por meio de revisões de código e programação em par",
+                    "Reduzi os custos de infraestrutura na AWS em 40% por meio de otimização de arquitetura",
+                ],
+            },
+            {
+                "title": "Engenheiro de Software",
+                "bullets": [
+                    "Desenvolvi painel de análise para clientes com mais de 50 mil usuários ativos mensais",
+                    "Implementei pipeline CI/CD reduzindo o ciclo de releases de 2 semanas para deploys diários",
+                    "Otimizei consultas de banco de dados resultando em melhoria de 60% nos tempos de resposta da API",
+                ],
+            },
+            {
+                "title": "Desenvolvedor Júnior",
+                "bullets": [
+                    "Desenvolvi APIs RESTful para aplicativo móvel com mais de 10 mil downloads",
+                    "Escrevi suítes de testes abrangentes atingindo mais de 90% de cobertura de código",
+                    "Colaborei com a equipe de UX para implementar design responsivo em 3 produtos",
+                ],
+            },
+        ],
+        "education": [
+            {"degree": "Bacharelado em Ciência da Computação"},
+        ],
+        "certifications": [
+            "AWS Solutions Architect – Associado (2023)",
+            "Certified Kubernetes Administrator (2022)",
+        ],
+        "key_achievements": [
+            "Reduzi custos de infraestrutura em $250K/ano por meio de redesenho da arquitetura cloud",
+            "Liderei equipe de 8 engenheiros entregando produto do zero em 6 meses",
+            "Alcancei 99,99% de disponibilidade para sistema crítico de processamento de pagamentos",
+        ],
+        "projects": [
+            {
+                "description": "Ferramenta de visualização de métricas em tempo real de código aberto para clusters Kubernetes",
+            },
+        ],
+    },
+    "ja": {
+        "title": "シニアソフトウェアエンジニア",
+        "summary": (
+            "8年以上の経験を持つ成果重視のソフトウェアエンジニア。スケーラブルなウェブアプリケーションと"
+            "分散システムの構築を専門とする。クロスファンクショナルチームのリード、納期内のプロジェクト"
+            "デリバリー、インフラコスト40%削減の実績あり。クリーンコード、ジュニア開発者のメンタリング、"
+            "継続的な改善に情熱を持つ。"
+        ),
+        "experience": [
+            {
+                "title": "シニアソフトウェアエンジニア",
+                "bullets": [
+                    "モノリシックアプリケーションのマイクロサービス移行をリードし、デプロイ時間を75%短縮",
+                    "1日200万件以上のイベントを処理するリアルタイムデータパイプラインを設計・実装",
+                    "コードレビューとペアプログラミングを通じてジュニア開発者5名をメンタリング",
+                    "アーキテクチャ最適化によりAWSインフラコストを40%削減",
+                ],
+            },
+            {
+                "title": "ソフトウェアエンジニア",
+                "bullets": [
+                    "月間アクティブユーザー5万人以上のカスタマー向け分析ダッシュボードを構築",
+                    "CI/CDパイプラインを実装し、リリースサイクルを2週間から日次デプロイに短縮",
+                    "データベースクエリを最適化し、APIレスポンスタイムを60%改善",
+                ],
+            },
+            {
+                "title": "ジュニアデベロッパー",
+                "bullets": [
+                    "1万件以上のダウンロード数を誇るモバイルアプリ向けRESTful APIを開発",
+                    "包括的なテストスイートを作成し、90%以上のコードカバレッジを達成",
+                    "UXチームと協力して3製品にレスポンシブデザインを実装",
+                ],
+            },
+        ],
+        "education": [
+            {"degree": "コンピュータサイエンス学士"},
+        ],
+        "certifications": [
+            "AWSソリューションアーキテクト – アソシエイト（2023年）",
+            "Certified Kubernetes Administrator（2022年）",
+        ],
+        "key_achievements": [
+            "クラウドアーキテクチャ再設計によりインフラコストを年間$25万削減",
+            "8名のエンジニアチームをリードし、新規プロダクトを6ヶ月で開発・リリース",
+            "決済処理システムの重要稼働率99.99%を達成",
+        ],
+        "projects": [
+            {
+                "description": "Kubernetesクラスター向けオープンソースのリアルタイムメトリクス可視化ツール",
+            },
+        ],
+    },
+    "de": {
+        "title": "Senior Software Engineer",
+        "summary": (
+            "Ergebnisorientierter Software Engineer mit über 8 Jahren Erfahrung in der Entwicklung "
+            "skalierbarer Webanwendungen und verteilter Systeme. Nachgewiesene Erfolgsbilanz bei der "
+            "Leitung funktionsübergreifender Teams, pünktlicher Projektablieferung und Senkung der "
+            "Infrastrukturkosten um 40%. Leidenschaft für sauberen Code, die Förderung junger "
+            "Entwickler und kontinuierliche Verbesserung."
+        ),
+        "experience": [
+            {
+                "title": "Senior Software Engineer",
+                "bullets": [
+                    "Leitete die Migration einer monolithischen Anwendung zu Microservices und reduzierte die Deployment-Zeit um 75%",
+                    "Entwarf und implementierte eine Echtzeit-Datenpipeline, die täglich über 2 Millionen Ereignisse verarbeitet",
+                    "Betreute ein Team von 5 Junior-Entwicklern durch Code-Reviews und Pair Programming",
+                    "Senkte die AWS-Infrastrukturkosten durch Architekturoptimierung um 40%",
+                ],
+            },
+            {
+                "title": "Software Engineer",
+                "bullets": [
+                    "Entwickelte ein kundenorientiertes Analyse-Dashboard mit über 50.000 monatlich aktiven Nutzern",
+                    "Implementierte eine CI/CD-Pipeline und verkürzte den Release-Zyklus von 2 Wochen auf tägliche Deployments",
+                    "Optimierte Datenbankabfragen und erzielte eine 60%ige Verbesserung der API-Antwortzeiten",
+                ],
+            },
+            {
+                "title": "Junior Developer",
+                "bullets": [
+                    "Entwickelte RESTful APIs für eine mobile Anwendung mit über 10.000 Downloads",
+                    "Schrieb umfassende Testsuites mit über 90% Codeabdeckung",
+                    "Arbeitete mit dem UX-Team zusammen, um responsives Design in 3 Produkten umzusetzen",
+                ],
+            },
+        ],
+        "education": [
+            {"degree": "Bachelor of Science Informatik"},
+        ],
+        "certifications": [
+            "AWS Solutions Architect – Associate (2023)",
+            "Certified Kubernetes Administrator (2022)",
+        ],
+        "key_achievements": [
+            "Infrastrukturkosten um $250K/Jahr durch Cloud-Architektur-Redesign gesenkt",
+            "Team von 8 Ingenieuren geleitet und ein Greenfield-Produkt in 6 Monaten ausgeliefert",
+            "99,99% Verfügbarkeit für kritisches Zahlungsverarbeitungssystem erreicht",
+        ],
+        "projects": [
+            {
+                "description": "Open-Source-Echtzeit-Metrikvisualisierungstool für Kubernetes-Cluster",
+            },
+        ],
+    },
+    "fr": {
+        "title": "Ingénieur Logiciel Senior",
+        "summary": (
+            "Ingénieur logiciel axé sur les résultats avec plus de 8 ans d'expérience dans la "
+            "conception d'applications web évolutives et de systèmes distribués. Solide expérience "
+            "dans la direction d'équipes pluridisciplinaires, la livraison de projets dans les "
+            "délais et la réduction des coûts d'infrastructure de 40%. Passionné par le code "
+            "propre, le mentorat des développeurs juniors et l'amélioration continue."
+        ),
+        "experience": [
+            {
+                "title": "Ingénieur Logiciel Senior",
+                "bullets": [
+                    "Dirigé la migration d'une application monolithique vers les microservices, réduisant le temps de déploiement de 75%",
+                    "Conçu et mis en œuvre un pipeline de données en temps réel traitant plus de 2 millions d'événements par jour",
+                    "Mentoré une équipe de 5 développeurs juniors via des revues de code et la programmation en binôme",
+                    "Réduit les coûts d'infrastructure AWS de 40% grâce à l'optimisation de l'architecture",
+                ],
+            },
+            {
+                "title": "Ingénieur Logiciel",
+                "bullets": [
+                    "Développé un tableau de bord analytique client utilisé par plus de 50 000 utilisateurs actifs mensuels",
+                    "Mis en place un pipeline CI/CD réduisant le cycle de mise en production de 2 semaines à des déploiements quotidiens",
+                    "Optimisé les requêtes de base de données avec une amélioration de 60% des temps de réponse API",
+                ],
+            },
+            {
+                "title": "Développeur Junior",
+                "bullets": [
+                    "Développé des API RESTful pour une application mobile avec plus de 10 000 téléchargements",
+                    "Rédigé des suites de tests complètes atteignant plus de 90% de couverture de code",
+                    "Collaboré avec l'équipe UX pour implémenter un design responsive sur 3 produits",
+                ],
+            },
+        ],
+        "education": [
+            {"degree": "Licence en Informatique"},
+        ],
+        "certifications": [
+            "AWS Solutions Architect – Associate (2023)",
+            "Certified Kubernetes Administrator (2022)",
+        ],
+        "key_achievements": [
+            "Réduction des coûts d'infrastructure de $250K/an grâce à la refonte de l'architecture cloud",
+            "Dirigé une équipe de 8 ingénieurs pour livrer un produit from scratch en 6 mois",
+            "Atteint 99,99% de disponibilité pour le système critique de traitement des paiements",
+        ],
+        "projects": [
+            {
+                "description": "Outil open-source de visualisation de métriques en temps réel pour les clusters Kubernetes",
+            },
+        ],
+    },
+    "nl": {
+        "title": "Senior Software Engineer",
+        "summary": (
+            "Resultaatgerichte software engineer met meer dan 8 jaar ervaring in het bouwen van "
+            "schaalbare webapplicaties en gedistribueerde systemen. Bewezen staat van dienst in het "
+            "leiden van cross-functionele teams, het on-time opleveren van projecten en het "
+            "verlagen van infrastructuurkosten met 40%. Gepassioneerd over clean code, het "
+            "begeleiden van junior ontwikkelaars en continue verbetering."
+        ),
+        "experience": [
+            {
+                "title": "Senior Software Engineer",
+                "bullets": [
+                    "Leidde de migratie van een monolithische applicatie naar microservices, waardoor de deploytijd met 75% werd verkort",
+                    "Ontwierp en implementeerde een realtime datapipeline die meer dan 2 miljoen events per dag verwerkt",
+                    "Begeleidde een team van 5 junior ontwikkelaars via code reviews en pair programming",
+                    "Verlaagde AWS-infrastructuurkosten met 40% door architectuuroptimalisatie",
+                ],
+            },
+            {
+                "title": "Software Engineer",
+                "bullets": [
+                    "Ontwikkelde een klantgericht analysedashboard met meer dan 50.000 maandelijkse actieve gebruikers",
+                    "Implementeerde een CI/CD-pipeline waardoor de releasecyclus van 2 weken naar dagelijkse deploys werd teruggebracht",
+                    "Optimaliseerde databasequeries met een verbetering van 60% in API-responstijden",
+                ],
+            },
+            {
+                "title": "Junior Developer",
+                "bullets": [
+                    "Ontwikkelde RESTful API's voor een mobiele applicatie met meer dan 10.000 downloads",
+                    "Schreef uitgebreide testsuites met meer dan 90% codedekking",
+                    "Werkte samen met het UX-team om responsief design te implementeren in 3 producten",
+                ],
+            },
+        ],
+        "education": [
+            {"degree": "Bachelor Informatica"},
+        ],
+        "certifications": [
+            "AWS Solutions Architect – Associate (2023)",
+            "Certified Kubernetes Administrator (2022)",
+        ],
+        "key_achievements": [
+            "Infrastructuurkosten verlaagd met $250K/jaar door herontwerp van cloudarchitectuur",
+            "Team van 8 engineers geleid bij het opleveren van een greenfield product in 6 maanden",
+            "99,99% uptime bereikt voor kritisch betalingsverwerkingssysteem",
+        ],
+        "projects": [
+            {
+                "description": "Open-source realtime metriekvisualisatietool voor Kubernetes-clusters",
+            },
+        ],
+    },
+}
+
+
+def _localize(data: dict, lang: str) -> dict:
+    """Translate CV content for non-English regions.
+
+    For the software-engineer role (most previewed), full high-quality translations
+    are applied. For all roles, structural elements (job titles, category labels,
+    degree names) are translated using the _TRANSLATIONS map.
+
+    Technical terms (Python, AWS, Docker, React, etc.) are kept in English.
+    Company names and university names are already set by _apply_region().
+    """
+    translations = _TRANSLATIONS.get(lang, {})
+    if not translations:
+        return data
+
+    role_id = data.get("_role_id", "")
+
+    # ---- Full content translation for software-engineer ----
+    if role_id == "software-engineer":
+        content = _SOFTWARE_ENGINEER_CONTENT.get(lang)
+        if content:
+            data["title"] = content["title"]
+            data["summary"] = content["summary"]
+            # Translate job bullets and titles (preserve company/location/date/tech)
+            for i, job in enumerate(data.get("experience", [])):
+                if i < len(content["experience"]):
+                    job["title"] = content["experience"][i]["title"]
+                    job["bullets"] = content["experience"][i]["bullets"]
+            # Translate degree names
+            for i, edu in enumerate(data.get("education", [])):
+                if i < len(content["education"]):
+                    edu["degree"] = content["education"][i]["degree"]
+            data["certifications"] = content["certifications"]
+            data["key_achievements"] = content["key_achievements"]
+            # Translate project descriptions (keep name, url, tech)
+            for i, proj in enumerate(data.get("projects", [])):
+                if i < len(content["projects"]):
+                    proj["description"] = content["projects"][i]["description"]
+
+    else:
+        # ---- Structural translation for all other roles ----
+        # Job titles — translate known title words using the translations map
+        for job in data.get("experience", []):
+            job["title"] = _translate_phrase(job.get("title", ""), translations)
+
+        # Degree names
+        for edu in data.get("education", []):
+            original = edu.get("degree", "")
+            edu["degree"] = translations.get(original, original)
+
+    # ---- Category labels for skills_grouped — applied to all roles ----
+    for group in data.get("skills_grouped", []):
+        original = group.get("category", "")
+        group["category"] = translations.get(original, original)
+
+    # ---- Top-level title translation for non-software-engineer roles ----
+    if role_id != "software-engineer":
+        data["title"] = _translate_phrase(data.get("title", ""), translations)
+
+    return data
+
+
+def _translate_phrase(phrase: str, translations: dict[str, str]) -> str:
+    """Translate a short phrase by looking up the full string first,
+    then falling back to the original."""
+    return translations.get(phrase, phrase)
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -1584,4 +2387,7 @@ def get_demo_data(region_code: str, role_id: str = "software-engineer") -> dict:
     """Return sample CV data for a role adapted to a specific region."""
     factory = _ROLE_DATA.get(role_id, _software_engineer)
     data = factory()
-    return _apply_region(data, region_code)
+    data["_role_id"] = role_id  # Used by _localize to detect role; stripped below
+    result = _apply_region(data, region_code)
+    result.pop("_role_id", None)
+    return result

@@ -85,6 +85,22 @@ Last updated: 2026-03-11.
 - [Rio & Learn – CV in Portuguese](https://rioandlearn.com/cv-in-portuguese/)
 - [Live in Brazil – Brazilian CV Format](https://liveinbrazil.org/2013/04/23/this-is-how-your-brazilian-cv-or-resume-should-look/)
 
+## Colombia (CO)
+
+- [Indeed Colombia – Cómo hacer una hoja de vida](https://co.indeed.com/orientacion-profesional/como-hacer-una-hoja-de-vida)
+- [Universia Colombia – Hoja de vida profesional en 6 pasos](https://www.universia.net/co/actualidad/orientacion-academica/como-hacer-hoja-vida-colombia-6-pasos.html)
+- [Elempleo – Qué debe tener tu hoja de vida](https://www.elempleo.com/co/noticias/mundo-empresarial/que-debe-tener-tu-hoja-de-vida-4578)
+- [Computrabajo Colombia – Modelo de hoja de vida](https://www.computrabajo.com.co/articulos/hoja-de-vida)
+- [Ministerio de Trabajo Colombia – Formatos y orientación laboral](https://www.mintrabajo.gov.co/empleo-y-pensiones/empleo/agencia-publica-de-empleo)
+
+## Venezuela (VE)
+
+- [Bumeran Venezuela – Cómo hacer un currículum vitae](https://www.bumeran.com.ve/noticias/consejos/como-hacer-un-curriculum-vitae/)
+- [Trabajando.com VE – Currículum venezolano: cómo hacerlo](https://ve.trabajando.com/guia-laboral/articulo/curriculum-venezolano-como-hacerlo/)
+- [Emplea VE – Modelo de CV para Venezuela](https://www.emplea.com.ve/blog/modelo-curriculum-vitae-venezuela)
+- [Novorésumé – Venezuelan Resume Guide](https://novoresume.com/career-blog/venezuelan-resume)
+- [VisualCV – Venezuela CV Guide](https://www.visualcv.com/international/venezuela-cv/)
+
 ## UAE / Dubai (AE)
 
 - [VisualCV – UAE Resume Guide](https://www.visualcv.com/international/uae-resume/)
