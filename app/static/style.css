@@ -3,8 +3,8 @@
 
 :root {
     --bg: #0f1117;
-    --surface: #1a1d27;
-    --border: #2a2d3a;
+    --surface: #1c1f2b;
+    --border: #2e3142;
     --text: #e1e4ed;
     --text-muted: #8b8fa3;
     --accent: #6c63ff;
@@ -16,12 +16,71 @@
     --radius: 8px;
 }
 
+/* Dark theme explicit override */
+[data-theme="dark"] {
+    --bg: #0f1117;
+    --surface: #1c1f2b;
+    --border: #2e3142;
+    --text: #e1e4ed;
+    --text-muted: #8b8fa3;
+    --accent: #6c63ff;
+    --accent-hover: #5a52d5;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --warning: #f59e0b;
+}
+
+/* Light theme */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+        --bg: #f8f7f4;
+        --surface: #ffffff;
+        --border: #e2e0dc;
+        --text: #1a1a2e;
+        --text-muted: #6b6b80;
+        --accent: #5b52e0;
+        --accent-hover: #4a42c0;
+        --green: #059669;
+        --yellow: #d97706;
+        --red: #dc2626;
+        --warning: #d97706;
+    }
+}
+
+[data-theme="light"] {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --border: #e2e0dc;
+    --text: #1a1a2e;
+    --text-muted: #6b6b80;
+    --accent: #5b52e0;
+    --accent-hover: #4a42c0;
+    --green: #059669;
+    --yellow: #d97706;
+    --red: #dc2626;
+    --warning: #d97706;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    background: radial-gradient(ellipse at 50% 0%, #1e2235 0%, var(--bg) 70%);
     color: var(--text);
     line-height: 1.6;
     min-height: 100vh;
+}
+
+/* Light theme body background */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) body {
+        background: radial-gradient(ellipse at 50% 0%, #ffffff 0%, var(--bg) 70%);
+    }
+}
+[data-theme="light"] body {
+    background: radial-gradient(ellipse at 50% 0%, #ffffff 0%, var(--bg) 70%);
+}
+[data-theme="dark"] body {
+    background: radial-gradient(ellipse at 50% 0%, #1e2235 0%, var(--bg) 70%);
 }
 
 /* Header — hand-drawn style */
@@ -5713,4 +5772,158 @@ select.input-field {
     .demo-index-wrap .sticky-note--lavender,
     .demo-index-wrap .sticky-note--peach { transform: rotate(0deg) !important; }
     .demo-index-wrap .sticky-note:hover { transform: translateY(-3px) !important; }
+}
+
+/* ============================================================
+   Light Theme Overrides
+   ============================================================ */
+
+/* Sticky notes — light theme uses solid pastel backgrounds */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .sticky-note--yellow { background: #fef9e7 !important; border-left-color: rgba(217, 119, 6, 0.35) !important; }
+    :root:not([data-theme="dark"]) .sticky-note--pink   { background: #fff0f0 !important; border-left-color: rgba(220, 38, 38, 0.25) !important; }
+    :root:not([data-theme="dark"]) .sticky-note--blue   { background: #eef2ff !important; border-left-color: rgba(91, 82, 224, 0.3) !important; }
+    :root:not([data-theme="dark"]) .sticky-note--green  { background: #ecfdf5 !important; border-left-color: rgba(5, 150, 105, 0.3) !important; }
+    :root:not([data-theme="dark"]) .sticky-note--lavender { background: #f5f3ff !important; border-left-color: rgba(109, 40, 217, 0.2) !important; }
+    :root:not([data-theme="dark"]) .sticky-note--peach  { background: #fff7ed !important; border-left-color: rgba(194, 65, 12, 0.25) !important; }
+    :root:not([data-theme="dark"]) .sticky-note { box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.08), inset 0 0 40px rgba(0, 0, 0, 0.01); }
+    :root:not([data-theme="dark"]) .sticky-note:hover { box-shadow: 3px 5px 15px rgba(0, 0, 0, 0.12), inset 0 0 40px rgba(0, 0, 0, 0.01) !important; }
+}
+[data-theme="light"] .sticky-note--yellow { background: #fef9e7 !important; border-left-color: rgba(217, 119, 6, 0.35) !important; }
+[data-theme="light"] .sticky-note--pink   { background: #fff0f0 !important; border-left-color: rgba(220, 38, 38, 0.25) !important; }
+[data-theme="light"] .sticky-note--blue   { background: #eef2ff !important; border-left-color: rgba(91, 82, 224, 0.3) !important; }
+[data-theme="light"] .sticky-note--green  { background: #ecfdf5 !important; border-left-color: rgba(5, 150, 105, 0.3) !important; }
+[data-theme="light"] .sticky-note--lavender { background: #f5f3ff !important; border-left-color: rgba(109, 40, 217, 0.2) !important; }
+[data-theme="light"] .sticky-note--peach  { background: #fff7ed !important; border-left-color: rgba(194, 65, 12, 0.25) !important; }
+[data-theme="light"] .sticky-note { box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.08), inset 0 0 40px rgba(0, 0, 0, 0.01); }
+[data-theme="light"] .sticky-note:hover { box-shadow: 3px 5px 15px rgba(0, 0, 0, 0.12), inset 0 0 40px rgba(0, 0, 0, 0.01) !important; }
+
+/* Cards — add subtle shadow in light mode instead of dark borders */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .score-card,
+    :root:not([data-theme="dark"]) .checklist,
+    :root:not([data-theme="dark"]) .region-notes,
+    :root:not([data-theme="dark"]) .generated-cv,
+    :root:not([data-theme="dark"]) .demo-cta,
+    :root:not([data-theme="dark"]) .account-section,
+    :root:not([data-theme="dark"]) .pricing-card,
+    :root:not([data-theme="dark"]) .wizard-panel.active,
+    :root:not([data-theme="dark"]) .vault-form-card,
+    :root:not([data-theme="dark"]) .auth-card,
+    :root:not([data-theme="dark"]) .bld-panels,
+    :root:not([data-theme="dark"]) .bld-tabs { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.05); }
+}
+[data-theme="light"] .score-card,
+[data-theme="light"] .checklist,
+[data-theme="light"] .region-notes,
+[data-theme="light"] .generated-cv,
+[data-theme="light"] .demo-cta,
+[data-theme="light"] .account-section,
+[data-theme="light"] .pricing-card,
+[data-theme="light"] .wizard-panel.active,
+[data-theme="light"] .vault-form-card,
+[data-theme="light"] .auth-card,
+[data-theme="light"] .bld-panels,
+[data-theme="light"] .bld-tabs { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.05); }
+
+/* Builder inputs — light theme uses white backgrounds */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .bld input[type="text"],
+    :root:not([data-theme="dark"]) .bld input[type="email"],
+    :root:not([data-theme="dark"]) .bld input[type="tel"],
+    :root:not([data-theme="dark"]) .bld input[type="url"],
+    :root:not([data-theme="dark"]) .bld textarea,
+    :root:not([data-theme="dark"]) .bld select,
+    :root:not([data-theme="dark"]) .bld .input-field { background: #f8f7f4; }
+    :root:not([data-theme="dark"]) .bld input::placeholder,
+    :root:not([data-theme="dark"]) .bld textarea::placeholder { color: #9ca3af; }
+    :root:not([data-theme="dark"]) .bld-card { background: #f4f3f0; }
+    :root:not([data-theme="dark"]) .bld-editing-banner { background: #f0effe; }
+}
+[data-theme="light"] .bld input[type="text"],
+[data-theme="light"] .bld input[type="email"],
+[data-theme="light"] .bld input[type="tel"],
+[data-theme="light"] .bld input[type="url"],
+[data-theme="light"] .bld textarea,
+[data-theme="light"] .bld select,
+[data-theme="light"] .bld .input-field { background: #f8f7f4; }
+[data-theme="light"] .bld input::placeholder,
+[data-theme="light"] .bld textarea::placeholder { color: #9ca3af; }
+[data-theme="light"] .bld-card { background: #f4f3f0; }
+[data-theme="light"] .bld-editing-banner { background: #f0effe; }
+
+/* vault-trust-warning hardcoded color — use variable in light theme */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .vault-trust-warning { color: var(--warning); background: rgba(217, 119, 6, 0.1); border-color: rgba(217, 119, 6, 0.45); }
+}
+[data-theme="light"] .vault-trust-warning { color: var(--warning); background: rgba(217, 119, 6, 0.1); border-color: rgba(217, 119, 6, 0.45); }
+
+/* Cookie banner shadow — softer in light mode */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .cookie-banner { box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1); }
+}
+[data-theme="light"] .cookie-banner { box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1); }
+
+/* Builder preview meta / save form — use variables instead of hardcoded light colors */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .builder-preview-result .builder-preview-meta { background: #f8f7f4; border-bottom-color: #e2e0dc; color: var(--text-muted); }
+    :root:not([data-theme="dark"]) .builder-save-form { background: #eeedfb; border-bottom-color: #d9d7f5; }
+    :root:not([data-theme="dark"]) .builder-save-fields .input-field { background: #fff; color: var(--text); border-color: var(--border); }
+    :root:not([data-theme="dark"]) .bld-empty p { color: var(--text-muted); }
+    :root:not([data-theme="dark"]) .bld-empty span { color: var(--text-muted); }
+}
+[data-theme="light"] .builder-preview-result .builder-preview-meta { background: #f8f7f4; border-bottom-color: #e2e0dc; color: var(--text-muted); }
+[data-theme="light"] .builder-save-form { background: #eeedfb; border-bottom-color: #d9d7f5; }
+[data-theme="light"] .builder-save-fields .input-field { background: #fff; color: var(--text); border-color: var(--border); }
+[data-theme="light"] .bld-empty p { color: var(--text-muted); }
+[data-theme="light"] .bld-empty span { color: var(--text-muted); }
+
+/* Pricing featured card shadow — adapt for light mode */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .pricing-card--featured { box-shadow: 4px 8px 24px rgba(91, 82, 224, 0.15), inset 0 0 40px rgba(0, 0, 0, 0.01); }
+    :root:not([data-theme="dark"]) .pricing-faq--notebook { box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.07); }
+}
+[data-theme="light"] .pricing-card--featured { box-shadow: 4px 8px 24px rgba(91, 82, 224, 0.15), inset 0 0 40px rgba(0, 0, 0, 0.01); }
+[data-theme="light"] .pricing-faq--notebook { box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.07); }
+
+/* Who-card shadow — lighter in light mode */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .who-card:hover { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); }
+}
+[data-theme="light"] .who-card:hover { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); }
+
+/* bld-modal backdrop — lighter in light mode */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .bld-modal-bg { background: rgba(26, 26, 46, 0.4); }
+    :root:not([data-theme="dark"]) .bld-modal { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18); }
+}
+[data-theme="light"] .bld-modal-bg { background: rgba(26, 26, 46, 0.4); }
+[data-theme="light"] .bld-modal { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18); }
+
+/* Theme toggle button */
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.35rem;
+    color: var(--text-muted);
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+    border-radius: 6px;
+}
+.theme-toggle:hover { color: var(--accent); }
+
+/* Sun icon — shown in dark mode (click to switch to light) */
+.theme-icon--sun  { display: inline; }
+.theme-icon--moon { display: none; }
+
+/* When light theme is active, show moon icon (click to switch to dark) */
+[data-theme="light"] .theme-icon--sun  { display: none; }
+[data-theme="light"] .theme-icon--moon { display: inline; }
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .theme-icon--sun  { display: none; }
+    :root:not([data-theme="dark"]) .theme-icon--moon { display: inline; }
 }
