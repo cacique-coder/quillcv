@@ -13,7 +13,7 @@ from app.services.template_registry import (
     list_templates_by_category,
 )
 
-router = APIRouter(prefix="/demo")
+router = APIRouter(prefix="/demo", redirect_slashes=False)
 templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
 cv_templates = Jinja2Templates(
     directory=Path(__file__).parent.parent / "templates"

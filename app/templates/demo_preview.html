@@ -52,6 +52,18 @@
         {% endfor %}
     </div>
 
+    <!-- Sticky CTA banner -->
+    <div class="demo-sticky-cta">
+        <p><strong>Like this template?</strong> Create your {{ region.name }} CV with QuillCV — AI tailors it to your job description.</p>
+        <a href="/signup" class="btn-cta btn-cta--small">
+            Create Your CV
+            <svg class="btn-arrow-doodle" width="16" height="12" viewBox="0 0 20 14" fill="none" aria-hidden="true">
+                <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M12 3 L17 7 L12 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+        </a>
+    </div>
+
     <!-- CV Preview -->
     <div class="demo-cv-frame">
         <iframe src="/demo/{{ region.code }}/{{ template.id }}/raw?role={{ current_role.id }}" class="cv-iframe" loading="lazy"></iframe>
@@ -88,11 +100,18 @@
 
     <!-- CTA -->
     <div class="demo-cta">
-        <h2>Like this template?</h2>
-        <p>QuillCV is launching soon. Register your interest and be first to use this template with AI-powered tailoring for {{ region.name }} formatting conventions.</p>
+        <h2>Build your {{ region.name }} CV with this template</h2>
+        <p>This is a demo with sample data. Register to create your own — paste a job description and QuillCV's AI will tailor your CV to match, using {{ region.name }} formatting conventions.</p>
         <div class="demo-cta-buttons">
-            <a href="/signup" class="btn-cta">Register Your Interest</a>
+            <a href="/signup" class="btn-cta">
+                Create Your CV Now
+                <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
+                    <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M12 3 L17 7 L12 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </a>
         </div>
+        <p class="demo-cta-subtext hint">Free to register. All templates included.</p>
     </div>
 </section>
 {% endblock %}

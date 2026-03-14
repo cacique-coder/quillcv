@@ -163,9 +163,16 @@
 
     <!-- CTA -->
     <div class="demo-cta">
-        <h2>QuillCV is launching soon</h2>
-        <p>Browse any template above and download it free as raw HTML. Register your interest to be first to use AI-tailored {{ region.name }} CVs when we launch.</p>
-        <a href="/signup" class="btn-cta">Register Your Interest</a>
+        <h2>Create your {{ region.name }} CV now</h2>
+        <p>Browse the templates above, then register to build your own. Paste a job description and QuillCV's AI will tailor your CV to {{ region.name }} conventions — correct format, keywords matched, ATS-optimized.</p>
+        <a href="/signup" class="btn-cta">
+            Create Your CV Now
+            <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
+                <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M12 3 L17 7 L12 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+        </a>
+        <p class="demo-cta-subtext hint">Free to register. All templates included.</p>
     </div>
 </section>
 {% endblock %}

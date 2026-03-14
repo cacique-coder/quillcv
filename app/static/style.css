@@ -5927,3 +5927,34 @@ select.input-field {
     :root:not([data-theme="dark"]) .theme-icon--sun  { display: none; }
     :root:not([data-theme="dark"]) .theme-icon--moon { display: inline; }
 }
+
+/* Demo sticky CTA banner */
+.demo-sticky-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+    background: var(--card-bg, #f8f7f4);
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+}
+.demo-sticky-cta p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+.demo-sticky-cta .btn-cta--small {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.demo-cta-subtext {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+}
+@media (max-width: 600px) {
+    .demo-sticky-cta {
+        flex-direction: column;
+        text-align: center;
+    }
+}
