@@ -10,7 +10,7 @@ Session lifecycle:
 - Load the JSON data blob from SQLite; attach to request.state.session.
 - After the response, write back to SQLite only when the session was modified
   (dirty flag).
-- Set/refresh the cookie on every response.
+- Set/refresh the cookie unless the response is publicly cacheable and the session was not modified.
 - Destroy: delete the row from SQLite and expire the cookie.
 """
 
@@ -184,10 +184,18 @@ class SQLiteSessionMiddleware(BaseHTTPMiddleware):
             return response
 
         current_data = request.state.session
-        if current_data != snapshot:
+        session_is_dirty = current_data != snapshot
+
+        if session_is_dirty:
             await _save_session(session_id, current_data)
 
-        # Set / refresh the cookie on every response (rolls TTL)
+        # Don't set Set-Cookie on publicly cacheable responses (e.g. blog
+        # pages) unless the session was modified — browsers refuse to cache
+        # responses that carry Set-Cookie.
+        cache_control = response.headers.get("cache-control", "")
+        if "public" in cache_control and not session_is_dirty:
+            return response
+
         cookie_kwargs = dict(
             key=_COOKIE_NAME,
             value=session_id,
