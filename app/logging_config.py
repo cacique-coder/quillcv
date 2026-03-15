@@ -9,76 +9,73 @@ import logging.config
 
 
 # ---------------------------------------------------------------------------
-# ANSI colour helpers (no external dependencies)
+# Logfmt formatter (key=value, used for both dev and prod)
 # ---------------------------------------------------------------------------
 
-_RESET = "\033[0m"
-_COLOURS = {
-    "DEBUG":    "\033[36m",   # cyan
-    "INFO":     "\033[32m",   # green
-    "WARNING":  "\033[33m",   # yellow
-    "ERROR":    "\033[31m",   # red
-    "CRITICAL": "\033[35m",   # magenta
-}
+_STANDARD_ATTRS = logging.LogRecord("", 0, "", 0, "", (), None).__dict__.keys()
 
 
-class _ColourFormatter(logging.Formatter):
-    """Human-readable, coloured formatter for development output."""
-
-    _FMT = "%(asctime)s %(levelname)-5s [%(name)s] %(message)s"
-    _DATE_FMT = "%H:%M:%S"
+class _LogfmtFormatter(logging.Formatter):
+    """Single logfmt (key=value) formatter for both dev and prod."""
 
     def format(self, record: logging.LogRecord) -> str:
-        from app.middleware import request_id_var
-        colour = _COLOURS.get(record.levelname, "")
-        level_str = f"{colour}{record.levelname:<5}{_RESET}"
-        # Shorten logger names: app.routers.cv -> routers.cv (trim app. prefix)
-        name = record.name.removeprefix("app.")
-        rid = request_id_var.get("-")
-        formatted = (
-            f"{self.formatTime(record, self._DATE_FMT)} "
-            f"{level_str} "
-            f"[{rid}] "
-            f"[{name}] "
-            f"{record.getMessage()}"
-        )
-        if record.exc_info:
-            formatted += "\n" + self.formatException(record.exc_info)
-        return formatted
-
-
-class _JSONFormatter(logging.Formatter):
-    """Structured JSON formatter suitable for log aggregators (prod)."""
-
-    def format(self, record: logging.LogRecord) -> str:
-        import json
         from datetime import datetime, timezone
 
-        from app.middleware import client_ip_var, request_id_var
+        from app.middleware import client_ip_var, request_id_var, session_id_var, user_id_var
 
-        payload: dict = {
-            "ts": datetime.fromtimestamp(record.created, tz=timezone.utc)
-                         .strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "level": record.levelname,
-            "logger": record.name,
-            "request_id": request_id_var.get("-"),
-            "client_ip": client_ip_var.get("-"),
-            "msg": record.getMessage(),
-        }
+        timestamp = (
+            datetime.fromtimestamp(record.created, tz=timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
+        level = record.levelname
+        request_id = request_id_var.get("-")
+        session_id = session_id_var.get("-")
+        user_id = user_id_var.get("-")
+        ip = client_ip_var.get("-")
 
-        # Merge in any extra structured fields the caller passed via the
-        # `extra=` kwarg (anything that isn't a standard LogRecord attribute).
-        _STANDARD_ATTRS = logging.LogRecord(
-            "", 0, "", 0, "", (), None
-        ).__dict__.keys()
+        # Collect extra fields passed via extra= kwarg
+        extra: dict = {}
         for key, value in record.__dict__.items():
             if key not in _STANDARD_ATTRS and not key.startswith("_"):
-                payload[key] = value
+                extra[key] = value
+
+        parts = [
+            f"timestamp={timestamp}",
+            f"level={level}",
+        ]
+
+        # For request logs the caller passes method/path/status/duration_ms
+        # via extra and uses "request" as the message — render as a flat line.
+        # For all other logs include the logger name and msg.
+        if extra:
+            for key, value in extra.items():
+                parts.append(f"{key}={value}")
+        else:
+            name = record.name.removeprefix("app.")
+            parts.append(f"logger={name}")
+
+        if request_id != "-":
+            parts.append(f"request_id={request_id}")
+        if session_id != "-":
+            parts.append(f"session_id={session_id}")
+        if user_id != "-":
+            parts.append(f"user_id={user_id}")
+        if ip != "-":
+            parts.append(f"ip={ip}")
+
+        # Only add msg when it is not the bare "request" sentinel used by
+        # RequestLoggingMiddleware (that log line is fully described by its
+        # extra fields).
+        msg = record.getMessage()
+        if msg and msg != "request":
+            quoted = f'"{msg}"' if " " in msg else msg
+            parts.append(f"msg={quoted}")
 
         if record.exc_info:
-            payload["exc"] = self.formatException(record.exc_info)
+            exc_text = self.formatException(record.exc_info)
+            parts.append(f'exc="{exc_text}"')
 
-        return json.dumps(payload, default=str)
+        return " ".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -92,17 +89,11 @@ def setup_logging(dev_mode: bool) -> None:
     subsequent logger.getLogger(__name__) calls inherit the configuration.
 
     Args:
-        dev_mode: When True, use DEBUG level + colour output.
-                  When False, use INFO level + JSON output.
+        dev_mode: When True, use DEBUG level + stdout.
+                  When False, use INFO level + stderr.
     """
     app_level = "DEBUG" if dev_mode else "INFO"
     third_party_level = "INFO" if dev_mode else "WARNING"
-
-    formatter_class = (
-        "app.logging_config._ColourFormatter"
-        if dev_mode
-        else "app.logging_config._JSONFormatter"
-    )
 
     stream = "ext://sys.stdout" if dev_mode else "ext://sys.stderr"
 
@@ -111,7 +102,7 @@ def setup_logging(dev_mode: bool) -> None:
         "disable_existing_loggers": False,
         "formatters": {
             "main": {
-                "()": formatter_class,
+                "()": "app.logging_config._LogfmtFormatter",
             },
         },
         "handlers": {

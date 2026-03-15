@@ -16,6 +16,8 @@ _IS_PRODUCTION = os.environ.get("APP_ENV", "development") == "production"
 
 request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
 client_ip_var: contextvars.ContextVar[str] = contextvars.ContextVar("client_ip", default="-")
+session_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("session_id", default="-")
+user_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("user_id", default="-")
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -59,5 +61,8 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
             request.state.user = user
             if user:
                 request.state.balance = request.state.session.get("cached_balance", 0)
+                user_id_var.set(user.id)
+                from app.instrumentation import add_custom_attributes
+                add_custom_attributes({"user_id": user.id})
 
         return await call_next(request)

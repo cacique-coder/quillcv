@@ -68,8 +68,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         status = response.status_code
 
         logger.info(
-            '%s %s → %d (%dms) [ip=%s]',
-            request.method, path, status, duration_ms, client_ip,
+            "request",
+            extra={
+                "method": request.method,
+                "path": path,
+                "status": status,
+                "duration_ms": duration_ms,
+            },
         )
         return response
 

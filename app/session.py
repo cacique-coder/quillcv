@@ -26,6 +26,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.middleware import session_id_var
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -168,6 +170,9 @@ class SQLiteSessionMiddleware(BaseHTTPMiddleware):
         # Attach to request state
         request.state.session = existing_data
         request.state._session_destroyed = False  # noqa: SLF001
+
+        # Expose session_id to logging context before the request is handled
+        session_id_var.set(session_id)
 
         # ── Handle request ──────────────────────────────────────────────────
         response = await call_next(request)
