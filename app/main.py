@@ -41,7 +41,9 @@ from app.routers import payments as payments_router  # noqa: E402
 from app.routers import invitations as invitations_router  # noqa: E402
 from app.routers import onboarding as onboarding_router  # noqa: E402
 from app.routers import pages as pages_router  # noqa: E402
+from app.routers import blog as blog_router  # noqa: E402
 from app.routers import seo as seo_router  # noqa: E402
+from app.routers import partials as partials_router  # noqa: E402
 from app.services.llm_client import ClaudeCodeClient, create_llm_client  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -133,6 +135,12 @@ app.include_router(seo_router.router)
 
 # Static content pages (about, privacy, terms)
 app.include_router(pages_router.router)
+
+# Blog
+app.include_router(blog_router.router)
+
+# HTMX partials (nav, footer auth fragments — never cached)
+app.include_router(partials_router.router)
 
 # Auth, payments, invitations, and onboarding
 app.include_router(auth_router.router)

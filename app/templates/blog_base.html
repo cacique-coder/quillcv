@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block nav_auth %}
+<span id="nav-auth-slot"
+      hx-get="/partials/nav"
+      hx-trigger="load"
+      hx-swap="outerHTML">
+    <a href="/login" class="btn-cta btn-cta--small" rel="nofollow">Sign In</a>
+</span>
+{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block footer_auth %}
+<span id="footer-auth-slot"
+      hx-get="/partials/footer"
+      hx-trigger="load"
+      hx-swap="outerHTML">
+    <a href="/login" rel="nofollow">Sign In</a>
+</span>
+{% endblock %}
