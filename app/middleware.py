@@ -7,7 +7,7 @@ import uuid
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-_SKIP_PREFIXES = ("/static/", "/favicon.ico", "/demo", "/blog")
+_SKIP_PREFIXES = ("/static/", "/favicon.ico", "/demo", "/blog", "/about", "/privacy", "/privacidad", "/privacidade", "/terms")
 _IS_PRODUCTION = os.environ.get("APP_ENV", "development") == "production"
 
 # ---------------------------------------------------------------------------

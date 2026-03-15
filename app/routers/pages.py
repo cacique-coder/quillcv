@@ -17,27 +17,37 @@ templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates"
 
 @router.get("/about")
 async def about_page(request: Request):
-    return templates.TemplateResponse("about.html", {"request": request})
+    response = templates.TemplateResponse("about.html", {"request": request})
+    response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+    return response
 
 
 @router.get("/privacy")
 async def privacy_page(request: Request):
-    return templates.TemplateResponse("privacy.html", {"request": request})
+    response = templates.TemplateResponse("privacy.html", {"request": request})
+    response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+    return response
 
 
 @router.get("/privacidad")
 async def privacidad_page(request: Request):
-    return templates.TemplateResponse("privacidad.html", {"request": request, "html_lang": "es"})
+    response = templates.TemplateResponse("privacidad.html", {"request": request, "html_lang": "es"})
+    response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+    return response
 
 
 @router.get("/privacidade")
 async def privacidade_page(request: Request):
-    return templates.TemplateResponse("privacidade.html", {"request": request, "html_lang": "pt-BR"})
+    response = templates.TemplateResponse("privacidade.html", {"request": request, "html_lang": "pt-BR"})
+    response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+    return response
 
 
 @router.get("/terms")
 async def terms_page(request: Request):
-    return templates.TemplateResponse("terms.html", {"request": request})
+    response = templates.TemplateResponse("terms.html", {"request": request})
+    response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+    return response
 
 
 @router.get("/ccpa-opt-out")
