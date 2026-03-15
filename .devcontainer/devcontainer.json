@@ -1,0 +1,51 @@
+{
+  "name": "QuillCV Dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+
+  // Start the dev server after the container is running
+  "postStartCommand": "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+
+  // Run migrations (and any first-time setup) once after the container is created
+  "postCreateCommand": "alembic upgrade head",
+
+  "forwardPorts": [8000, 5432],
+  "portsAttributes": {
+    "8000": { "label": "FastAPI", "onAutoForward": "notify" },
+    "5432": { "label": "Postgres", "onAutoForward": "silent" }
+  },
+
+  "remoteEnv": {
+    "APP_ENV": "development",
+    "DATABASE_URL": "postgresql+asyncpg://postgres:postgres@db:5432/quillcv_dev",
+    "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium",
+    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-python.debugpy",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+          }
+        },
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"]
+      }
+    }
+  }
+}
