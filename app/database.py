@@ -25,11 +25,22 @@ class Base(DeclarativeBase):
 
 
 async def init_db():
-    """Run Alembic migrations then create_all as safety net.
+    """Run Alembic migrations on startup.
 
     Uses a Postgres advisory lock so only one gunicorn worker runs
     migrations — the others wait and skip.
+
+    In development, migrations are skipped unless RUN_MIGRATIONS=1 is set.
+    Run `alembic upgrade head` manually instead.
     """
+    import os
+
+    app_env = os.environ.get("APP_ENV", "")
+    run_migrations = os.environ.get("RUN_MIGRATIONS", "")
+    if app_env == "development" and run_migrations != "1":
+        logger.info("Skipping auto-migration in development (set RUN_MIGRATIONS=1 to enable)")
+        return
+
     from alembic import command
     from alembic.config import Config
     from sqlalchemy import text
@@ -61,12 +72,6 @@ async def init_db():
         sync_engine.dispose()
 
     await asyncio.to_thread(_run_upgrade)
-
-    # Step 2: create_all for any new tables not yet in a migration
-    from app.models import APIRequestLog, ConsentRecord, Credit, ExpressionOfInterest, Invitation, Payment, PIIVault, SavedCV, User, WebAuthnCredential  # noqa: F401
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("create_all safety net complete.")
 
 
 async def get_db() -> AsyncSession:
