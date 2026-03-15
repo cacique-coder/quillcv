@@ -197,6 +197,17 @@ async def _run_generation_pipeline(
         timings=timings,
     )
 
+    from app.instrumentation import record_custom_event
+    record_custom_event("CVGeneration", {
+        "user_id": user_id,
+        "attempt_id": attempt_id,
+        "region": region_code,
+        "template_id": template_id,
+        "score_original": ats_result.score,
+        "score_generated": ats_generated.score,
+        "duration_sec": sum(timings.values()),
+    })
+
     # Cache results
     review_flags = quality_review.get("flags", []) if quality_review else []
     update_attempt(

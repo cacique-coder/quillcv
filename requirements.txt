@@ -29,6 +29,8 @@ stripe>=10.12.0
 # CV content storage
 markdownify>=1.2.2
 nh3>=0.3.3
+# APM
+newrelic>=10.0.0
 # Quality tools
 ruff>=0.15.0
 bandit>=1.9.0

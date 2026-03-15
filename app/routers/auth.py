@@ -217,6 +217,12 @@ async def signup_submit(
 
         logger.info("Invited signup: user %s created via invitation %s", new_user.id, invite_code)
 
+        from app.instrumentation import record_custom_event
+        record_custom_event("UserSignup", {
+            "user_id": new_user.id,
+            "method": "invitation",
+        })
+
         # Send welcome email — fire-and-forget (failure is non-fatal)
         try:
             base_url = str(request.base_url).rstrip("/")
@@ -411,6 +417,13 @@ async def google_callback(request: Request):
     request.state.session["pii"] = pii
     request.state.session["pii_onboarded"] = vault_existed
 
+    if not vault_existed:
+        from app.instrumentation import record_custom_event
+        record_custom_event("UserSignup", {
+            "user_id": user.id,
+            "method": "google",
+        })
+
     # Seed credit balance in session.
     async with async_session() as db:
         request.state.session["cached_balance"] = await get_balance(db, user.id)
@@ -495,6 +508,13 @@ async def github_callback(request: Request):
 
     request.state.session["pii"] = pii
     request.state.session["pii_onboarded"] = vault_existed
+
+    if not vault_existed:
+        from app.instrumentation import record_custom_event
+        record_custom_event("UserSignup", {
+            "user_id": user.id,
+            "method": "github",
+        })
 
     # Seed credit balance in session.
     async with async_session() as db:

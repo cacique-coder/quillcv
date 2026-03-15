@@ -89,6 +89,13 @@ async def invite_redeem(request: Request, code: str):
         # Grant credits using the credit service
         await add_credits(db, user.id, invitation.credits)
 
+        from app.instrumentation import record_custom_event
+        record_custom_event("InvitationRedeemed", {
+            "user_id": user.id,
+            "credits_granted": invitation.credits,
+            "invitation_code": code,
+        })
+
         # Refresh cached balance in session so the nav bar updates immediately.
         new_balance = await get_balance(db, user.id)
         request.state.session["cached_balance"] = new_balance

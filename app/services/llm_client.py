@@ -122,6 +122,21 @@ async def _log_to_db(
     except Exception:
         logger.warning("Failed to log API request to DB", exc_info=True)
 
+    from app.instrumentation import record_llm_event
+    record_llm_event(
+        model=model,
+        service=service,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cache_read_tokens=cache_read,
+        cache_creation_tokens=cache_creation,
+        cost_usd=cost_usd,
+        duration_ms=duration_ms,
+        user_id=user_id,
+        status=status,
+        error_message=error_message,
+    )
+
 
 class LLMClient(ABC):
     @abstractmethod
@@ -172,12 +187,14 @@ class AnthropicAPIClient(LLMClient):
         duration_s = 0.0
 
         try:
-            message = await self.client.messages.create(
-                model=self.model,
-                max_tokens=12000,
-                system=system_text,
-                messages=[{"role": "user", "content": user_text}],
-            )
+            from app.instrumentation import external_segment
+            with external_segment("anthropic", "https://api.anthropic.com", "messages.create"):
+                message = await self.client.messages.create(
+                    model=self.model,
+                    max_tokens=12000,
+                    system=system_text,
+                    messages=[{"role": "user", "content": user_text}],
+                )
 
             duration_s = round(time.monotonic() - t0, 2)
 
@@ -401,11 +418,13 @@ class OpenAIClient(LLMClient):
                 messages.append({"role": "system", "content": system_text})
             messages.append({"role": "user", "content": user_text})
 
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                max_tokens=12000,
-            )
+            from app.instrumentation import external_segment
+            with external_segment("openai", "https://api.openai.com", "chat.completions.create"):
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_tokens=12000,
+                )
 
             duration_s = round(time.monotonic() - t0, 2)
 
@@ -503,11 +522,13 @@ class GeminiClient(LLMClient):
             if system_text:
                 config_kwargs["system_instruction"] = system_text
 
-            response = await client.aio.models.generate_content(
-                model=self.model,
-                contents=user_text,
-                config=GenerateContentConfig(**config_kwargs),
-            )
+            from app.instrumentation import external_segment
+            with external_segment("google-genai", "https://generativelanguage.googleapis.com", "generate_content"):
+                response = await client.aio.models.generate_content(
+                    model=self.model,
+                    contents=user_text,
+                    config=GenerateContentConfig(**config_kwargs),
+                )
 
             duration_s = round(time.monotonic() - t0, 2)
 

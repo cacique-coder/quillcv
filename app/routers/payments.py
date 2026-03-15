@@ -196,6 +196,15 @@ async def checkout_success(request: Request, session_id: str = ""):
 
                         await add_credits(db, user.id, credits_granted)
 
+                        from app.instrumentation import record_custom_event
+                        record_custom_event("CreditPurchase", {
+                            "user_id": user.id,
+                            "credits_granted": credits_granted,
+                            "amount_cents": payment.amount_cents,
+                            "currency": payment.currency or "aud",
+                            "stripe_session_id": session_id,
+                        })
+
                         # Refresh cached balance in session so nav bar updates immediately.
                         new_balance = await get_balance(db, user.id)
                         request.state.session["cached_balance"] = new_balance
@@ -263,6 +272,15 @@ async def stripe_webhook(request: Request):
                     await db.commit()
 
                     await add_credits(db, user_id, credits_to_grant)
+
+                    from app.instrumentation import record_custom_event
+                    record_custom_event("CreditPurchase", {
+                        "user_id": user_id,
+                        "credits_granted": credits_to_grant,
+                        "amount_cents": payment.amount_cents,
+                        "currency": payment.currency or "aud",
+                        "stripe_session_id": session_id,
+                    })
 
                     # Send payment confirmation email — look up user for name + email
                     try:
