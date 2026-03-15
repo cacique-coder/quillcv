@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Credit
 
-ALPHA_PACK_CREDITS = 40
-ALPHA_PACK_PRICE_CENTS = 2900  # $29.00 AUD
+ALPHA_PACK_CREDITS = 15
+ALPHA_PACK_PRICE_CENTS = 999  # $9.99 AUD
 ALPHA_USER_CAP = 100
 
 TOPUP_PACKS = {

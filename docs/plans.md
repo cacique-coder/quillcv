@@ -2,8 +2,8 @@
 
 ## Alpha — First 100 Users (Founders Cohort)
 
-- **$29.99 AUD for 50 credits** (no subscription)
-- **$0.60 per credit**
+- **$9.99 AUD for 15 credits** (no subscription)
+- **$0.67 per credit**
 - 60–70% discount vs post-alpha pricing
 - Goal: validate demand, collect feedback, break even on API costs
 
@@ -38,16 +38,16 @@ Estimated cost per generation: $0.10–0.25 AUD
 
 | Tier | Revenue | Cost | Margin | Margin % |
 |------|---------|------|--------|----------|
-| Alpha | $0.60 | $0.10–0.25 | $0.35–0.50 | 58–83% |
+| Alpha | $0.67 | $0.10–0.25 | $0.42–0.57 | 63–85% |
 | Basic | $1.50 | $0.10–0.25 | $1.25–1.40 | 83–93% |
 | Advanced | $2.00 | $0.10–0.25 | $1.75–1.90 | 88–95% |
 
 ## Alpha Revenue Projection
 
-- 100 founders x $29.99 = **$2,999 revenue**
-- Up to 5,000 generations
-- Estimated cost: $500–1,250
-- **Estimated profit: $1,749–2,499**
+- 100 founders x $9.99 = **$999 revenue**
+- Up to 1,500 generations
+- Estimated cost: $150–375
+- **Estimated profit: $624–849**
 
 ## Competitor Analysis
 

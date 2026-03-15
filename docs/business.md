@@ -25,7 +25,7 @@ All prices in AUD. Payments via Stripe one-time purchases.
 
 ### Alpha — First 100 Users (Founders Cohort)
 
-- $29 AUD for 40 CV generations
+- $9.99 AUD for 15 CV generations
 - Best per-credit value across all packs (founders reward)
 - Goal: validate demand, collect feedback, fund initial compliance
 

@@ -13,10 +13,10 @@ All prices in AUD. Payments via Stripe.
 
 | | Details |
 |--|--------|
-| Price | **$29 AUD** |
-| Credits | **40** |
-| Per credit | $0.73 |
-| Stripe product | `quillcv_alpha_40` |
+| Price | **$9.99 AUD** |
+| Credits | **15** |
+| Per credit | $0.67 |
+| Stripe product | `quillcv_alpha_15` |
 
 - One-time purchase, no subscription
 - Best per-credit value across all packs (founders reward)
@@ -55,7 +55,7 @@ Design based on real usage data from alpha + credit pack purchases.
 ### Products to create
 
 ```
-quillcv_alpha_40      — Alpha Pack (40 credits, $29 AUD) — one-time
+quillcv_alpha_15      — Alpha Pack (15 credits, $9.99 AUD) — one-time
 quillcv_starter_15    — Starter Pack (15 credits, $15 AUD) — one-time
 quillcv_standard_35   — Standard Pack (35 credits, $29 AUD) — one-time
 quillcv_pro_65        — Pro Pack (65 credits, $49 AUD) — one-time
@@ -83,7 +83,7 @@ quillcv_pro_65        — Pro Pack (65 credits, $49 AUD) — one-time
 
 | Pack | Revenue (USD~) | Max cost (all gens) | Gross margin |
 |------|---------------|---------------------|-------------|
-| Alpha (40) | ~$18.50 | $10.00 | ~46% |
+| Alpha (15) | ~$6.40 | $3.75 | ~41% |
 | Starter (15) | ~$9.60 | $3.75 | ~61% |
 | Standard (35) | ~$18.50 | $8.75 | ~53% |
 | Pro (65) | ~$31.30 | $16.25 | ~48% |
@@ -91,7 +91,7 @@ quillcv_pro_65        — Pro Pack (65 credits, $49 AUD) — one-time
 ### Break-even for infrastructure
 
 - Estimated hosting (Digital Ocean): ~$40/mo
-- At alpha margin (~$8.50/pack): ~5 packs/month to cover infra
+- At alpha margin (~$2.65/pack): ~16 packs/month to cover infra
 - At standard margin (~$9.75/pack): ~4 packs/month to cover infra
 
 ### Compliance budget (funded by margins)

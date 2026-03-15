@@ -29,7 +29,7 @@ async def landing(request: Request):
     return templates.TemplateResponse("landing.html", {
         "request": request,
         "spots_remaining": spots_remaining,
-        "page_description": "Build ATS-optimized CVs tailored to job descriptions. Multiple country formats, keyword matching, and AI-powered quality review. Alpha pricing: $14.99 for 20 generations.",
+        "page_description": "Build ATS-optimized CVs tailored to job descriptions. Multiple country formats, keyword matching, and AI-powered quality review. Alpha pricing: $9.99 for 15 generations.",
     })
 
 

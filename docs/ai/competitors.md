@@ -97,7 +97,7 @@
 
 | Platform | Model | Price | Per CV | ATS Score | Job Tailoring | Multi-Country |
 |----------|-------|-------|--------|-----------|---------------|---------------|
-| **QuillCV Alpha** | Credits | $14.99/20cv | **$0.75** | Yes | Yes | **Yes (14)** |
+| **QuillCV Alpha** | Credits | $9.99/15cv | **$0.67** | Yes | Yes | **Yes (14)** |
 | QuillCV Starter | Credits | $15/10cv | $1.50 | Yes | Yes | Yes (14) |
 | QuillCV Pro | Credits | $49/50cv | $0.98 | Yes | Yes | Yes (14) |
 | Rezi | Subscription | $29/mo | ~$1.45* | **Best** | Yes | No |
