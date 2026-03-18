@@ -205,5 +205,7 @@ def pii_from_user(user) -> dict:
         "country": "",
         "nationality": "",
         "marital_status": "",
+        "self_description": "",
+        "values": "",
         "references": [],
     }

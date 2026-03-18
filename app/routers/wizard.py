@@ -109,7 +109,11 @@ def _get_or_create_attempt(request: Request) -> dict:
 @router.get("/step/1")
 async def step1(request: Request):
     attempt = _get_or_create_attempt(request)
-    selected = attempt.get("region", "AU")
+    # Pre-select from PII vault country when the attempt has no region yet.
+    # Vault country codes match REGIONS keys (e.g. "AU", "US").
+    pii = request.state.session.get("pii") or {}
+    vault_country = pii.get("country", "")
+    selected = attempt.get("region") or (vault_country if vault_country in REGIONS else "AU")
     return templates.TemplateResponse("partials/wizard/step1_country.html", {
         "request": request,
         "regions": list_regions(),
@@ -148,7 +152,8 @@ async def step2(request: Request):
     # Merge PII vault values as defaults — attempt values always take priority
     pii = request.state.session.get("pii") or {}
     pii_prefilled = bool(pii)
-    for key in ("full_name", "email", "phone", "dob", "document_id", "nationality", "marital_status"):
+    for key in ("full_name", "email", "phone", "dob", "document_id", "nationality", "marital_status",
+                "self_description", "values"):
         if not attempt.get(key) and pii.get(key):
             attempt[key] = pii[key]
 
@@ -359,12 +364,18 @@ async def step2_save(
     )
 
     # ------------------------------------------------------------------
-    # Persist references to the PII vault so they pre-fill on future visits
+    # Persist voice fields + references to the PII vault so they
+    # pre-fill on future wizard runs.
+    # `offer_appeal` is intentionally excluded — it is role-specific.
     # ------------------------------------------------------------------
     if current_user:
         from app.services.pii_vault import upsert_vault
         pii = request.state.session.get("pii") or {}
         pii["references"] = references
+        if self_description:
+            pii["self_description"] = self_description
+        if values:
+            pii["values"] = values
         password = request.state.session.get("_pii_password")
         async with async_session() as db:
             await upsert_vault(db, user_id=current_user.id, pii=pii, password=password or None)
