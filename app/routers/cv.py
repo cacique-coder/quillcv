@@ -280,8 +280,17 @@ async def ws_analyze(websocket: WebSocket):
         llm = websocket.app.state.llm
         llm_fast = websocket.app.state.llm_fast
 
-        # WebSocket connections bypass BaseHTTPMiddleware, so resolve user directly
+        # WebSocket connections bypass BaseHTTPMiddleware, so the session
+        # middleware never runs and websocket.state.session is never set.
+        # Manually load the session from the cookie before resolving the user.
+        from app.session import _COOKIE_NAME, _load_session  # noqa: PLC2701
         from app.auth.dependencies import get_current_user
+        _ws_session_id = websocket.cookies.get(_COOKIE_NAME)
+        _ws_session_data = (
+            await _load_session(_ws_session_id) if _ws_session_id else None
+        ) or {}
+        websocket.state.session = _ws_session_data
+
         ws_user = await get_current_user(websocket)
         ws_user_id = ws_user.id if ws_user else None
 
@@ -320,7 +329,7 @@ async def ws_analyze(websocket: WebSocket):
             )
 
         # Render the final HTML
-        html = templates.get_template("partials/results.html").render(**result)
+        html = templates.get_template("partials/results.html").render(request=websocket, **result)
         await websocket.send_json({"type": "complete", "html": html})
 
     except WebSocketDisconnect:
