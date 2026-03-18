@@ -13,6 +13,7 @@
     {% if quality_review and quality_review.flags %}
     <form class="quality-review" hx-post="/apply-fixes" hx-target="#generate-area" hx-swap="outerHTML"
           hx-indicator="#fixes-loader">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <div class="quality-review-header">
             <!-- Hand-drawn warning/info circle icon -->
             <svg viewBox="0 0 24 24" width="22" height="22" class="quality-review-icon" fill="none" stroke-linecap="round" stroke-linejoin="round">

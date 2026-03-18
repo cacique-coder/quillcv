@@ -30,7 +30,7 @@ from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
 
-from app.middleware import AuthContextMiddleware, RequestContextMiddleware  # noqa: E402
+from app.middleware import AuthContextMiddleware, CSRFMiddleware, RequestContextMiddleware  # noqa: E402
 from app.session import SQLiteSessionMiddleware, init_session_db  # noqa: E402
 from app.routers import account as account_router  # noqa: E402
 from app.routers import admin as admin_router  # noqa: E402
@@ -91,11 +91,43 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
+async def _cleanup_stale_payments() -> None:
+    """Mark payments that have been pending for over 24 hours as expired.
+
+    Stripe checkout sessions expire after 24 hours by default. If the webhook
+    was missed or the user abandoned the flow, pending rows would otherwise
+    remain stuck indefinitely.  This is safe to run multiple times — it only
+    touches rows that are still in 'pending' status.
+    """
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import update
+    from app.models import Payment
+    from app.database import async_session
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    async with async_session() as db:
+        result = await db.execute(
+            update(Payment)
+            .where(Payment.status == "pending", Payment.created_at < cutoff)
+            .values(status="expired")
+            .returning(Payment.id)
+        )
+        expired_ids = result.scalars().all()
+        await db.commit()
+        if expired_ids:
+            logger.info(
+                "Cleaned up %d stale pending payment(s) older than 24 h: %s",
+                len(expired_ids),
+                expired_ids,
+            )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from app.database import init_db
     await init_db()
     await init_session_db()
+    await _cleanup_stale_payments()
     yield
 
 
@@ -108,9 +140,12 @@ app.add_middleware(StaticCacheMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(RequestContextMiddleware)  # adds request_id context var
 app.add_middleware(AuthContextMiddleware)
+# CSRF must run after the session is loaded (session middleware is outermost,
+# so it runs first and populates request.state.session before CSRF checks run).
+app.add_middleware(CSRFMiddleware)
 
 # Server-side session middleware backed by SQLite.  Must be outermost so that
-# sessions are available when AuthContextMiddleware runs.
+# sessions are available when AuthContextMiddleware and CSRFMiddleware run.
 app.add_middleware(SQLiteSessionMiddleware)
 
 # LLM clients: primary (heavy) for CV generation, fast (light) for lightweight tasks.

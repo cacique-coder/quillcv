@@ -32,6 +32,7 @@
     {% endif %}
 
     <form method="post" action="/signup" class="auth-form">
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
       <input type="hidden" name="invite_code" value="{{ invitation.code }}">
 
       <div class="form-field">
@@ -108,6 +109,7 @@
     <div id="eoi-form-area">
       <form method="post" action="/signup" class="auth-form"
             hx-post="/signup" hx-target="#eoi-form-area" hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <div class="form-field">
           <label for="name">Name <span class="optional-hint">(optional)</span></label>
           <input type="text" id="name" name="name" placeholder="Your name" autocomplete="name">

@@ -3,6 +3,7 @@
 {% include "partials/wizard/progress.html" %}
 
 <form class="wizard-panel active" hx-post="/wizard/step/3/save" hx-target="#wizard-container" hx-swap="innerHTML" hx-indicator="#step3-loader" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
     <div class="panel-header">
         <h2>Upload Your Documents</h2>

@@ -139,6 +139,7 @@
         </p>
         {% if not invitation.email or invitation.email == user.email %}
         <form method="post" action="/invite/{{ code }}/redeem">
+          <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
           <button type="submit" class="btn-primary">
             Claim {{ invitation.credits }} credits &rarr;
           </button>

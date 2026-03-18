@@ -13,6 +13,7 @@
     <div class="account-section">
         <h3>Profile</h3>
         <form hx-post="/account/update-profile" hx-target="#profile-result" hx-swap="innerHTML">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             <div class="account-field">
                 <label for="acct-name">Name</label>
                 <input id="acct-name" type="text" name="name" class="input-field" value="{{ request.state.user.name }}">
@@ -115,6 +116,7 @@
 
         {% if request.state.user.password_hash %}
         <form hx-post="/account/change-password" hx-target="#password-result" hx-swap="innerHTML" class="account-password-form">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             <div class="account-field">
                 <label for="acct-cur-pw">Current Password</label>
                 <input id="acct-cur-pw" type="password" name="current_password" class="input-field" required>
@@ -177,6 +179,7 @@
         <h3>Danger Zone</h3>
         <p class="account-hint">Permanently delete your account and all associated data. This cannot be undone.</p>
         <form hx-post="/account/delete" hx-target="#delete-result" hx-swap="innerHTML">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             <div class="account-field">
                 <label for="acct-confirm">Type DELETE to confirm</label>
                 <input id="acct-confirm" type="text" name="confirm" class="input-field" placeholder="DELETE" required>

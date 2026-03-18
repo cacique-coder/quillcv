@@ -24,6 +24,7 @@
         {% endif %}
 
         <form method="post" action="/login{% if invite %}?invite={{ invite }}{% endif %}" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             {% if invite %}
             <input type="hidden" name="invite_code" value="{{ invite }}">
             {% endif %}

@@ -50,6 +50,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="/static/vendor/htmx-2.0.2.min.js" defer></script>
+    {# Send the CSRF token as a header on every HTMX request. #}
+    <meta name="csrf-token" content="{{ request.state.csrf_token | default('') }}">
+    <script>
+      document.addEventListener("htmx:configRequest", function(evt) {
+        var token = document.querySelector('meta[name="csrf-token"]');
+        if (token) { evt.detail.headers["X-CSRF-Token"] = token.getAttribute("content"); }
+      });
+    </script>
     {% block head_extra %}{% endblock %}
     {% block structured_data %}
     <script type="application/ld+json">

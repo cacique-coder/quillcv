@@ -162,6 +162,7 @@
     <form method="post"
           action="{{ '/account/pii' if mode == 'account' else '/onboarding' }}"
           class="vault-form" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
       <!-- ── Country selector (first field) ──────────────────────────── -->
       <div class="vault-field">

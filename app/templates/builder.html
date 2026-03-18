@@ -17,6 +17,7 @@
           hx-swap="innerHTML"
           hx-trigger="input changed delay:800ms from:find input, input changed delay:800ms from:find textarea, change delay:200ms from:find select"
           hx-indicator="#builder-form">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
         <!-- ═══ LEFT: Form with tabs ═══ -->
         <div class="bld-form">

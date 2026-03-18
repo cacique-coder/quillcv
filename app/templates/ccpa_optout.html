@@ -28,6 +28,7 @@
 
         <h2>Submit an opt-out request</h2>
         <form method="post" action="/ccpa-opt-out" class="legal-form">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             <div class="form-group">
                 <label for="email" class="form-label">Your email address</label>
                 <input

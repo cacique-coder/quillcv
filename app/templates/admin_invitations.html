@@ -190,6 +190,7 @@
   <div class="create-card">
     <h2>Create Invitation</h2>
     <form method="post" action="/admin/invitations">
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
       <div class="form-row">
         <div class="form-group">
           <label for="inv-email">Email (optional — lock to one address)</label>

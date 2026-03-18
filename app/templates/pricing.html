@@ -262,6 +262,7 @@
                     </a>
                 {% elif stripe_enabled and spots_remaining > 0 %}
                     <form method="post" action="/checkout/alpha">
+                        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                         <button type="submit" class="btn-cta btn-cta--full">
                             Buy Alpha Pack
                             <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
@@ -284,7 +285,6 @@
                     </svg>
                 </a>
             {% endif %}
-            <p class="pricing-risk-reversal">Not happy? Email us within 30 days for a full refund.</p>
         </div>
 
         <div class="pricing-card sticky-note sticky-note--blue">
@@ -350,6 +350,7 @@
                     </li>
                 </ul>
                 <form method="post" action="/checkout/topup/{{ pack_id }}">
+                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                     <button type="submit" class="btn-cta btn-cta--full">
                         Buy {{ pack.credits }} Credits
                         <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">

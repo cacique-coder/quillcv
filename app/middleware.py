@@ -1,14 +1,43 @@
 """Application-level middleware for QuillCV."""
 
 import contextvars
+import hmac
+import logging
 import os
+import secrets
 import uuid
+from urllib.parse import parse_qs
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from starlette.responses import HTMLResponse, Response
+
+logger = logging.getLogger(__name__)
 
 _SKIP_PREFIXES = ("/static/", "/favicon.ico", "/demo", "/blog", "/about", "/privacy", "/privacidad", "/privacidade", "/terms")
 _IS_PRODUCTION = os.environ.get("APP_ENV", "development") == "production"
+
+# ---------------------------------------------------------------------------
+# CSRF token helpers
+# ---------------------------------------------------------------------------
+
+# Endpoints that must be excluded from CSRF checks (Stripe posts without a
+# browser session — it signs requests with a separate webhook secret instead).
+_CSRF_EXEMPT_PATHS = {"/webhook/stripe"}
+
+_CSRF_FIELD = "csrf_token"
+_CSRF_HEADER = "X-CSRF-Token"
+_CSRF_SESSION_KEY = "_csrf_token"
+
+
+def _generate_csrf_token() -> str:
+    """Return a 32-byte URL-safe random token."""
+    return secrets.token_urlsafe(32)
+
+
+def _csrf_tokens_equal(a: str, b: str) -> bool:
+    """Constant-time comparison to prevent timing attacks."""
+    return hmac.compare_digest(a.encode(), b.encode())
 
 # ---------------------------------------------------------------------------
 # Request-scoped context vars — accessible from any async code in the stack
@@ -18,6 +47,64 @@ request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id
 client_ip_var: contextvars.ContextVar[str] = contextvars.ContextVar("client_ip", default="-")
 session_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("session_id", default="-")
 user_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("user_id", default="-")
+
+
+class CSRFMiddleware(BaseHTTPMiddleware):
+    """CSRF protection for all state-mutating (POST/PUT/PATCH/DELETE) requests.
+
+    Strategy:
+    - On GET requests: generate a token (if not already in session) and attach
+      it to request.state.csrf_token so templates can embed it in forms.
+    - On POST (and other mutating) requests: compare the token submitted via the
+      hidden form field OR the X-CSRF-Token header against the session token.
+    - Returns 403 on mismatch.  Exempt paths (e.g. /webhook/stripe) are skipped.
+    - The session must already be loaded before this middleware runs
+      (SQLiteSessionMiddleware must be outermost / registered last).
+    """
+
+    _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        # Ensure the session has a CSRF token.  We attach it to state so
+        # templates rendered during GET requests can include it.
+        session = getattr(request.state, "session", None) or {}
+        token: str = session.get(_CSRF_SESSION_KEY, "")
+        if not token:
+            token = _generate_csrf_token()
+            session[_CSRF_SESSION_KEY] = token
+            # Mark session dirty so SQLiteSessionMiddleware persists it.
+            if hasattr(request.state, "session"):
+                request.state.session[_CSRF_SESSION_KEY] = token
+
+        request.state.csrf_token = token
+
+        if request.method in self._MUTATING_METHODS:
+            if request.url.path not in _CSRF_EXEMPT_PATHS:
+                # Try the header first (used by HTMX), then the form field.
+                submitted = request.headers.get(_CSRF_HEADER, "")
+                if not submitted:
+                    # We need to read the form body.  FastAPI/Starlette caches
+                    # the body so reading it here does not consume it for the
+                    # downstream handler.
+                    try:
+                        body = await request.body()
+                        parsed = parse_qs(body.decode("utf-8", errors="replace"))
+                        submitted = parsed.get(_CSRF_FIELD, [""])[0]
+                    except Exception:
+                        submitted = ""
+
+                if not submitted or not _csrf_tokens_equal(token, submitted):
+                    logger.warning(
+                        "CSRF token mismatch: path=%s method=%s",
+                        request.url.path,
+                        request.method,
+                    )
+                    return HTMLResponse(
+                        "<h1>403 Forbidden</h1><p>Invalid or missing CSRF token.</p>",
+                        status_code=403,
+                    )
+
+        return await call_next(request)
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
