@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.services.prompt_guard import (
+from app.cv_generation.adapters.prompt_guard import (
     MAX_CV_LENGTH,
     MAX_JOB_DESC_LENGTH,
     detect_injection,

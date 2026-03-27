@@ -3960,6 +3960,10 @@ select.input-field {
     resize: vertical;
     min-height: 2.5rem;
 }
+.bld textarea.achievements-field {
+    line-height: 1.7;
+    font-size: 0.84rem;
+}
 .bld input::placeholder,
 .bld textarea::placeholder,
 .bld .input-field::placeholder {

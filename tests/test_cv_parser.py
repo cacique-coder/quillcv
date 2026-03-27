@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.services.cv_parser import parse_cv, parse_text
+from app.cv_generation.adapters.pdfplumber_parser import parse_cv, parse_text
 
 
 class TestParseCV:

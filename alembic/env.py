@@ -60,8 +60,8 @@ def _get_url() -> str:
 # ---------------------------------------------------------------------------
 
 # Import Base AND all models so SQLAlchemy metadata is fully populated.
-from app.database import Base  # noqa: E402
-import app.models  # noqa: E402, F401  — registers all ORM classes on Base.metadata
+from app.infrastructure.persistence.database import Base  # noqa: E402
+import app.infrastructure.persistence.orm_models  # noqa: E402, F401  — registers all ORM classes on Base.metadata
 
 target_metadata = Base.metadata
 

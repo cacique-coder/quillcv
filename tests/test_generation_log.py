@@ -4,15 +4,15 @@ import json
 
 import pytest
 
-from app.services.ats_analyzer import ATSResult
-from app.services.generation_log import _score_breakdown, log_generation
+from app.scoring.adapters.keyword_matcher import ATSResult
+from app.cv_generation.adapters.generation_log import _score_breakdown, log_generation
 
 
 @pytest.fixture(autouse=True)
 def use_temp_log_dir(tmp_path, monkeypatch):
     """Use a temp directory for log files during tests."""
-    monkeypatch.setattr("app.services.generation_log.LOG_DIR", tmp_path)
-    monkeypatch.setattr("app.services.generation_log.LOG_FILE", tmp_path / "generations.jsonl")
+    monkeypatch.setattr("app.cv_generation.adapters.generation_log.LOG_DIR", tmp_path)
+    monkeypatch.setattr("app.cv_generation.adapters.generation_log.LOG_FILE", tmp_path / "generations.jsonl")
     return tmp_path
 
 

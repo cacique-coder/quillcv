@@ -1,6 +1,6 @@
 """Tests for template registry — templates, regions, and configuration."""
 
-from app.services.template_registry import (
+from app.cv_export.adapters.template_registry import (
     REGION_RULES,
     CVTemplate,
     RegionConfig,

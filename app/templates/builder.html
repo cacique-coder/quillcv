@@ -238,7 +238,7 @@
                                     </div>
                                     <div class="bld-field bld-field--full">
                                         <label class="bld-label-sm">Achievements <span class="bld-hint">(one per line)</span></label>
-                                        <textarea name="exp_bullets_{{ loop.index0 }}" rows="3" class="input-field" placeholder="Led migration of legacy system to microservices, reducing deploy time by 60%">{{ exp.get('bullets', [])|join('\n') }}</textarea>
+                                        <textarea name="exp_bullets_{{ loop.index0 }}" rows="6" class="input-field achievements-field" placeholder="• Led migration of legacy system to microservices, reducing deploy time by 60%">{{ ('• ' + exp.get('bullets', [])|join('\n• ')) if exp.get('bullets', []) else '' }}</textarea>
                                     </div>
                                 </div>
                             </div>
@@ -433,7 +433,7 @@
         <button type="button" class="bld-btn-cancel" onclick="closeSaveModal()">Cancel</button>
         <button type="button" class="bld-btn-save"
                 hx-post="/builder/save"
-                hx-include="#modal-save-label, #modal-save-job-title"
+                hx-include="#builder-form, #modal-save-label, #modal-save-job-title"
                 hx-target="#modal-save-result"
                 hx-swap="innerHTML"
                 hx-disabled-elt="this">Save</button>
@@ -543,7 +543,7 @@ function _expCardHtml(i) {
         + '<div class="bld-field bld-field--full"><label class="bld-label-sm">Tech / Tools</label>'
         + '<input type="text" name="exp_tech_' + i + '" class="input-field" placeholder="Python, FastAPI"></div>'
         + '<div class="bld-field bld-field--full"><label class="bld-label-sm">Achievements <span class="bld-hint">(one per line)</span></label>'
-        + '<textarea name="exp_bullets_' + i + '" rows="3" class="input-field" placeholder="Led migration of legacy system..."></textarea></div>'
+        + '<textarea name="exp_bullets_' + i + '" rows="6" class="input-field achievements-field" placeholder="• Led migration of legacy system..."></textarea></div>'
         + '</div></div>';
 }
 

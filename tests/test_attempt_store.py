@@ -3,7 +3,7 @@
 
 import pytest
 
-from app.services.attempt_store import (
+from app.infrastructure.persistence.attempt_store import (
     create_attempt,
     get_attempt,
     get_document_bytes,

@@ -248,6 +248,86 @@
         {{ phone_input("phone", value=pii.phone | default(''), placeholder="+61 400 123 456") }}
       </div>
 
+      <!-- Location / city -->
+      <div class="vault-field">
+        <label for="vf-location" class="vault-field-label">
+          <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+            <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          Location
+        </label>
+        <input
+          id="vf-location"
+          type="text"
+          name="location"
+          class="input-field vault-input"
+          value="{{ pii.location | default('') }}"
+          placeholder="Sydney, NSW"
+          autocomplete="address-level2">
+        <span class="vault-field-hint">City and state/region for your CV header</span>
+      </div>
+
+      <!-- LinkedIn URL -->
+      <div class="vault-field">
+        <label for="vf-linkedin" class="vault-field-label">
+          <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+            <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          LinkedIn URL
+        </label>
+        <input
+          id="vf-linkedin"
+          type="url"
+          name="linkedin"
+          class="input-field vault-input"
+          value="{{ pii.linkedin | default('') }}"
+          placeholder="https://linkedin.com/in/your-name"
+          autocomplete="off">
+        <span class="vault-field-hint">Your LinkedIn profile URL</span>
+      </div>
+
+      <!-- GitHub URL -->
+      <div class="vault-field">
+        <label for="vf-github" class="vault-field-label">
+          <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+            <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          GitHub URL
+        </label>
+        <input
+          id="vf-github"
+          type="url"
+          name="github"
+          class="input-field vault-input"
+          value="{{ pii.github | default('') }}"
+          placeholder="https://github.com/your-username"
+          autocomplete="off">
+        <span class="vault-field-hint">Your GitHub profile URL</span>
+      </div>
+
+      <!-- Portfolio URL -->
+      <div class="vault-field">
+        <label for="vf-portfolio" class="vault-field-label">
+          <svg class="vault-field-lock" viewBox="0 0 14 16" width="11" height="12" fill="none" aria-hidden="true">
+            <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          </svg>
+          Portfolio / Website
+        </label>
+        <input
+          id="vf-portfolio"
+          type="url"
+          name="portfolio"
+          class="input-field vault-input"
+          value="{{ pii.portfolio | default('') }}"
+          placeholder="https://yoursite.com"
+          autocomplete="off">
+        <span class="vault-field-hint">Personal website or portfolio URL</span>
+      </div>
+
       <!-- ── Conditional fields (shown based on selected country) ──────── -->
       <div class="vault-conditional-fields" id="vault-conditional-fields">
 

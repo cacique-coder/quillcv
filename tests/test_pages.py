@@ -15,18 +15,18 @@ async def mock_db_for_pages(monkeypatch, tmp_path):
     test_engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}", echo=False)
     test_session = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
 
-    monkeypatch.setattr("app.database.engine", test_engine)
-    monkeypatch.setattr("app.database.async_session", test_session)
-    monkeypatch.setattr("app.routers.auth.async_session", test_session)
-    monkeypatch.setattr("app.routers.payments.async_session", test_session)
-    monkeypatch.setattr("app.routers.landing.async_session", test_session)
-    monkeypatch.setattr("app.auth.dependencies.async_session", test_session)
+    monkeypatch.setattr("app.infrastructure.persistence.database.engine", test_engine)
+    monkeypatch.setattr("app.infrastructure.persistence.database.async_session", test_session)
+    monkeypatch.setattr("app.web.routes.auth.async_session", test_session)
+    monkeypatch.setattr("app.web.routes.payments.async_session", test_session)
+    monkeypatch.setattr("app.web.routes.landing.async_session", test_session)
+    monkeypatch.setattr("app.identity.adapters.fastapi_deps.async_session", test_session)
 
-    monkeypatch.setattr("app.services.attempt_store.ATTEMPTS_DIR", tmp_path / "attempts")
-    monkeypatch.setattr("app.services.generation_log.LOG_DIR", tmp_path / "logs")
-    monkeypatch.setattr("app.services.generation_log.LOG_FILE", tmp_path / "logs" / "gen.jsonl")
+    monkeypatch.setattr("app.infrastructure.persistence.attempt_store.ATTEMPTS_DIR", tmp_path / "attempts")
+    monkeypatch.setattr("app.cv_generation.adapters.generation_log.LOG_DIR", tmp_path / "logs")
+    monkeypatch.setattr("app.cv_generation.adapters.generation_log.LOG_FILE", tmp_path / "logs" / "gen.jsonl")
 
-    from app.database import Base
+    from app.infrastructure.persistence.database import Base
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

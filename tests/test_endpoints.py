@@ -6,8 +6,8 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
-from app.services.attempt_store import create_attempt, save_document, update_attempt
-from app.services.llm_client import LLMClient, LLMResult
+from app.infrastructure.persistence.attempt_store import create_attempt, save_document, update_attempt
+from app.infrastructure.llm.client import LLMClient, LLMResult
 
 # ── Mock LLM for endpoint tests ──────────────────────────────
 
@@ -61,10 +61,10 @@ def mock_llm_clients(monkeypatch, tmp_path):
     app.state.llm_fast = mock
 
     # Use temp dir for attempts
-    monkeypatch.setattr("app.services.attempt_store.ATTEMPTS_DIR", tmp_path / "attempts")
+    monkeypatch.setattr("app.infrastructure.persistence.attempt_store.ATTEMPTS_DIR", tmp_path / "attempts")
     # Use temp dir for logs
-    monkeypatch.setattr("app.services.generation_log.LOG_DIR", tmp_path / "logs")
-    monkeypatch.setattr("app.services.generation_log.LOG_FILE", tmp_path / "logs" / "gen.jsonl")
+    monkeypatch.setattr("app.cv_generation.adapters.generation_log.LOG_DIR", tmp_path / "logs")
+    monkeypatch.setattr("app.cv_generation.adapters.generation_log.LOG_FILE", tmp_path / "logs" / "gen.jsonl")
 
 
 @pytest.fixture

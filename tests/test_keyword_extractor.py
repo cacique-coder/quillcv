@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from app.services.keyword_extractor import extract_keywords_llm
+from app.cv_generation.adapters.keyword_llm import extract_keywords_llm
 
 
 @pytest.mark.asyncio

@@ -1,6 +1,6 @@
 """Tests for ATS analyzer — keyword extraction, scoring, and section checks."""
 
-from app.services.ats_analyzer import (
+from app.scoring.adapters.keyword_matcher import (
     ATSResult,
     _strip_boilerplate,
     analyze_ats,

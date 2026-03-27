@@ -3,8 +3,8 @@
 
 import pytest
 
-from app.services.ats_analyzer import ATSResult
-from app.services.llm_client import LLMClient, LLMResult
+from app.scoring.adapters.keyword_matcher import ATSResult
+from app.infrastructure.llm.client import LLMClient, LLMResult
 
 # ── Sample data ──────────────────────────────────────────────
 

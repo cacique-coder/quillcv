@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from app.services.ai_generator import (
+from app.cv_generation.adapters.anthropic_generator import (
     _build_ats_report,
     _build_keyword_context,
     _build_personal_context,
@@ -12,7 +12,7 @@ from app.services.ai_generator import (
     _parse_cv_json,
     generate_tailored_cv,
 )
-from app.services.template_registry import get_region
+from app.cv_export.adapters.template_registry import get_region
 
 
 class TestBuildRegionRules:

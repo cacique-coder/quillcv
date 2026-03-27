@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.services.credit_service import add_credits, deduct_credit, get_balance, has_credits
+from app.billing.use_cases.manage_credits import add_credits, deduct_credit, get_balance, has_credits
 
 
 @pytest.fixture(autouse=True)
@@ -14,10 +14,10 @@ async def setup_test_db(monkeypatch, tmp_path):
     test_engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}", echo=False)
     test_session = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
 
-    monkeypatch.setattr("app.database.engine", test_engine)
-    monkeypatch.setattr("app.database.async_session", test_session)
+    monkeypatch.setattr("app.infrastructure.persistence.database.engine", test_engine)
+    monkeypatch.setattr("app.infrastructure.persistence.database.async_session", test_session)
 
-    from app.database import Base
+    from app.infrastructure.persistence.database import Base
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -26,7 +26,7 @@ async def setup_test_db(monkeypatch, tmp_path):
 
 async def _create_test_user(session_factory):
     """Create a test user and return their ID."""
-    from app.models import Credit, User
+    from app.infrastructure.persistence.orm_models import Credit, User
     async with session_factory() as db:
         user = User(email="credit@test.com", name="Credit Test")
         db.add(user)

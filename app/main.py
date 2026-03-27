@@ -17,7 +17,7 @@ _dev_mode_for_logging = (
     == "quillcv-dev-secret-change-in-prod"
 )
 
-from app.logging_config import setup_logging
+from app.infrastructure.logging import setup_logging
 setup_logging(dev_mode=_dev_mode_for_logging)
 
 logger = logging.getLogger(__name__)
@@ -30,21 +30,21 @@ from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
 
-from app.middleware import AuthContextMiddleware, CSRFMiddleware, RequestContextMiddleware  # noqa: E402
-from app.session import SQLiteSessionMiddleware, init_session_db  # noqa: E402
-from app.routers import account as account_router  # noqa: E402
-from app.routers import admin as admin_router  # noqa: E402
-from app.routers import auth as auth_router  # noqa: E402
-from app.routers import builder, cv, demo, my_cvs, photos, wizard  # noqa: E402
-from app.routers import landing as landing_router  # noqa: E402
-from app.routers import payments as payments_router  # noqa: E402
-from app.routers import invitations as invitations_router  # noqa: E402
-from app.routers import onboarding as onboarding_router  # noqa: E402
-from app.routers import pages as pages_router  # noqa: E402
-from app.routers import blog as blog_router  # noqa: E402
-from app.routers import seo as seo_router  # noqa: E402
-from app.routers import partials as partials_router  # noqa: E402
-from app.services.llm_client import ClaudeCodeClient, create_llm_client  # noqa: E402
+from app.infrastructure.middleware.main import AuthContextMiddleware, CSRFMiddleware, RequestContextMiddleware  # noqa: E402
+from app.infrastructure.middleware.session import SQLiteSessionMiddleware, init_session_db  # noqa: E402
+from app.web.routes import account as account_router  # noqa: E402
+from app.web.routes import admin as admin_router  # noqa: E402
+from app.web.routes import auth as auth_router  # noqa: E402
+from app.web.routes import builder, cv, demo, my_cvs, photos, wizard  # noqa: E402
+from app.web.routes import landing as landing_router  # noqa: E402
+from app.web.routes import payments as payments_router  # noqa: E402
+from app.web.routes import invitations as invitations_router  # noqa: E402
+from app.web.routes import onboarding as onboarding_router  # noqa: E402
+from app.web.routes import pages as pages_router  # noqa: E402
+from app.web.routes import blog as blog_router  # noqa: E402
+from app.web.routes import seo as seo_router  # noqa: E402
+from app.web.routes import partials as partials_router  # noqa: E402
+from app.infrastructure.llm.client import ClaudeCodeClient, create_llm_client  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Request logging middleware
@@ -101,8 +101,8 @@ async def _cleanup_stale_payments() -> None:
     """
     from datetime import datetime, timedelta, timezone
     from sqlalchemy import update
-    from app.models import Payment
-    from app.database import async_session
+    from app.infrastructure.persistence.orm_models import Payment
+    from app.infrastructure.persistence.database import async_session
 
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
     async with async_session() as db:
@@ -124,7 +124,7 @@ async def _cleanup_stale_payments() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from app.database import init_db
+    from app.infrastructure.persistence.database import init_db
     await init_db()
     await init_session_db()
     await _cleanup_stale_payments()
