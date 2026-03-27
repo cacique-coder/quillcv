@@ -6,10 +6,10 @@ import logging
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
 
-from app.infrastructure.persistence.database import async_session
-from app.infrastructure.persistence.cv_repo import get_saved_cv, list_saved_cvs
 from app.cv_export.adapters.docx_export import generate_docx
 from app.cv_export.adapters.puppeteer_pdf import generate_pdf
+from app.infrastructure.persistence.cv_repo import get_saved_cv, list_saved_cvs
+from app.infrastructure.persistence.database import async_session
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -45,10 +45,13 @@ async def my_cvs_page(request: Request):
         # Sort by created_at descending
         cvs.sort(key=lambda c: c.created_at, reverse=True)
 
-    return templates.TemplateResponse("my_cvs.html", {
-        "request": request,
-        "saved_cvs": cvs,
-    })
+    return templates.TemplateResponse(
+        "my_cvs.html",
+        {
+            "request": request,
+            "saved_cvs": cvs,
+        },
+    )
 
 
 @router.get("/my-cvs/{cv_id}/preview")
@@ -82,9 +85,7 @@ async def my_cv_preview(request: Request, cv_id: str):
                 raw = raw.replace(token, real_val)
         cv_data = json.loads(raw)
 
-    rendered = templates.get_template(
-        f"cv_templates/{saved.template_id}.html"
-    ).render(**cv_data)
+    rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
 
     return Response(rendered, media_type="text/html")
 
@@ -120,9 +121,7 @@ async def my_cv_download(request: Request, cv_id: str):
                 raw = raw.replace(token, real_val)
         cv_data = json.loads(raw)
 
-    rendered = templates.get_template(
-        f"cv_templates/{saved.template_id}.html"
-    ).render(**cv_data)
+    rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
 
     cv_name = cv_data.get("name", "CV") or "CV"
     safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "CV"

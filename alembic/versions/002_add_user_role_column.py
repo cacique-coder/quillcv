@@ -9,6 +9,7 @@ Create Date: 2026-03-14
 """
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "002_add_role"

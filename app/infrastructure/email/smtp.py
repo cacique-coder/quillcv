@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import httpx
@@ -65,7 +65,7 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 # Email type enum — separation between transactional and marketing
 # ---------------------------------------------------------------------------
 
-class EmailType(str, Enum):
+class EmailType(StrEnum):
     """Category of email — used for Mailgun tagging and future routing rules."""
     TRANSACTIONAL = "transactional"
     MARKETING = "marketing"

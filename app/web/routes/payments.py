@@ -6,18 +6,20 @@ import os
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 
-from app.identity.adapters.fastapi_deps import require_auth
-from app.infrastructure.persistence.database import async_session
-from app.infrastructure.persistence.orm_models import Payment, User
-from app.billing.use_cases.manage_credits import (
+from app.billing.entities import (
     ALPHA_PACK_CREDITS,
     ALPHA_PACK_PRICE_CENTS,
     TOPUP_PACKS,
+)
+from app.billing.use_cases.manage_credits import (
     add_credits,
     get_balance,
 )
-from app.infrastructure.email.smtp import send_payment_confirmation_email
+from app.identity.adapters.fastapi_deps import require_auth
 from app.identity.use_cases.authenticate import count_alpha_users
+from app.infrastructure.email.smtp import send_payment_confirmation_email
+from app.infrastructure.persistence.database import async_session
+from app.infrastructure.persistence.orm_models import Payment, User
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,7 @@ STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")  # Alpha pack price ID
 def _get_stripe():
     """Lazy import stripe to avoid startup errors when key isn't set."""
     import stripe
+
     stripe.api_key = STRIPE_SECRET_KEY
     return stripe
 
@@ -43,14 +46,17 @@ async def pricing_page(request: Request):
 
     spots_remaining = max(0, 200 - alpha_count)
 
-    return templates.TemplateResponse("pricing.html", {
-        "request": request,
-        "spots_remaining": spots_remaining,
-        "alpha_count": alpha_count,
-        "stripe_enabled": bool(STRIPE_SECRET_KEY),
-        "topup_packs": TOPUP_PACKS,
-        "page_description": "QuillCV pricing — $29 for 40 ATS-optimized CV generations during alpha. Credits never expire. No subscriptions.",
-    })
+    return templates.TemplateResponse(
+        "pricing.html",
+        {
+            "request": request,
+            "spots_remaining": spots_remaining,
+            "alpha_count": alpha_count,
+            "stripe_enabled": bool(STRIPE_SECRET_KEY),
+            "topup_packs": TOPUP_PACKS,
+            "page_description": "QuillCV pricing — $29 for 40 ATS-optimized CV generations during alpha. Credits never expire. No subscriptions.",
+        },
+    )
 
 
 @router.post("/checkout/alpha")
@@ -73,20 +79,26 @@ async def create_alpha_checkout(request: Request, user: User = Depends(require_a
         mode="payment",
         customer_email=user.email,
         metadata={"user_id": user.id, "pack": "alpha"},
-        line_items=[{
-            "price": STRIPE_PRICE_ID,
-            "quantity": 1,
-        }] if STRIPE_PRICE_ID else [{
-            "price_data": {
-                "currency": "aud",
-                "product_data": {
-                    "name": "QuillCV Alpha Pack — 40 CV Generations",
-                    "description": "Founders cohort. Credits never expire.",
+        line_items=[
+            {
+                "price": STRIPE_PRICE_ID,
+                "quantity": 1,
+            }
+        ]
+        if STRIPE_PRICE_ID
+        else [
+            {
+                "price_data": {
+                    "currency": "aud",
+                    "product_data": {
+                        "name": "QuillCV Alpha Pack — 40 CV Generations",
+                        "description": "Founders cohort. Credits never expire.",
+                    },
+                    "unit_amount": ALPHA_PACK_PRICE_CENTS,
                 },
-                "unit_amount": ALPHA_PACK_PRICE_CENTS,
-            },
-            "quantity": 1,
-        }],
+                "quantity": 1,
+            }
+        ],
         success_url=f"{base_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{base_url}/pricing",
     )
@@ -124,17 +136,19 @@ async def create_topup_checkout(request: Request, pack_id: str, user: User = Dep
         mode="payment",
         customer_email=user.email,
         metadata={"user_id": user.id, "pack": pack_id},
-        line_items=[{
-            "price_data": {
-                "currency": "aud",
-                "product_data": {
-                    "name": f"QuillCV — {pack['name']}",
-                    "description": "Credits never expire.",
+        line_items=[
+            {
+                "price_data": {
+                    "currency": "aud",
+                    "product_data": {
+                        "name": f"QuillCV — {pack['name']}",
+                        "description": "Credits never expire.",
+                    },
+                    "unit_amount": pack["price_cents"],
                 },
-                "unit_amount": pack["price_cents"],
-            },
-            "quantity": 1,
-        }],
+                "quantity": 1,
+            }
+        ],
         success_url=f"{base_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{base_url}/pricing",
     )
@@ -180,9 +194,8 @@ async def checkout_success(
                 async with async_session() as db:
                     # Check if we already processed this
                     from sqlalchemy import select
-                    result = await db.execute(
-                        select(Payment).where(Payment.stripe_session_id == session_id)
-                    )
+
+                    result = await db.execute(select(Payment).where(Payment.stripe_session_id == session_id))
                     payment = result.scalar_one_or_none()
                     if payment and payment.status != "completed":
                         payment.status = "completed"
@@ -192,13 +205,17 @@ async def checkout_success(
                         await add_credits(db, user.id, credits_granted)
 
                         from app.infrastructure.instrumentation import record_custom_event
-                        record_custom_event("CreditPurchase", {
-                            "user_id": user.id,
-                            "credits_granted": credits_granted,
-                            "amount_cents": payment.amount_cents,
-                            "currency": payment.currency or "aud",
-                            "stripe_session_id": session_id,
-                        })
+
+                        record_custom_event(
+                            "CreditPurchase",
+                            {
+                                "user_id": user.id,
+                                "credits_granted": credits_granted,
+                                "amount_cents": payment.amount_cents,
+                                "currency": payment.currency or "aud",
+                                "stripe_session_id": session_id,
+                            },
+                        )
 
                         # Refresh cached balance in session so nav bar updates immediately.
                         new_balance = await get_balance(db, user.id)
@@ -214,16 +231,17 @@ async def checkout_success(
                                 currency=payment.currency.upper() if payment.currency else "AUD",
                             )
                         except Exception:
-                            logger.exception(
-                                "Failed to send payment confirmation email to %s", user.email
-                            )
+                            logger.exception("Failed to send payment confirmation email to %s", user.email)
         except Exception:
             logger.exception("Error verifying checkout session")
 
-    return templates.TemplateResponse("checkout_success.html", {
-        "request": request,
-        "credits": credits_granted,
-    })
+    return templates.TemplateResponse(
+        "checkout_success.html",
+        {
+            "request": request,
+            "credits": credits_granted,
+        },
+    )
 
 
 @router.post("/webhook/stripe")
@@ -256,10 +274,10 @@ async def stripe_webhook(request: Request):
 
             async with async_session() as db:
                 from sqlalchemy import select
+
                 from app.infrastructure.persistence.orm_models import User as _User
-                result = await db.execute(
-                    select(Payment).where(Payment.stripe_session_id == session_id)
-                )
+
+                result = await db.execute(select(Payment).where(Payment.stripe_session_id == session_id))
                 payment = result.scalar_one_or_none()
                 if payment and payment.status != "completed":
                     payment.status = "completed"
@@ -269,19 +287,21 @@ async def stripe_webhook(request: Request):
                     await add_credits(db, user_id, credits_to_grant)
 
                     from app.infrastructure.instrumentation import record_custom_event
-                    record_custom_event("CreditPurchase", {
-                        "user_id": user_id,
-                        "credits_granted": credits_to_grant,
-                        "amount_cents": payment.amount_cents,
-                        "currency": payment.currency or "aud",
-                        "stripe_session_id": session_id,
-                    })
+
+                    record_custom_event(
+                        "CreditPurchase",
+                        {
+                            "user_id": user_id,
+                            "credits_granted": credits_to_grant,
+                            "amount_cents": payment.amount_cents,
+                            "currency": payment.currency or "aud",
+                            "stripe_session_id": session_id,
+                        },
+                    )
 
                     # Send payment confirmation email — look up user for name + email
                     try:
-                        user_result = await db.execute(
-                            select(_User).where(_User.id == user_id)
-                        )
+                        user_result = await db.execute(select(_User).where(_User.id == user_id))
                         webhook_user = user_result.scalar_one_or_none()
                         if webhook_user:
                             await send_payment_confirmation_email(
@@ -312,9 +332,8 @@ async def stripe_webhook(request: Request):
 
         async with async_session() as db:
             from sqlalchemy import select
-            result = await db.execute(
-                select(Payment).where(Payment.stripe_session_id == session_id)
-            )
+
+            result = await db.execute(select(Payment).where(Payment.stripe_session_id == session_id))
             payment = result.scalar_one_or_none()
             if payment and payment.status == "pending":
                 payment.status = new_status

@@ -15,8 +15,8 @@ import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from app.scoring.adapters.keyword_matcher import ATSResult
 from app.pii.use_cases.redact_pii import PIIRedactor
+from app.scoring.adapters.keyword_matcher import ATSResult
 
 LOG_DIR = Path(__file__).parent.parent.parent / "logs"
 LOG_FILE = LOG_DIR / "generations.jsonl"

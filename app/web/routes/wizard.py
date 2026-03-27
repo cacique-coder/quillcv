@@ -3,15 +3,6 @@ import logging
 
 from fastapi import APIRouter, File, Form, Request, UploadFile
 
-from app.identity.adapters.fastapi_deps import get_current_user
-from app.infrastructure.persistence.database import async_session
-from app.infrastructure.persistence.attempt_store import (
-    create_attempt,
-    get_attempt,
-    get_document_filename,
-    save_document,
-    update_attempt,
-)
 from app.consent.use_cases.record_consent import (
     CURRENT_POLICY_VERSION,
     get_client_ip,
@@ -19,8 +10,17 @@ from app.consent.use_cases.record_consent import (
     record_age_confirmation,
     record_consent,
 )
-from app.infrastructure.phone_utils import normalize_phone
 from app.cv_export.adapters.template_registry import REGIONS, list_regions, list_templates, list_templates_by_category
+from app.identity.adapters.fastapi_deps import get_current_user
+from app.infrastructure.persistence.attempt_store import (
+    create_attempt,
+    get_attempt,
+    get_document_filename,
+    save_document,
+    update_attempt,
+)
+from app.infrastructure.persistence.database import async_session
+from app.infrastructure.phone_utils import normalize_phone
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -294,6 +294,7 @@ async def step2_save(
     # ------------------------------------------------------------------
     if current_user:
         from sqlalchemy import select
+
         from app.infrastructure.persistence.orm_models import User as UserModel
 
         ip = get_client_ip(request)

@@ -21,8 +21,8 @@ import nh3
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.persistence.orm_models import SavedCV
 from app.infrastructure.crypto import decrypt_data, encrypt_data
+from app.infrastructure.persistence.orm_models import SavedCV
 from app.pii.use_cases.redact_pii import PIIRedactor
 
 logger = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ def _make_redactor(cv_data: dict) -> PIIRedactor:
 def _redact_cv_data(cv_data: dict, redactor: PIIRedactor) -> dict:
     """Return a copy of cv_data with all string values redacted."""
     import copy
-    from app.pii.use_cases.redact_pii import _walk_restore
+
 
     # We need to redact each string value. We reuse _walk_restore with a
     # custom approach: serialise to JSON, redact the JSON text, then parse back.
@@ -242,7 +242,7 @@ def restore_cv_pii(saved: SavedCV, pii: dict) -> SavedCV:
         cv_data = redactor.restore(cv_data)
         saved.cv_data_json = json.dumps(cv_data, default=str)
     except (json.JSONDecodeError, Exception):
-        pass
+        logger.debug("Failed to restore PII in cv_data_json for saved CV")
 
     # Restore markdown
     replacement_map = redactor._build_replacement_map()

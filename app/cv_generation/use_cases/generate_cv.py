@@ -16,19 +16,24 @@ from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
 
-from app.infrastructure.persistence.database import async_session
+from app.cv_export.adapters.template_registry import REGION_RULES, get_region, get_template
 from app.cv_generation.adapters.anthropic_generator import generate_tailored_cv
-from app.infrastructure.llm.client import set_llm_context
-from app.scoring.adapters.keyword_matcher import analyze_ats
-from app.infrastructure.persistence.attempt_store import get_attempt, get_document_bytes, get_document_filename, update_attempt
-from app.cv_generation.adapters.pdfplumber_parser import parse_cv
-from app.cv_generation.adapters.quality_reviewer import review_cv_quality
-from app.infrastructure.persistence.cv_repo import save_cv
 from app.cv_generation.adapters.generation_log import log_generation
 from app.cv_generation.adapters.keyword_llm import extract_keywords_llm
-from app.pii.use_cases.redact_pii import PIIRedactor
+from app.cv_generation.adapters.pdfplumber_parser import parse_cv
+from app.cv_generation.adapters.quality_reviewer import review_cv_quality
+from app.infrastructure.llm.client import set_llm_context
+from app.infrastructure.persistence.attempt_store import (
+    get_attempt,
+    get_document_bytes,
+    get_document_filename,
+    update_attempt,
+)
+from app.infrastructure.persistence.cv_repo import save_cv
+from app.infrastructure.persistence.database import async_session
 from app.pii.use_cases.check_placeholders import check_placeholders
-from app.cv_export.adapters.template_registry import REGION_RULES, get_region, get_template
+from app.pii.use_cases.redact_pii import PIIRedactor
+from app.scoring.adapters.keyword_matcher import analyze_ats
 
 logger = logging.getLogger(__name__)
 

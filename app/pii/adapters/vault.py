@@ -40,7 +40,6 @@ Usage:
 import base64
 import json
 import logging
-import os
 from datetime import UTC, datetime
 
 from cryptography.fernet import Fernet

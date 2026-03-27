@@ -26,17 +26,17 @@ import re
 from dataclasses import dataclass, field
 
 # Stable tokens — deliberately ugly so the LLM won't confuse them with real content
-_NAME_TOKEN = "<<CANDIDATE_NAME>>"
-_EMAIL_TOKEN_PREFIX = "<<EMAIL_"       # <<EMAIL_1>>, <<EMAIL_2>>, ...
-_PHONE_TOKEN_PREFIX = "<<PHONE_"       # <<PHONE_1>>, <<PHONE_2>>, ...
-_DOB_TOKEN = "<<DOB>>"
-_DOCUMENT_ID_TOKEN = "<<DOCUMENT_ID>>"
+_NAME_TOKEN = "<<CANDIDATE_NAME>>"  # noqa: S105
+_EMAIL_TOKEN_PREFIX = "<<EMAIL_"       # noqa: S105  # <<EMAIL_1>>, <<EMAIL_2>>, ...
+_PHONE_TOKEN_PREFIX = "<<PHONE_"       # noqa: S105  # <<PHONE_1>>, <<PHONE_2>>, ...
+_DOB_TOKEN = "<<DOB>>"  # noqa: S105
+_DOCUMENT_ID_TOKEN = "<<DOCUMENT_ID>>"  # noqa: S105
 _REF_NAME_PREFIX = "<<REF_NAME_"       # <<REF_NAME_1>>, ...
 _REF_EMAIL_PREFIX = "<<REF_EMAIL_"     # <<REF_EMAIL_1>>, ...
 _REF_PHONE_PREFIX = "<<REF_PHONE_"     # <<REF_PHONE_1>>, ...
-_LINKEDIN_TOKEN = "<<LINKEDIN_URL>>"
-_GITHUB_TOKEN = "<<GITHUB_URL>>"
-_PORTFOLIO_TOKEN = "<<PORTFOLIO_URL>>"
+_LINKEDIN_TOKEN = "<<LINKEDIN_URL>>"  # noqa: S105
+_GITHUB_TOKEN = "<<GITHUB_URL>>"  # noqa: S105
+_PORTFOLIO_TOKEN = "<<PORTFOLIO_URL>>"  # noqa: S105
 
 # Patterns
 _EMAIL_RE = re.compile(

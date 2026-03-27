@@ -6,6 +6,7 @@ import logging
 import os
 import secrets
 import uuid
+from typing import ClassVar
 from urllib.parse import parse_qs
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -62,7 +63,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
       (SQLiteSessionMiddleware must be outermost / registered last).
     """
 
-    _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+    _MUTATING_METHODS: ClassVar[set[str]] = {"POST", "PUT", "PATCH", "DELETE"}
 
     async def dispatch(self, request: Request, call_next) -> Response:
         # Ensure the session has a CSRF token.  We attach it to state so

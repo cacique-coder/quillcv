@@ -3,7 +3,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from sqlalchemy import delete, func, select
 
 from app.identity.adapters.fastapi_deps import require_auth

@@ -6,7 +6,7 @@ the FastAPI app instance.
 
 import logging
 import logging.config
-
+from datetime import UTC
 
 # ---------------------------------------------------------------------------
 # Logfmt formatter (key=value, used for both dev and prod)
@@ -19,12 +19,12 @@ class _LogfmtFormatter(logging.Formatter):
     """Single logfmt (key=value) formatter for both dev and prod."""
 
     def format(self, record: logging.LogRecord) -> str:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from app.infrastructure.middleware.main import client_ip_var, request_id_var, session_id_var, user_id_var
 
         timestamp = (
-            datetime.fromtimestamp(record.created, tz=timezone.utc)
+            datetime.fromtimestamp(record.created, tz=UTC)
             .strftime("%Y-%m-%dT%H:%M:%SZ")
         )
         level = record.levelname
@@ -102,7 +102,7 @@ def setup_logging(dev_mode: bool) -> None:
         "disable_existing_loggers": False,
         "formatters": {
             "main": {
-                "()": "app.logging_config._LogfmtFormatter",
+                "()": "app.infrastructure.logging._LogfmtFormatter",
             },
         },
         "handlers": {

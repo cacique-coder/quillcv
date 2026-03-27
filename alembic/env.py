@@ -9,11 +9,11 @@ import logging
 import os
 from logging.config import fileConfig
 
-from alembic import context
-from sqlalchemy import engine_from_config, pool
-
 # Load .env for local development before importing app config.
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+
+from alembic import context
 
 load_dotenv()
 
@@ -60,8 +60,8 @@ def _get_url() -> str:
 # ---------------------------------------------------------------------------
 
 # Import Base AND all models so SQLAlchemy metadata is fully populated.
-from app.infrastructure.persistence.database import Base  # noqa: E402
 import app.infrastructure.persistence.orm_models  # noqa: E402, F401  — registers all ORM classes on Base.metadata
+from app.infrastructure.persistence.database import Base  # noqa: E402
 
 target_metadata = Base.metadata
 

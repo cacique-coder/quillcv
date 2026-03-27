@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from app.scoring.adapters.keyword_matcher import ATSResult
 from app.cv_generation.adapters.generation_log import _score_breakdown, log_generation
+from app.scoring.adapters.keyword_matcher import ATSResult
 
 
 @pytest.fixture(autouse=True)

@@ -53,7 +53,7 @@ def get_attempt(attempt_id: str) -> dict | None:
         try:
             raw = decrypt_data(raw)
         except (InvalidToken, Exception):
-            pass  # Legacy unencrypted file — read as-is
+            logger.debug("Decryption skipped for attempt %s — legacy unencrypted file", attempt_id)
         return json.loads(raw)
     except (json.JSONDecodeError, OSError):
         return None

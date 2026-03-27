@@ -10,7 +10,7 @@ import re
 
 
 def normalize_phone(raw: str) -> str:
-    """Normalize a raw phone number string for storage.
+    r"""Normalize a raw phone number string for storage.
 
     Rules applied:
     - Strip leading/trailing whitespace.

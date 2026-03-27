@@ -222,7 +222,7 @@ class AnthropicAPIClient(LLMClient):
             raise
 
         finally:
-            asyncio.ensure_future(_log_to_db(
+            _lt = asyncio.create_task(_log_to_db(  # noqa: RUF006
                 transaction_id=transaction_id,
                 attempt_id=attempt_id,
                 user_id=user_id,
@@ -346,7 +346,7 @@ class ClaudeCodeClient(LLMClient):
             raise
 
         finally:
-            asyncio.ensure_future(_log_to_db(
+            _lt = asyncio.create_task(_log_to_db(  # noqa: RUF006
                 transaction_id=transaction_id,
                 attempt_id=attempt_id,
                 user_id=user_id,
@@ -448,7 +448,7 @@ class OpenAIClient(LLMClient):
             raise
 
         finally:
-            asyncio.ensure_future(_log_to_db(
+            _lt = asyncio.create_task(_log_to_db(  # noqa: RUF006
                 transaction_id=transaction_id,
                 attempt_id=attempt_id,
                 user_id=user_id,
@@ -559,7 +559,7 @@ class GeminiClient(LLMClient):
             raise
 
         finally:
-            asyncio.ensure_future(_log_to_db(
+            _lt = asyncio.create_task(_log_to_db(  # noqa: RUF006
                 transaction_id=transaction_id,
                 attempt_id=attempt_id,
                 user_id=user_id,

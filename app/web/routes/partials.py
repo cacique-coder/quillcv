@@ -3,7 +3,6 @@
 import logging
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
 
 from app.identity.adapters.fastapi_deps import get_current_user
 from app.web.templates import templates

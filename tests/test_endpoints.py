@@ -5,9 +5,9 @@ import json
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.main import app
-from app.infrastructure.persistence.attempt_store import create_attempt, save_document, update_attempt
 from app.infrastructure.llm.client import LLMClient, LLMResult
+from app.infrastructure.persistence.attempt_store import create_attempt, save_document, update_attempt
+from app.main import app
 
 # ── Mock LLM for endpoint tests ──────────────────────────────
 

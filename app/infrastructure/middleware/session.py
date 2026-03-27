@@ -134,7 +134,7 @@ async def destroy_session(request: Request, response: Response) -> None:
     if session_id:
         await _delete_session(session_id)
     request.state.session.clear()
-    request.state._session_destroyed = True  # noqa: SLF001
+    request.state._session_destroyed = True
     response.delete_cookie(_COOKIE_NAME)
 
 
@@ -169,7 +169,7 @@ class SQLiteSessionMiddleware(BaseHTTPMiddleware):
 
         # Attach to request state
         request.state.session = existing_data
-        request.state._session_destroyed = False  # noqa: SLF001
+        request.state._session_destroyed = False
 
         # Expose session_id to logging context before the request is handled
         session_id_var.set(session_id)
@@ -178,7 +178,7 @@ class SQLiteSessionMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # ── Persist if changed ──────────────────────────────────────────────
-        if request.state._session_destroyed:  # noqa: SLF001
+        if request.state._session_destroyed:
             # destroy_session() already deleted the row and cleared the dict
             response.delete_cookie(_COOKIE_NAME)
             return response

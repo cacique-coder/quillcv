@@ -71,7 +71,7 @@ async def scrape_job_url(url: str) -> dict:
             try:
                 proc.kill()
             except Exception:
-                pass
+                logger.debug("Failed to kill scraper process for %s", url)
             logger.warning("Job scrape timed out for %s", url)
             return {"success": False, "text": "", "title": "", "error": "The page took too long to load. Try pasting the description manually."}
 

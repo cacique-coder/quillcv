@@ -19,12 +19,12 @@ from app.cv_builder.use_cases.build_cv import (
     region_fields_map,
     restore_pii_tokens,
 )
-from app.infrastructure.persistence.database import async_session
-from app.infrastructure.persistence.attempt_store import create_attempt, get_attempt, update_attempt
-from app.infrastructure.persistence.cv_repo import get_saved_cv, save_cv, update_cv
 from app.cv_export.adapters.docx_export import generate_docx
 from app.cv_export.adapters.puppeteer_pdf import generate_pdf
 from app.cv_export.adapters.template_registry import TEMPLATES, list_regions, list_templates
+from app.infrastructure.persistence.attempt_store import create_attempt, get_attempt, update_attempt
+from app.infrastructure.persistence.cv_repo import get_saved_cv, save_cv, update_cv
+from app.infrastructure.persistence.database import async_session
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -62,19 +62,22 @@ async def builder_page(request: Request):
     region_options = [(r.code, f"{r.flag} {r.name}") for r in list_regions()]
     region_fields = region_fields_map()
 
-    return templates.TemplateResponse("builder.html", {
-        "request": request,
-        "cv_data": cv_data,
-        "template_options": template_options,
-        "region_options": region_options,
-        "selected_region": region,
-        "selected_template": template_id,
-        "region_fields_json": json.dumps(region_fields),
-        "dev_mode": request.app.state.dev_mode,
-        "editing_cv_id": None,
-        "editing_label": "",
-        "editing_job_title": "",
-    })
+    return templates.TemplateResponse(
+        "builder.html",
+        {
+            "request": request,
+            "cv_data": cv_data,
+            "template_options": template_options,
+            "region_options": region_options,
+            "selected_region": region,
+            "selected_template": template_id,
+            "region_fields_json": json.dumps(region_fields),
+            "dev_mode": request.app.state.dev_mode,
+            "editing_cv_id": None,
+            "editing_label": "",
+            "editing_job_title": "",
+        },
+    )
 
 
 @router.get("/edit/{cv_id}")
@@ -86,6 +89,7 @@ async def builder_edit(cv_id: str, request: Request):
 
     if not saved:
         from fastapi.responses import RedirectResponse
+
         return RedirectResponse("/my-cvs", status_code=303)
 
     # Parse the stored cv_data_json back into builder_data
@@ -127,19 +131,22 @@ async def builder_edit(cv_id: str, request: Request):
     region_options = [(r.code, f"{r.flag} {r.name}") for r in list_regions()]
     region_fields = region_fields_map()
 
-    return templates.TemplateResponse("builder.html", {
-        "request": request,
-        "cv_data": cv_data,
-        "template_options": template_options,
-        "region_options": region_options,
-        "selected_region": region,
-        "selected_template": template_id,
-        "region_fields_json": json.dumps(region_fields),
-        "dev_mode": request.app.state.dev_mode,
-        "editing_cv_id": cv_id,
-        "editing_label": saved.label or "Untitled CV",
-        "editing_job_title": saved.job_title or "",
-    })
+    return templates.TemplateResponse(
+        "builder.html",
+        {
+            "request": request,
+            "cv_data": cv_data,
+            "template_options": template_options,
+            "region_options": region_options,
+            "selected_region": region,
+            "selected_template": template_id,
+            "region_fields_json": json.dumps(region_fields),
+            "dev_mode": request.app.state.dev_mode,
+            "editing_cv_id": cv_id,
+            "editing_label": saved.label or "Untitled CV",
+            "editing_job_title": saved.job_title or "",
+        },
+    )
 
 
 @router.post("/preview")
@@ -157,14 +164,13 @@ async def builder_preview(request: Request):
     # Guard: if nothing meaningful is filled in yet, return a friendly nudge
     # rather than rendering an empty CV template.
     _has_content = any(
-        form.get(f, "").strip()
-        for f in ("name", "title", "summary", "exp_title_0", "edu_degree_0", "skills")
+        form.get(f, "").strip() for f in ("name", "title", "summary", "exp_title_0", "edu_degree_0", "skills")
     )
     if not _has_content:
         return Response(
             '<div class="builder-preview-empty" style="padding:2.5rem 1rem;text-align:center;">'
             '<p style="color:var(--text-muted);font-size:0.9rem;">Start filling in your details and the preview will appear here automatically.</p>'
-            '</div>',
+            "</div>",
             media_type="text/html",
         )
 
@@ -179,19 +185,20 @@ async def builder_preview(request: Request):
 
     # Render CV with selected template
     cv_data = cv_data_from_attempt({"builder_data": builder_data})
-    rendered_cv = templates.get_template(
-        f"cv_templates/{template_id}.html"
-    ).render(**cv_data)
+    rendered_cv = templates.get_template(f"cv_templates/{template_id}.html").render(**cv_data)
 
     # Cache for PDF download
     update_attempt(attempt["id"], rendered_cv=rendered_cv, cv_data=cv_data)
 
-    return templates.TemplateResponse("partials/builder_preview.html", {
-        "request": request,
-        "generated_cv": rendered_cv,
-        "template_name": (TEMPLATES.get(template_id) or TEMPLATES["modern"]).name,
-        "region": region,
-    })
+    return templates.TemplateResponse(
+        "partials/builder_preview.html",
+        {
+            "request": request,
+            "generated_cv": rendered_cv,
+            "template_name": (TEMPLATES.get(template_id) or TEMPLATES["modern"]).name,
+            "region": region,
+        },
+    )
 
 
 @router.post("/save")
@@ -253,6 +260,7 @@ async def builder_save(request: Request):
             pii.update(backfill_updates)
             request.state.session["pii"] = pii
             from app.pii.adapters.vault import upsert_vault
+
             async with async_session() as db:
                 password = request.state.session.get("_pii_password")
                 await upsert_vault(db, user_id=user.id, pii=pii, password=password)
@@ -293,7 +301,7 @@ async def builder_save(request: Request):
                 action_word = "Saved"
         return Response(
             f'<div class="save-success">{action_word} as "<strong>{label}</strong>"'
-            f'{" for " + job_title if job_title else ""}'
+            f"{' for ' + job_title if job_title else ''}"
             f' <span class="save-date">{saved.created_at.strftime("%d %b %Y %H:%M")}</span></div>',
             media_type="text/html",
         )

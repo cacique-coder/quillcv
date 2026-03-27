@@ -10,24 +10,30 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 
+from app.billing.use_cases.manage_credits import add_credits, get_balance
 from app.identity.adapters.fastapi_deps import get_current_user
 from app.identity.adapters.token_utils import create_access_token, hash_password
-from app.infrastructure.persistence.database import async_session
-from app.infrastructure.persistence.orm_models import ConsentRecord, ExpressionOfInterest, Invitation, PasswordResetToken, User
-from app.billing.use_cases.manage_credits import add_credits, get_balance
-from app.infrastructure.email.smtp import send_password_reset_email, send_welcome_email
-from app.pii.adapters.vault import (
-    pii_from_user,
-    unlock_vault,
-    unlock_vault_server_key,
-    upsert_vault,
-)
 from app.identity.use_cases.authenticate import (
     authenticate_user,
     create_user,
     get_user_by_email,
     get_user_by_provider,
     update_last_login,
+)
+from app.infrastructure.email.smtp import send_password_reset_email, send_welcome_email
+from app.infrastructure.persistence.database import async_session
+from app.infrastructure.persistence.orm_models import (
+    ConsentRecord,
+    ExpressionOfInterest,
+    Invitation,
+    PasswordResetToken,
+    User,
+)
+from app.pii.adapters.vault import (
+    pii_from_user,
+    unlock_vault,
+    unlock_vault_server_key,
+    upsert_vault,
 )
 from app.web.templates import templates
 
@@ -55,9 +61,7 @@ async def signup_page(request: Request, invite: str | None = None):
     invite_error = None
     if invite:
         async with async_session() as db:
-            result = await db.execute(
-                select(Invitation).where(Invitation.code == invite)
-            )
+            result = await db.execute(select(Invitation).where(Invitation.code == invite))
             invitation = result.scalar_one_or_none()
 
         if not invitation:
@@ -67,11 +71,14 @@ async def signup_page(request: Request, invite: str | None = None):
             invite_error = "This invitation has already been claimed."
             invitation = None
 
-    return templates.TemplateResponse("auth/signup.html", {
-        "request": request,
-        "invitation": invitation,
-        "invite_error": invite_error,
-    })
+    return templates.TemplateResponse(
+        "auth/signup.html",
+        {
+            "request": request,
+            "invitation": invitation,
+            "invite_error": invite_error,
+        },
+    )
 
 
 @router.post("/signup")
@@ -98,9 +105,7 @@ async def signup_submit(
 
         # Validate invite code
         async with async_session() as db:
-            result = await db.execute(
-                select(Invitation).where(Invitation.code == invite_code)
-            )
+            result = await db.execute(select(Invitation).where(Invitation.code == invite_code))
             invitation = result.scalar_one_or_none()
 
         if not invitation:
@@ -131,20 +136,21 @@ async def signup_submit(
         if errors:
             # Re-fetch invitation for the template (it may still be valid for display)
             async with async_session() as db:
-                result = await db.execute(
-                    select(Invitation).where(Invitation.code == invite_code)
-                )
+                result = await db.execute(select(Invitation).where(Invitation.code == invite_code))
                 inv_for_template = result.scalar_one_or_none()
                 # Only pass to template if not yet redeemed
                 if inv_for_template and inv_for_template.redeemed_by:
                     inv_for_template = None
-            return templates.TemplateResponse("auth/signup.html", {
-                "request": request,
-                "errors": errors,
-                "invitation": inv_for_template,
-                "email_value": email,
-                "name_value": name,
-            })
+            return templates.TemplateResponse(
+                "auth/signup.html",
+                {
+                    "request": request,
+                    "errors": errors,
+                    "invitation": inv_for_template,
+                    "email_value": email,
+                    "name_value": name,
+                },
+            )
 
         # Create the user account
         async with async_session() as db:
@@ -152,9 +158,7 @@ async def signup_submit(
 
         # Redeem the invitation and grant credits
         async with async_session() as db:
-            result = await db.execute(
-                select(Invitation).where(Invitation.code == invite_code)
-            )
+            result = await db.execute(select(Invitation).where(Invitation.code == invite_code))
             invitation = result.scalar_one_or_none()
             if invitation and not invitation.redeemed_by:
                 invitation.redeemed_by = new_user.id
@@ -216,14 +220,18 @@ async def signup_submit(
         logger.info("Invited signup: user %s created via invitation %s", new_user.id, invite_code)
 
         from app.infrastructure.instrumentation import record_custom_event
-        record_custom_event("UserSignup", {
-            "user_id": new_user.id,
-            "method": "invitation",
-        })
+
+        record_custom_event(
+            "UserSignup",
+            {
+                "user_id": new_user.id,
+                "method": "invitation",
+            },
+        )
 
         # Send welcome email — fire-and-forget (failure is non-fatal)
         try:
-            base_url = str(request.base_url).rstrip("/")
+            str(request.base_url).rstrip("/")
             await send_welcome_email(to_email=new_user.email, name=new_user.name)
         except Exception:
             logger.exception("Failed to send welcome email to %s", new_user.email)
@@ -259,12 +267,15 @@ async def login_page(request: Request, invite: str | None = None):
         if invite:
             return RedirectResponse(f"/invite/{invite}/redeem", status_code=303)
         return RedirectResponse("/app", status_code=303)
-    return templates.TemplateResponse("auth/login.html", {
-        "request": request,
-        "google_enabled": bool(GOOGLE_CLIENT_ID),
-        "github_enabled": bool(GITHUB_CLIENT_ID),
-        "invite": invite,
-    })
+    return templates.TemplateResponse(
+        "auth/login.html",
+        {
+            "request": request,
+            "google_enabled": bool(GOOGLE_CLIENT_ID),
+            "github_enabled": bool(GITHUB_CLIENT_ID),
+            "invite": invite,
+        },
+    )
 
 
 @router.post("/login")
@@ -278,14 +289,17 @@ async def login_submit(
         user = await authenticate_user(db, email, password)
 
     if not user:
-        return templates.TemplateResponse("auth/login.html", {
-            "request": request,
-            "errors": ["Invalid email or password."],
-            "email": email,
-            "google_enabled": bool(GOOGLE_CLIENT_ID),
-            "github_enabled": bool(GITHUB_CLIENT_ID),
-            "invite": invite_code or None,
-        })
+        return templates.TemplateResponse(
+            "auth/login.html",
+            {
+                "request": request,
+                "errors": ["Invalid email or password."],
+                "email": email,
+                "google_enabled": bool(GOOGLE_CLIENT_ID),
+                "github_enabled": bool(GITHUB_CLIENT_ID),
+                "invite": invite_code or None,
+            },
+        )
 
     token = create_access_token(user.id, user.email)
     request.state.session["auth_token"] = token
@@ -318,9 +332,7 @@ async def login_submit(
     # Auto-redeem invite if one was passed through the login flow.
     if invite_code:
         async with async_session() as db:
-            result = await db.execute(
-                select(Invitation).where(Invitation.code == invite_code)
-            )
+            result = await db.execute(select(Invitation).where(Invitation.code == invite_code))
             invitation = result.scalar_one_or_none()
             if (
                 invitation
@@ -333,7 +345,9 @@ async def login_submit(
                 await add_credits(db, user.id, invitation.credits)
                 logger.info(
                     "Invitation %s auto-redeemed for existing user %s — %d credits granted",
-                    invite_code, user.id, invitation.credits,
+                    invite_code,
+                    user.id,
+                    invitation.credits,
                 )
         if not vault_existed:
             return RedirectResponse("/onboarding?invite_redeemed=1", status_code=303)
@@ -353,11 +367,13 @@ async def logout(request: Request):
 
 # ── OAuth: Google ─────────────────────────────────────────
 
+
 @router.get("/auth/google")
 async def google_login(request: Request):
     if not GOOGLE_CLIENT_ID:
         return RedirectResponse("/login", status_code=303)
     from authlib.integrations.starlette_client import OAuth
+
     oauth = OAuth()
     oauth.register(
         name="google",
@@ -375,6 +391,7 @@ async def google_callback(request: Request):
     if not GOOGLE_CLIENT_ID:
         return RedirectResponse("/login", status_code=303)
     from authlib.integrations.starlette_client import OAuth
+
     oauth = OAuth()
     oauth.register(
         name="google",
@@ -417,10 +434,14 @@ async def google_callback(request: Request):
 
     if not vault_existed:
         from app.infrastructure.instrumentation import record_custom_event
-        record_custom_event("UserSignup", {
-            "user_id": user.id,
-            "method": "google",
-        })
+
+        record_custom_event(
+            "UserSignup",
+            {
+                "user_id": user.id,
+                "method": "google",
+            },
+        )
 
     # Seed credit balance in session.
     async with async_session() as db:
@@ -433,18 +454,20 @@ async def google_callback(request: Request):
 
 # ── OAuth: GitHub ─────────────────────────────────────────
 
+
 @router.get("/auth/github")
 async def github_login(request: Request):
     if not GITHUB_CLIENT_ID:
         return RedirectResponse("/login", status_code=303)
     from authlib.integrations.starlette_client import OAuth
+
     oauth = OAuth()
     oauth.register(
         name="github",
         client_id=GITHUB_CLIENT_ID,
         client_secret=GITHUB_CLIENT_SECRET,
         authorize_url="https://github.com/login/oauth/authorize",
-        access_token_url="https://github.com/login/oauth/access_token",
+        access_token_url="https://github.com/login/oauth/access_token",  # noqa: S106
         api_base_url="https://api.github.com/",
         client_kwargs={"scope": "user:email"},
     )
@@ -457,13 +480,14 @@ async def github_callback(request: Request):
     if not GITHUB_CLIENT_ID:
         return RedirectResponse("/login", status_code=303)
     from authlib.integrations.starlette_client import OAuth
+
     oauth = OAuth()
     oauth.register(
         name="github",
         client_id=GITHUB_CLIENT_ID,
         client_secret=GITHUB_CLIENT_SECRET,
         authorize_url="https://github.com/login/oauth/authorize",
-        access_token_url="https://github.com/login/oauth/access_token",
+        access_token_url="https://github.com/login/oauth/access_token",  # noqa: S106
         api_base_url="https://api.github.com/",
         client_kwargs={"scope": "user:email"},
     )
@@ -509,10 +533,14 @@ async def github_callback(request: Request):
 
     if not vault_existed:
         from app.infrastructure.instrumentation import record_custom_event
-        record_custom_event("UserSignup", {
-            "user_id": user.id,
-            "method": "github",
-        })
+
+        record_custom_event(
+            "UserSignup",
+            {
+                "user_id": user.id,
+                "method": "github",
+            },
+        )
 
     # Seed credit balance in session.
     async with async_session() as db:
@@ -552,11 +580,13 @@ async def forgot_password_submit(request: Request, email: str = Form(...)):
         expires_at = datetime.now(UTC) + timedelta(minutes=PASSWORD_RESET_TTL_MINUTES)
 
         async with async_session() as db:
-            db.add(PasswordResetToken(
-                user_id=user.id,
-                token_hash=token_hash,
-                expires_at=expires_at,
-            ))
+            db.add(
+                PasswordResetToken(
+                    user_id=user.id,
+                    token_hash=token_hash,
+                    expires_at=expires_at,
+                )
+            )
             await db.commit()
 
         base_url = str(request.base_url).rstrip("/")

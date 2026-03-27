@@ -2,16 +2,16 @@
 
 import logging
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import func, literal_column, select, text
+from sqlalchemy import func, select
 
 from app.identity.adapters.fastapi_deps import require_auth
+from app.infrastructure.email.smtp import send_invitation_email
 from app.infrastructure.persistence.database import async_session
 from app.infrastructure.persistence.orm_models import APIRequestLog, ExpressionOfInterest, Invitation, User
-from app.infrastructure.email.smtp import send_invitation_email
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)

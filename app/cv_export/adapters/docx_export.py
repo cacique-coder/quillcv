@@ -13,8 +13,8 @@ from io import BytesIO
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx.shared import Emu, Inches, Pt, RGBColor
 
 logger = logging.getLogger(__name__)
@@ -318,7 +318,7 @@ def _add_section_heading(doc: Document, text: str, style: dict) -> None:
 
     # Derive a hex string from the accent RGBColor for the border
     if border_color is None:
-        border_color = "{:02X}{:02X}{:02X}".format(accent[0], accent[1], accent[2])
+        border_color = f"{accent[0]:02X}{accent[1]:02X}{accent[2]:02X}"
 
     para = doc.add_paragraph()
     para.style = doc.styles["Heading 1"]
@@ -361,7 +361,7 @@ def _add_header(doc: Document, cv_data: dict, style: dict) -> None:
     heading_font = style["heading_font"]
     body_font = style["body_font"]
     name_color: RGBColor = style["name_color"]
-    title_color: RGBColor = style["title_color"]
+    style["title_color"]
     name_size: float = style["name_size"]
     name_align = style.get("name_align", WD_ALIGN_PARAGRAPH.LEFT)
     contact_align = style.get("contact_align", WD_ALIGN_PARAGRAPH.LEFT)
@@ -671,7 +671,7 @@ def _add_languages(doc: Document, cv_data: dict, style: dict) -> None:
         lp = doc.add_paragraph()
         lp.paragraph_format.space_before = Pt(3)
         lp.paragraph_format.space_after = Pt(6)
-        _add_run(lp, ", ".join(l for l in lang_strs if l), body_font, body_size)
+        _add_run(lp, ", ".join(lang for lang in lang_strs if lang), body_font, body_size)
 
 
 # ---------------------------------------------------------------------------

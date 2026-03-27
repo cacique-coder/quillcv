@@ -179,7 +179,7 @@ async def blog_index(request: Request, lang: str):
         )
 
     strings = INDEX_STRINGS[lang]
-    alternate_urls = {l: f"/blog/{l}" for l in SUPPORTED_LANGS}
+    alternate_urls = {lang: f"/blog/{lang}" for lang in SUPPORTED_LANGS}
     lang_posts = POSTS[lang]
     page_description = strings["page_description"]
     in_language_map = {"en": "en", "es": "es", "pt": "pt-BR"}

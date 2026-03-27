@@ -4,12 +4,6 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.persistence.orm_models import Credit
-from app.billing.entities import (
-    ALPHA_PACK_CREDITS,
-    ALPHA_PACK_PRICE_CENTS,
-    ALPHA_USER_CAP,
-    TOPUP_PACKS,
-)
 
 
 async def get_balance(db: AsyncSession, user_id: str) -> int:

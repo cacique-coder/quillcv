@@ -120,7 +120,7 @@ async def sitemap_xml():
         ("es", "es"),
         ("pt", "pt-BR"),
     ]
-    for lang_code, hreflang_code in BLOG_LANGS:
+    for lang_code, _hreflang_code in BLOG_LANGS:
         path = f"/blog/{lang_code}"
         hreflang_links = ""
         for alt_lang_code, alt_hreflang_code in BLOG_LANGS:

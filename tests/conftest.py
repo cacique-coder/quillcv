@@ -3,8 +3,8 @@
 
 import pytest
 
-from app.scoring.adapters.keyword_matcher import ATSResult
 from app.infrastructure.llm.client import LLMClient, LLMResult
+from app.scoring.adapters.keyword_matcher import ATSResult
 
 # ── Sample data ──────────────────────────────────────────────
 

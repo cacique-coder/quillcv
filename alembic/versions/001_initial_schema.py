@@ -16,8 +16,9 @@ Create Date: 2026-03-14
 """
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy import inspect as sa_inspect
+
+from alembic import op
 
 revision = "001_initial"
 down_revision = None

@@ -11,6 +11,7 @@ import logging
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
+from app.cv_export.adapters.template_registry import list_regions
 from app.identity.adapters.fastapi_deps import require_auth
 from app.infrastructure.persistence.database import async_session
 from app.infrastructure.persistence.orm_models import User
@@ -21,7 +22,6 @@ from app.pii.adapters.vault import (
     unlock_vault_server_key,
     upsert_vault,
 )
-from app.cv_export.adapters.template_registry import list_regions
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -70,13 +70,16 @@ async def onboarding_page(request: Request, user: User = Depends(require_auth)):
         return RedirectResponse("/app", status_code=303)
 
     pii = get_session_pii(request)
-    return templates.TemplateResponse("onboarding.html", {
-        "request": request,
-        "pii": pii,
-        "is_oauth": _is_oauth_user(user),
-        "mode": "onboarding",
-        "regions": list_regions(),
-    })
+    return templates.TemplateResponse(
+        "onboarding.html",
+        {
+            "request": request,
+            "pii": pii,
+            "is_oauth": _is_oauth_user(user),
+            "mode": "onboarding",
+            "regions": list_regions(),
+        },
+    )
 
 
 @router.post("/onboarding")
@@ -101,14 +104,18 @@ async def onboarding_submit(
     full_name = full_name.strip()
     if not full_name:
         pii = get_session_pii(request)
-        return templates.TemplateResponse("onboarding.html", {
-            "request": request,
-            "pii": pii,
-            "is_oauth": _is_oauth_user(user),
-            "mode": "onboarding",
-            "regions": list_regions(),
-            "errors": ["Full name is required."],
-        }, status_code=422)
+        return templates.TemplateResponse(
+            "onboarding.html",
+            {
+                "request": request,
+                "pii": pii,
+                "is_oauth": _is_oauth_user(user),
+                "mode": "onboarding",
+                "regions": list_regions(),
+                "errors": ["Full name is required."],
+            },
+            status_code=422,
+        )
 
     pii = {
         "full_name": full_name,
@@ -155,13 +162,16 @@ async def account_pii_page(request: Request, user: User = Depends(require_auth))
                 if password:
                     pii = await unlock_vault(db, user_id=user.id, password=password) or {}
 
-    return templates.TemplateResponse("onboarding.html", {
-        "request": request,
-        "pii": pii,
-        "is_oauth": _is_oauth_user(user),
-        "mode": "account",
-        "regions": list_regions(),
-    })
+    return templates.TemplateResponse(
+        "onboarding.html",
+        {
+            "request": request,
+            "pii": pii,
+            "is_oauth": _is_oauth_user(user),
+            "mode": "account",
+            "regions": list_regions(),
+        },
+    )
 
 
 @router.post("/account/pii")
@@ -186,14 +196,18 @@ async def account_pii_submit(
     full_name = full_name.strip()
     if not full_name:
         pii = get_session_pii(request)
-        return templates.TemplateResponse("onboarding.html", {
-            "request": request,
-            "pii": pii,
-            "is_oauth": _is_oauth_user(user),
-            "mode": "account",
-            "regions": list_regions(),
-            "errors": ["Full name is required."],
-        }, status_code=422)
+        return templates.TemplateResponse(
+            "onboarding.html",
+            {
+                "request": request,
+                "pii": pii,
+                "is_oauth": _is_oauth_user(user),
+                "mode": "account",
+                "regions": list_regions(),
+                "errors": ["Full name is required."],
+            },
+            status_code=422,
+        )
 
     pii = {
         "full_name": full_name,

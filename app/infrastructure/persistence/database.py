@@ -41,9 +41,10 @@ async def init_db():
         logger.info("Skipping auto-migration in development (set RUN_MIGRATIONS=1 to enable)")
         return
 
-    from alembic import command
     from alembic.config import Config
     from sqlalchemy import text
+
+    from alembic import command
 
     # Step 1: Alembic migrations with advisory lock (prevents deadlock
     # when multiple gunicorn workers start simultaneously)

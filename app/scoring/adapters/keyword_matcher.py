@@ -2,7 +2,6 @@ import re
 
 from app.scoring.entities import ATSResult
 
-
 # Common ATS-expected section headings
 EXPECTED_SECTIONS = [
     "summary",

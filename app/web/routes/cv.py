@@ -5,15 +5,20 @@ import time
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 
-from app.infrastructure.llm.client import set_llm_context
-from app.scoring.adapters.keyword_matcher import analyze_ats
-from app.infrastructure.persistence.attempt_store import get_attempt, get_document_bytes, get_document_filename, update_attempt
-from app.cv_generation.adapters.pdfplumber_parser import parse_cv
-from app.cv_generation.adapters.refiner import apply_review_fixes
 from app.cv_export.adapters.docx_export import generate_docx
 from app.cv_export.adapters.puppeteer_pdf import generate_pdf
-from app.cv_export.adapters.template_registry import REGION_RULES, get_region, get_template
-from app.cv_generation.use_cases.generate_cv import run_generation_pipeline, ProgressCallback
+from app.cv_export.adapters.template_registry import REGION_RULES, get_template
+from app.cv_generation.adapters.pdfplumber_parser import parse_cv
+from app.cv_generation.adapters.refiner import apply_review_fixes
+from app.cv_generation.use_cases.generate_cv import run_generation_pipeline
+from app.infrastructure.llm.client import set_llm_context
+from app.infrastructure.persistence.attempt_store import (
+    get_attempt,
+    get_document_bytes,
+    get_document_filename,
+    update_attempt,
+)
+from app.scoring.adapters.keyword_matcher import analyze_ats
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -24,6 +29,7 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 # WebSocket endpoint — real-time progress during CV generation
 # ---------------------------------------------------------------------------
+
 
 @router.websocket("/ws/analyze")
 async def ws_analyze(websocket: WebSocket):
@@ -44,7 +50,10 @@ async def ws_analyze(websocket: WebSocket):
         step_elapsed = round((time.monotonic() - ws_start) * 1000)
         logger.info(
             "WebSocket progress attempt=%s step=%r detail=%r elapsed=%dms",
-            attempt_id, step, detail, step_elapsed,
+            attempt_id,
+            step,
+            detail,
+            step_elapsed,
         )
         try:
             await websocket.send_json({"type": "progress", "step": step, "detail": detail})
@@ -58,26 +67,28 @@ async def ws_analyze(websocket: WebSocket):
         # WebSocket connections bypass BaseHTTPMiddleware, so the session
         # middleware never runs and websocket.state.session is never set.
         # Manually load the session from the cookie before resolving the user.
-        from app.infrastructure.middleware.session import _COOKIE_NAME, _load_session  # noqa: PLC2701
         from app.identity.adapters.fastapi_deps import get_current_user
+        from app.infrastructure.middleware.session import _COOKIE_NAME, _load_session
+
         _ws_session_id = websocket.cookies.get(_COOKIE_NAME)
-        _ws_session_data = (
-            await _load_session(_ws_session_id) if _ws_session_id else None
-        ) or {}
+        _ws_session_data = (await _load_session(_ws_session_id) if _ws_session_id else None) or {}
         websocket.state.session = _ws_session_data
 
         ws_user = await get_current_user(websocket)
         ws_user_id = ws_user.id if ws_user else None
 
         result = await run_generation_pipeline(
-            attempt_id, llm, llm_fast, on_progress=send_progress,
+            attempt_id,
+            llm,
+            llm_fast,
+            on_progress=send_progress,
             user_id=ws_user_id,
             pii=_ws_session_data.get("pii") or {},
             pii_password=_ws_session_data.get("_pii_password"),
         )
 
         total_ms = round((time.monotonic() - ws_start) * 1000)
-        llm_usage = result.get("quality_review") and (
+        result.get("quality_review") and (
             # _llm_usage lives inside cv_data; surface it for the log if present
             result.get("quality_review", {}) or {}
         )
@@ -85,16 +96,17 @@ async def ws_analyze(websocket: WebSocket):
         attempt_data = {}
         try:
             from app.infrastructure.persistence.attempt_store import get_attempt as _get
+
             attempt_data = _get(attempt_id) or {}
         except Exception:
-            pass
+            logger.debug("Failed to retrieve attempt data for %s", attempt_id)
         cv_data = attempt_data.get("cv_data") or {}
         usage = cv_data.get("_llm_usage", {})
         if usage:
             logger.info(
-                "WebSocket complete attempt=%s duration=%dms "
-                "input_tokens=%s output_tokens=%s cost_usd=%s",
-                attempt_id, total_ms,
+                "WebSocket complete attempt=%s duration=%dms input_tokens=%s output_tokens=%s cost_usd=%s",
+                attempt_id,
+                total_ms,
                 usage.get("input_tokens", "?"),
                 usage.get("output_tokens", "?"),
                 usage.get("cost_usd", "?"),
@@ -102,7 +114,8 @@ async def ws_analyze(websocket: WebSocket):
         else:
             logger.info(
                 "WebSocket complete attempt=%s duration=%dms",
-                attempt_id, total_ms,
+                attempt_id,
+                total_ms,
             )
 
         # Render the final HTML
@@ -117,7 +130,10 @@ async def ws_analyze(websocket: WebSocket):
         elapsed_ms = round((time.monotonic() - ws_start) * 1000)
         logger.warning(
             "WebSocket validation error attempt=%s step=%r elapsed=%dms error=%r",
-            attempt_id, current_step[0], elapsed_ms, str(e),
+            attempt_id,
+            current_step[0],
+            elapsed_ms,
+            str(e),
         )
         try:
             await websocket.send_json({"type": "error", "message": str(e)})
@@ -127,7 +143,9 @@ async def ws_analyze(websocket: WebSocket):
         elapsed_ms = round((time.monotonic() - ws_start) * 1000)
         logger.exception(
             "WebSocket generation failed attempt=%s step=%r elapsed=%dms",
-            attempt_id, current_step[0], elapsed_ms,
+            attempt_id,
+            current_step[0],
+            elapsed_ms,
         )
         try:
             await websocket.send_json({"type": "error", "message": "Generation failed. Please try again."})
@@ -143,6 +161,7 @@ async def ws_analyze(websocket: WebSocket):
 # ---------------------------------------------------------------------------
 # HTTP fallback — kept for clients without WebSocket support
 # ---------------------------------------------------------------------------
+
 
 @router.post("/analyze")
 async def analyze(request: Request):
@@ -181,6 +200,7 @@ async def analyze(request: Request):
 # ---------------------------------------------------------------------------
 # Apply fixes (unchanged — stays HTTP)
 # ---------------------------------------------------------------------------
+
 
 @router.post("/apply-fixes")
 async def apply_fixes(request: Request):
@@ -231,6 +251,7 @@ async def apply_fixes(request: Request):
     llm_fast = request.app.state.llm_fast
 
     import uuid as _uuid_mod
+
     fix_user = getattr(request.state, "user", None)
     set_llm_context(
         service="apply_fixes",
@@ -247,14 +268,12 @@ async def apply_fixes(request: Request):
         )
 
     llm_usage = updated_data.pop("_llm_usage", {})
-    rendered_cv = templates.get_template(
-        f"cv_templates/{template_id}.html"
-    ).render(**updated_data)
+    rendered_cv = templates.get_template(f"cv_templates/{template_id}.html").render(**updated_data)
     updated_data["_llm_usage"] = llm_usage
 
-    generated_text = re.sub(r'<style[^>]*>.*?</style>', '', rendered_cv, flags=re.DOTALL)
-    generated_text = re.sub(r'<[^>]+>', ' ', generated_text)
-    generated_text = re.sub(r'\s+', ' ', generated_text).strip()
+    generated_text = re.sub(r"<style[^>]*>.*?</style>", "", rendered_cv, flags=re.DOTALL)
+    generated_text = re.sub(r"<[^>]+>", " ", generated_text)
+    generated_text = re.sub(r"\s+", " ", generated_text).strip()
 
     keyword_data = attempt.get("extracted_keywords")
     job_keywords = keyword_data["all_keywords"] if keyword_data else None
@@ -298,6 +317,7 @@ async def apply_fixes(request: Request):
 # ---------------------------------------------------------------------------
 # PDF download (unchanged)
 # ---------------------------------------------------------------------------
+
 
 @router.get("/download-pdf")
 async def download_pdf(request: Request):

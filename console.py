@@ -19,11 +19,13 @@ Examples:
 import asyncio
 
 from dotenv import load_dotenv
+
 load_dotenv(".env")
 
+from sqlalchemy import select, text, update  # noqa: E402
+
 from app.infrastructure.persistence.database import async_session  # noqa: E402
-from app.infrastructure.persistence.orm_models import *  # noqa: E402, F401, F403
-from sqlalchemy import select, update, delete, func, text  # noqa: E402
+from app.infrastructure.persistence.orm_models import ExpressionOfInterest, Invitation, User  # noqa: E402
 
 
 async def get_user(email: str):

@@ -3,14 +3,14 @@
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
+from app.billing.use_cases.manage_credits import add_credits, get_balance
 from app.identity.adapters.fastapi_deps import get_current_user, require_auth
 from app.infrastructure.persistence.database import async_session
 from app.infrastructure.persistence.orm_models import Invitation, User
-from app.billing.use_cases.manage_credits import add_credits, get_balance
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -24,9 +24,7 @@ async def invite_landing(request: Request, code: str):
     user = await get_current_user(request)
 
     async with async_session() as db:
-        result = await db.execute(
-            select(Invitation).where(Invitation.code == code)
-        )
+        result = await db.execute(select(Invitation).where(Invitation.code == code))
         invitation = result.scalar_one_or_none()
 
     if not invitation:
@@ -48,9 +46,7 @@ async def invite_redeem(request: Request, code: str, user: User = Depends(requir
     """Redeem an invitation for the currently logged-in user."""
 
     async with async_session() as db:
-        result = await db.execute(
-            select(Invitation).where(Invitation.code == code)
-        )
+        result = await db.execute(select(Invitation).where(Invitation.code == code))
         invitation = result.scalar_one_or_none()
 
         if not invitation:
@@ -83,11 +79,15 @@ async def invite_redeem(request: Request, code: str, user: User = Depends(requir
         await add_credits(db, user.id, invitation.credits)
 
         from app.infrastructure.instrumentation import record_custom_event
-        record_custom_event("InvitationRedeemed", {
-            "user_id": user.id,
-            "credits_granted": invitation.credits,
-            "invitation_code": code,
-        })
+
+        record_custom_event(
+            "InvitationRedeemed",
+            {
+                "user_id": user.id,
+                "credits_granted": invitation.credits,
+                "invitation_code": code,
+            },
+        )
 
         # Refresh cached balance in session so the nav bar updates immediately.
         new_balance = await get_balance(db, user.id)
