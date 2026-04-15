@@ -18,6 +18,68 @@ LANG_LABELS = {
 POSTS = {
     "en": [
         {
+            "slug": "cv-formats-around-the-world",
+            "title": "CV Formats Around the World: Why One Resume Doesn't Work in 12 Countries",
+            "description": "Your US resume isn't a German Lebenslauf. It isn't a Japanese rirekisho. Here's what actually changes country by country — and why sending the same CV everywhere quietly kills your application.",
+            "date": "2026-04-16",
+            "date_modified": "2026-04-16",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-format", "international-jobs", "region-specific", "cv-tips"],
+            "faq": [
+                {
+                    "q": "Are a CV and a resume the same thing?",
+                    "a": "Depends where you are. In the US and Canada, a résumé is the short sales document and 'CV' is reserved for academic use. In the UK, Australia, and most of Europe, the word 'CV' is used for what Americans call a résumé. The formats also differ meaningfully — length, photo, personal details, and tone all vary by country.",
+                },
+                {
+                    "q": "Do I need a different CV for every country I apply to?",
+                    "a": "Yes, if you're applying across regions. A US résumé sent to a German employer looks incomplete (no photo, no date of birth, no signature). A German Lebenslauf sent to a US employer creates legal problems by including protected characteristics. Translating isn't enough — the format has to change.",
+                },
+                {
+                    "q": "Which countries still expect a photo on a CV?",
+                    "a": "Germany, France, Brazil, India, the UAE, and Japan generally expect or strongly prefer a professional photo. The US, UK, Canada, Australia, and New Zealand specifically do not — in those countries photos can trigger anti-discrimination concerns and are routinely stripped by recruiters.",
+                },
+                {
+                    "q": "How long should a CV be in each country?",
+                    "a": "One page in the US for under a decade of experience; two pages elsewhere. Two to three pages is standard in the UK, Australia, Germany, and France. Indian CVs run two to four pages. Japanese rirekisho are form-bound so length isn't really a choice.",
+                },
+                {
+                    "q": "Do I need to translate my CV or rewrite it?",
+                    "a": "Rewrite it. Translating is the most common mistake — the words land, but the format, fields, and tone will all be wrong for the target country. A good multi-country CV tool will produce the right format per region, not just a translated version of the same document.",
+                },
+            ],
+        },
+        {
+            "slug": "why-ai-cover-letters-get-ignored",
+            "title": "Why Most AI Cover Letters Get Ignored (and How to Fix Yours)",
+            "description": "Generic openings, fabricated achievements, and copy-paste enthusiasm. The three ways AI cover letters fail — and what actually gets a recruiter to read past the first paragraph.",
+            "date": "2026-04-16",
+            "date_modified": "2026-04-16",
+            "author": "Daniel Zambrano",
+            "tags": ["cover-letters", "ai-writing", "job-applications", "career-advice"],
+            "faq": [
+                {
+                    "q": "Are AI-generated cover letters effective in 2026?",
+                    "a": "Only if used carefully. A cover letter written with AI defaults — generic opener, invented metrics, LinkedIn-style enthusiasm — gets filtered instantly because recruiters now see hundreds of identical ones every week. AI is useful as a structuring and polishing tool, not as a content-generating one.",
+                },
+                {
+                    "q": "Can hiring managers tell if a cover letter is written by AI?",
+                    "a": "Often yes, because AI models converge on similar phrasings for similar prompts. Openers like 'I am writing to express my keen interest' and 'with over a decade of experience' appear in dozens of cover letters per week and function as immediate signal that the candidate didn't personalise the draft.",
+                },
+                {
+                    "q": "What's the biggest mistake people make with AI cover letters?",
+                    "a": "Fabricated achievements. When the AI is given a vague prompt it invents plausible-sounding metrics that the candidate can't defend in an interview. Always feed the AI your actual achievements and let it help you phrase them — never let it invent numbers.",
+                },
+                {
+                    "q": "Should I include a cover letter if the job says it's optional?",
+                    "a": "If it's a role you actually want, yes. A short, specific cover letter differentiates you from the majority who skip it or send a generic one. The key word is 'specific' — a generic cover letter signals less effort than no cover letter at all.",
+                },
+                {
+                    "q": "How do I make an AI cover letter sound authentic?",
+                    "a": "Give the AI real context — your specific achievements, the specific job posting, and the company's tone. Then edit the output: the opening line should reference something only this company would care about; the middle should use your actual numbers; the tone should match the company's voice, not LinkedIn's.",
+                },
+            ],
+        },
+        {
             "slug": "why-auto-apply-is-hurting-your-job-search",
             "title": "Why Auto-Apply Tools Are Hurting Your Job Search",
             "description": "Mass-applying to hundreds of jobs sounds efficient, but it kills your chances. Here's why intentional, tailored applications still win — and how to do it without the grind.",
@@ -82,6 +144,68 @@ POSTS = {
     ],
     "es": [
         {
+            "slug": "formatos-de-cv-en-el-mundo",
+            "title": "Formatos de CV en el Mundo: Por Qué Un Solo Currículum No Funciona en 12 Países",
+            "description": "Tu CV estadounidense no es un Lebenslauf alemán. No es un rirekisho japonés. Acá te contamos qué cambia realmente país por país — y por qué mandar el mismo CV a todas partes arruina tu postulación en silencio.",
+            "date": "2026-04-16",
+            "date_modified": "2026-04-16",
+            "author": "Daniel Zambrano",
+            "tags": ["formato-cv", "trabajo-internacional", "cv-por-país", "consejos-cv"],
+            "faq": [
+                {
+                    "q": "¿Un CV y un résumé son lo mismo?",
+                    "a": "Depende de dónde estés. En EE.UU. y Canadá, un résumé es el documento corto de ventas y 'CV' se reserva para uso académico. En Reino Unido, Australia y gran parte de Europa, la palabra 'CV' se usa para lo que los estadounidenses llaman résumé. Los formatos también cambian — extensión, foto, datos personales y tono varían por país.",
+                },
+                {
+                    "q": "¿Necesito un CV diferente para cada país al que postule?",
+                    "a": "Sí, si postulás a varias regiones. Un résumé estadounidense enviado a un empleador alemán parece incompleto (sin foto, sin fecha de nacimiento, sin firma). Un Lebenslauf alemán enviado a un empleador estadounidense genera problemas legales al incluir características protegidas. Traducir no alcanza — el formato tiene que cambiar.",
+                },
+                {
+                    "q": "¿Qué países todavía esperan foto en el CV?",
+                    "a": "Alemania, Francia, Brasil, India, EAU y Japón generalmente esperan o prefieren fuertemente una foto profesional. EE.UU., Reino Unido, Canadá, Australia y Nueva Zelanda específicamente no — en esos países las fotos pueden generar problemas de discriminación y las eliminan los reclutadores.",
+                },
+                {
+                    "q": "¿Qué extensión debe tener un CV en cada país?",
+                    "a": "Una página en EE.UU. para menos de una década de experiencia; dos páginas en otras partes. Dos o tres páginas es estándar en Reino Unido, Australia, Alemania y Francia. Los CVs indios tienen de dos a cuatro páginas. Los rirekisho japoneses usan un formulario estandarizado, así que la extensión no se elige.",
+                },
+                {
+                    "q": "¿Tengo que traducir mi CV o reescribirlo?",
+                    "a": "Reescribirlo. Traducir es el error más común — las palabras funcionan, pero el formato, los campos y el tono van a estar mal para el país objetivo. Una buena herramienta multi-país produce el formato correcto por región, no sólo una versión traducida del mismo documento.",
+                },
+            ],
+        },
+        {
+            "slug": "por-que-ignoran-tus-cartas-de-presentacion-con-ia",
+            "title": "Por Qué Ignoran la Mayoría de las Cartas de Presentación con IA (y Cómo Arreglar la Tuya)",
+            "description": "Aperturas genéricas, logros inventados y entusiasmo copiado. Las tres formas en que las cartas con IA fallan — y qué hace que un reclutador pase del primer párrafo.",
+            "date": "2026-04-16",
+            "date_modified": "2026-04-16",
+            "author": "Daniel Zambrano",
+            "tags": ["carta-de-presentación", "ia-redacción", "postulaciones", "carrera-profesional"],
+            "faq": [
+                {
+                    "q": "¿Son efectivas las cartas de presentación generadas con IA en 2026?",
+                    "a": "Sólo si se usan con cuidado. Una carta escrita con los defaults de IA — apertura genérica, métricas inventadas, entusiasmo al estilo LinkedIn — se filtra al instante porque los reclutadores hoy ven cientos iguales por semana. La IA es útil como herramienta para estructurar y pulir, no como generadora de contenido.",
+                },
+                {
+                    "q": "¿Pueden los reclutadores detectar si una carta fue escrita por IA?",
+                    "a": "Con frecuencia sí, porque los modelos de IA convergen en frases parecidas ante prompts parecidos. Aperturas como 'Por medio de la presente expreso mi marcado interés' y 'con más de una década de experiencia' aparecen en decenas de cartas por semana y funcionan como señal inmediata de que el candidato no personalizó el borrador.",
+                },
+                {
+                    "q": "¿Cuál es el error más grande con las cartas con IA?",
+                    "a": "Inventar logros. Cuando le das a la IA un prompt vago, inventa métricas verosimiles pero falsas que no podés defender en una entrevista. Alimentá siempre a la IA con tus logros reales y dejale que te ayude a redactarlos — nunca la dejes inventar números.",
+                },
+                {
+                    "q": "¿Debo incluir carta de presentación si la oferta dice que es opcional?",
+                    "a": "Si es un rol que realmente te interesa, sí. Una carta corta y específica te diferencia de la mayoría que la omite o manda una genérica. La palabra clave es 'específica' — una carta genérica señala menos esfuerzo que no enviar ninguna.",
+                },
+                {
+                    "q": "¿Cómo hago que una carta con IA suene auténtica?",
+                    "a": "Dale a la IA contexto real — tus logros específicos, la oferta específica, y el tono de la empresa. Después editá la salida: la primera línea debe referir algo que sólo a esta empresa le importe; el medio debe usar tus números reales; el tono debe coincidir con la voz de la empresa, no con LinkedIn.",
+                },
+            ],
+        },
+        {
             "slug": "por-que-aplicar-en-masa-perjudica-tu-busqueda-de-empleo",
             "title": "Por Qué Aplicar en Masa Perjudica Tu Búsqueda de Empleo",
             "description": "Las herramientas de postulación automática prometen enviar cientos de solicitudes, pero arruinan tus chances. Descubrí por qué las postulaciones pensadas siguen ganando.",
@@ -145,6 +269,68 @@ POSTS = {
         },
     ],
     "pt": [
+        {
+            "slug": "formatos-de-curriculo-pelo-mundo",
+            "title": "Formatos de Currículo pelo Mundo: Por Que Um Único Currículo Não Funciona em 12 Países",
+            "description": "Seu résumé americano não é um Lebenslauf alemão. Não é um rirekisho japonês. Veja o que realmente muda país a país — e por que mandar o mesmo currículo para todo lado mata sua candidatura em silêncio.",
+            "date": "2026-04-16",
+            "date_modified": "2026-04-16",
+            "author": "Daniel Zambrano",
+            "tags": ["formato-currículo", "trabalho-internacional", "currículo-por-país", "dicas-cv"],
+            "faq": [
+                {
+                    "q": "Um CV e um résumé são a mesma coisa?",
+                    "a": "Depende de onde você está. Nos EUA e Canadá, o résumé é o documento curto de vendas e 'CV' é reservado para uso acadêmico. No Reino Unido, Austrália e grande parte da Europa, a palavra 'CV' é usada para o que os americanos chamam de résumé. Os formatos também mudam — extensão, foto, dados pessoais e tom variam por país.",
+                },
+                {
+                    "q": "Preciso de um currículo diferente para cada país?",
+                    "a": "Sim, se você se candidata em várias regiões. Um résumé americano enviado a um empregador alemão parece incompleto (sem foto, sem data de nascimento, sem assinatura). Um Lebenslauf alemão enviado a um empregador americano gera problemas legais por incluir características protegidas. Traduzir não basta — o formato precisa mudar.",
+                },
+                {
+                    "q": "Quais países ainda esperam foto no currículo?",
+                    "a": "Alemanha, França, Brasil, Índia, EAU e Japão geralmente esperam ou preferem fortemente uma foto profissional. EUA, Reino Unido, Canadá, Austrália e Nova Zelândia especificamente não — nesses países fotos podem gerar problemas de discriminação e são removidas pelos recrutadores.",
+                },
+                {
+                    "q": "Qual a extensão de um currículo em cada país?",
+                    "a": "Uma página nos EUA para menos de uma década de experiência; duas páginas em outros lugares. Duas a três páginas é padrão em Reino Unido, Austrália, Alemanha e França. Currículos indianos têm de duas a quatro páginas. Os rirekisho japoneses usam um formulário padronizado, então a extensão não é uma escolha.",
+                },
+                {
+                    "q": "Preciso traduzir meu currículo ou reescrevê-lo?",
+                    "a": "Reescrever. Traduzir é o erro mais comum — as palavras funcionam, mas o formato, os campos e o tom vão estar errados para o país-alvo. Uma boa ferramenta multi-país produz o formato certo por região, não apenas uma versão traduzida do mesmo documento.",
+                },
+            ],
+        },
+        {
+            "slug": "por-que-ignoram-suas-cartas-de-apresentacao-com-ia",
+            "title": "Por Que Ignoram a Maioria das Cartas de Apresentação com IA (e Como Arrumar a Sua)",
+            "description": "Aberturas genéricas, realizações inventadas e entusiasmo copiado. As três formas pelas quais cartas com IA falham — e o que faz um recrutador ler além do primeiro parágrafo.",
+            "date": "2026-04-16",
+            "date_modified": "2026-04-16",
+            "author": "Daniel Zambrano",
+            "tags": ["carta-de-apresentação", "ia-escrita", "candidaturas", "carreira-profissional"],
+            "faq": [
+                {
+                    "q": "Cartas de apresentação geradas por IA são eficazes em 2026?",
+                    "a": "Só se usadas com cuidado. Uma carta escrita com defaults de IA — abertura genérica, métricas inventadas, entusiasmo estilo LinkedIn — é filtrada na hora porque os recrutadores hoje veem centenas iguais por semana. A IA é útil como ferramenta para estruturar e polir, não como geradora de conteúdo.",
+                },
+                {
+                    "q": "Os recrutadores conseguem detectar se uma carta foi escrita por IA?",
+                    "a": "Muitas vezes sim, porque modelos de IA convergem para frases parecidas em prompts parecidos. Aberturas como 'Venho por meio desta expressar meu grande interesse' e 'com mais de uma década de experiência' aparecem em dezenas de cartas por semana e funcionam como sinal imediato de que o candidato não personalizou o rascunho.",
+                },
+                {
+                    "q": "Qual o maior erro com cartas de IA?",
+                    "a": "Inventar realizações. Quando você dá à IA um prompt vago, ela inventa métricas plausíveis, porém falsas, que você não consegue defender numa entrevista. Alimente sempre a IA com suas realizações reais e deixe que ela te ajude a formular — nunca deixe que invente números.",
+                },
+                {
+                    "q": "Devo incluir carta de apresentação se a vaga diz que é opcional?",
+                    "a": "Se é uma vaga que você realmente quer, sim. Uma carta curta e específica te diferencia da maioria que pula ou manda uma genérica. A palavra-chave é 'específica' — uma carta genérica sinaliza menos esforço do que não enviar nenhuma.",
+                },
+                {
+                    "q": "Como faço uma carta com IA soar autêntica?",
+                    "a": "Dê à IA contexto real — suas realizações específicas, a vaga específica, e o tom da empresa. Depois edite a saída: a primeira linha deve citar algo que só essa empresa se importaria; o meio deve usar seus números reais; o tom deve combinar com a voz da empresa, não com a do LinkedIn.",
+                },
+            ],
+        },
         {
             "slug": "por-que-se-candidatar-em-massa-prejudica-sua-busca-de-emprego",
             "title": "Por Que Se Candidatar em Massa Prejudica Sua Busca de Emprego",
@@ -212,6 +398,30 @@ POSTS = {
 
 # Maps (lang, slug) -> {other_lang: other_slug} for hreflang on post pages
 TRANSLATIONS = {
+    ("en", "cv-formats-around-the-world"): {
+        "es": "formatos-de-cv-en-el-mundo",
+        "pt": "formatos-de-curriculo-pelo-mundo",
+    },
+    ("es", "formatos-de-cv-en-el-mundo"): {
+        "en": "cv-formats-around-the-world",
+        "pt": "formatos-de-curriculo-pelo-mundo",
+    },
+    ("pt", "formatos-de-curriculo-pelo-mundo"): {
+        "en": "cv-formats-around-the-world",
+        "es": "formatos-de-cv-en-el-mundo",
+    },
+    ("en", "why-ai-cover-letters-get-ignored"): {
+        "es": "por-que-ignoran-tus-cartas-de-presentacion-con-ia",
+        "pt": "por-que-ignoram-suas-cartas-de-apresentacao-com-ia",
+    },
+    ("es", "por-que-ignoran-tus-cartas-de-presentacion-con-ia"): {
+        "en": "why-ai-cover-letters-get-ignored",
+        "pt": "por-que-ignoram-suas-cartas-de-apresentacao-com-ia",
+    },
+    ("pt", "por-que-ignoram-suas-cartas-de-apresentacao-com-ia"): {
+        "en": "why-ai-cover-letters-get-ignored",
+        "es": "por-que-ignoran-tus-cartas-de-presentacion-con-ia",
+    },
     ("en", "why-auto-apply-is-hurting-your-job-search"): {
         "es": "por-que-aplicar-en-masa-perjudica-tu-busqueda-de-empleo",
         "pt": "por-que-se-candidatar-em-massa-prejudica-sua-busca-de-emprego",

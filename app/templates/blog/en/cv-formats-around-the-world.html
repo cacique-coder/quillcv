@@ -1,0 +1,148 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>A CV is not a universal document.</strong> What recruiters expect in Munich is nearly the opposite of what recruiters expect in Melbourne, and what works in Tokyo would get your application quietly binned in Toronto. Same facts, same career &mdash; but the format, the fields, and even the file itself have to change. Sending one CV everywhere is the slowest way to get ignored in twelve countries at once.</p>
+
+        <p>There's a myth that circulates in job-search advice: "a good CV is a good CV, anywhere." It's comforting. It's wrong. A beautifully crafted two-page American r&eacute;sum&eacute; &mdash; no photo, no date of birth, skills front and centre &mdash; will make a German recruiter wonder why half the file is missing. A traditional Japanese <em>rirekisho</em> will look, to a British hiring manager, like you filled out a government form instead of applying for a job.</p>
+
+        <p>This isn't about formatting preferences. It's about what local employers read as professionalism, seriousness, and fit. And the rules vary more than most people realise.</p>
+
+        <h2>Why the same CV doesn't travel</h2>
+
+        <p>Three forces pull CVs in different directions across borders.</p>
+
+        <p><strong>Law and anti-discrimination culture.</strong> In the US, UK, Australia, Canada, and New Zealand, hiring is heavily regulated against discrimination. That's why you won't find a photo, date of birth, marital status, or nationality on a well-written CV &mdash; including any of those hands the employer a protected characteristic and becomes a legal liability. In Germany, France, the Netherlands, and across much of Continental Europe, those same fields are normal and often <em>expected</em> &mdash; their legal frameworks work differently, and the local cultural read is that more context makes you easier to shortlist, not riskier.</p>
+
+        <p><strong>Language of evaluation.</strong> American r&eacute;sum&eacute;s are written for speed: recruiters spend six to eight seconds scanning bullet points. That's why US CVs are terse, achievement-first, and often one page. European CVs assume the reader will take longer, and a two- or three-page document is normal. Japanese <em>rirekisho</em> take a different approach entirely: they're standardised forms, often filled by hand, because the signal being sent is discipline and attention to detail.</p>
+
+        <p><strong>What employers think a CV is <em>for</em>.</strong> In the Anglo world, a CV is a marketing document &mdash; you, pitched. In Germany, it's a record &mdash; verifiable, dated, thorough. In Japan, it's partly a ritual &mdash; a demonstration of how seriously you take the process. When you send the wrong kind of document, the recruiter's first reaction isn't "they're underqualified." It's "they don't understand how we do this."</p>
+
+        <h2>What actually changes country by country</h2>
+
+        <h3>United States &amp; Canada &mdash; the lean r&eacute;sum&eacute;</h3>
+
+        <p>One page if you have under a decade of experience, two pages if more. No photo. No date of birth. No "Curriculum Vitae" heading &mdash; the document is called a <em>r&eacute;sum&eacute;</em>, and the word "CV" is reserved for academic contexts. Personal statements are out of fashion; a professional summary of two or three lines is acceptable. References are "available on request" or omitted entirely. Achievements come before responsibilities; metrics come before adjectives. Spelling is American (<em>organization</em>, <em>analyze</em>).</p>
+
+        <h3>United Kingdom &amp; Ireland &mdash; the concise CV</h3>
+
+        <p>Called a CV, but closer to the American r&eacute;sum&eacute; than to the Continental one. Two pages is the norm. No photo, no DOB, no marital status. A short personal profile at the top is common. References are often listed or noted "on request." Spelling is British (<em>organisation</em>, <em>analyse</em>). The UK convention is slightly more generous with detail than the US, but not by much.</p>
+
+        <h3>Australia &amp; New Zealand &mdash; the hybrid</h3>
+
+        <p>Two to three pages. No photo, no DOB. Career summary at the top. References are expected &mdash; usually two, with contact details, from previous managers. Education and work history are reverse-chronological. Visa or work-rights status is often expected on the CV itself, particularly for roles where sponsorship is a question. Spelling is Australian-British.</p>
+
+        <h3>Germany &mdash; the <em>Lebenslauf</em></h3>
+
+        <p>This is where the Anglo CV breaks hardest. A German <em>Lebenslauf</em> expects: a professional-looking photo (top right), date and place of birth, nationality, a tabular layout with a left-hand column of dates, and a signature at the bottom. Page length is two to three pages. Gaps in your career history should be accounted for, not hidden. Cover letters (<em>Anschreiben</em>) are expected and are scrutinised for formality, precision, and specificity to the role. Honesty and completeness are read as professionalism.</p>
+
+        <h3>France &amp; the Netherlands &mdash; Continental variants</h3>
+
+        <p>France is closer to Germany than to the UK: photos are common, date of birth is expected, a one-to-two-page CV is standard. Dutch CVs look similar, though the photo is less universal and English is often acceptable in international-leaning companies. Across both, expect recruiters to read linearly and expect the document to justify every gap and transition.</p>
+
+        <h3>Japan &mdash; the <em>rirekisho</em> and <em>shokumu keirekisho</em></h3>
+
+        <p>Uniquely rule-bound. The <em>rirekisho</em> is a standardised form: personal details including date of birth, a headshot, an education and work history in a rigid table, and a small section for hobbies and reasons for applying. Alongside it, a <em>shokumu keirekisho</em> details work history in longer prose. Historically handwritten; increasingly accepted digitally. Deviating from the expected format signals carelessness &mdash; so the "creativity" that works in Silicon Valley r&eacute;sum&eacute;s is actively harmful here.</p>
+
+        <h3>United Arab Emirates &amp; Gulf region &mdash; detailed personal information</h3>
+
+        <p>Expect photo, nationality, date of birth, marital status, and occasionally religion. Two to three pages. Visa status and current location are important. English CVs are standard for expat-heavy sectors; Arabic for public-sector and locally-focused roles. Fields that would raise flags in the US are entirely routine here.</p>
+
+        <h3>India &mdash; biodata influence</h3>
+
+        <p>Indian CVs sit somewhere between an Anglo r&eacute;sum&eacute; and the South Asian biodata tradition. Photo, date of birth, marital status, and father's name are common. CVs run two to four pages. Detailed educational records (percentages, institution rankings, school years) matter more than in the West. "Declaration" statements at the bottom (<em>"I hereby declare that the above information is true&hellip;"</em>) are traditional.</p>
+
+        <h3>Brazil &amp; Latin America &mdash; the <em>curr&iacute;culo</em> / <em>hoja de vida</em></h3>
+
+        <p>Photo, date of birth, and marital status are usual. A one-to-two-page document, warmer in tone than a US r&eacute;sum&eacute;, often leading with a self-description paragraph. References expected. In several countries, a national ID number is routine on the CV itself. Spelling is Brazilian Portuguese or regional Spanish &mdash; not Iberian &mdash; and the tone matters.</p>
+
+        <h2>The "translate and send" trap</h2>
+
+        <p>The most expensive mistake international job seekers make is treating a CV as a language problem. They take their US r&eacute;sum&eacute;, run it through a translator, and send it to employers in Germany or Brazil. The words are right. Everything else is wrong. Missing photo. Missing date of birth. Wrong page length. Wrong tone. Wrong layout.</p>
+
+        <p>Worse, they sometimes do the opposite: take a Continental CV, translate it into English, and send it to the US. Now there's a photo and a date of birth on the r&eacute;sum&eacute; of an American-bound candidate, and the recruiter has to pretend they didn't see it. The candidate has just made the legal team's job harder.</p>
+
+        <p>The translation isn't the problem. The <em>format</em> is.</p>
+
+        <h2>What transfers, regardless of country</h2>
+
+        <p>A few things are genuinely universal:</p>
+
+        <ul>
+            <li><strong>Reverse-chronological work history.</strong> Pretty much every country expects this. The exception is academic CVs, which follow their own rules worldwide.</li>
+            <li><strong>Specific, measurable achievements.</strong> "Led a team" matters less than "Led a team of six engineers, shipped four releases, reduced deploy time from 40 to 8 minutes." This travels across every language and culture.</li>
+            <li><strong>Honesty about gaps.</strong> How you explain a gap differs. That you should explain it &mdash; rather than hide it &mdash; is nearly universal now.</li>
+            <li><strong>Clear, parseable formatting.</strong> Applicant Tracking Systems read CVs in almost every country. Complex columns, text in images, and decorative fonts get your information lost no matter where you're applying.</li>
+            <li><strong>Tailoring to the role.</strong> This matters in every country we cover &mdash; because the one thing recruiters worldwide share is a distaste for applications that clearly went to a hundred other companies before reaching them.</li>
+        </ul>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>We built QuillCV because we were tired of job-search tools that pretend a CV is a CV is a CV. It isn't. So when you paste in a job description on QuillCV, we don't just tailor the content &mdash; we pick a format that matches the expectations of the country the role is in.</p>
+
+        <ul>
+            <li><strong>Twelve country variants, not one.</strong> Australia, the US, the UK, Canada, New Zealand, Germany, France, the Netherlands, India, Brazil, the UAE, and Japan. Each with the right length, photo rules, expected fields, and spelling.</li>
+            <li><strong>Automatic field handling.</strong> Your date of birth appears when it's expected (Germany, Brazil, Japan) and is left off when it shouldn't be there (US, UK, Australia). Same with photo, marital status, nationality, and visa.</li>
+            <li><strong>Template libraries per region.</strong> A <em>Lebenslauf</em> for Germany, a <em>rirekisho</em> and <em>shokumu keirekisho</em> for Japan, a <em>curr&iacute;culo</em> for Brazil, a <em>hoja de vida</em> for LatAm, and modern ATS-ready layouts for Anglo markets.</li>
+            <li><strong>ATS-optimised no matter the country.</strong> All formats are parseable &mdash; no text in images, no hidden columns &mdash; because Applicant Tracking Systems exist everywhere now.</li>
+        </ul>
+
+        <p>You still write your career. We make sure the document arrives in the shape the local recruiter actually wants to read.</p>
+
+        <h2>The short version</h2>
+
+        <p>If you're only going to remember three things from this post:</p>
+
+        <ol>
+            <li>A US r&eacute;sum&eacute; and a German <em>Lebenslauf</em> are different documents, not translations of the same document.</li>
+            <li>What's <em>illegal to include</em> in one country is <em>expected</em> in another. Get that wrong and you either lose the application or trigger a compliance headache.</li>
+            <li>Tailor by country first, role second. Both matter. Most people do neither.</li>
+        </ol>
+
+        <p>Your career is international. Your CV should be too &mdash; not the same document, translated, but the <em>right</em> document, per market, every time.</p>
+    </article>
+</div>
+{% endblock %}

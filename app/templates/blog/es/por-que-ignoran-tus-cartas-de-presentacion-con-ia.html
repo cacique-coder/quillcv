@@ -1,0 +1,129 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/es" class="blog-back">&larr; Volver al blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>La mayor&iacute;a de las cartas de presentaci&oacute;n generadas con IA se borran antes del segundo p&aacute;rrafo.</strong> No porque la IA escriba mal &mdash; escribe con fluidez &mdash; sino porque "fluido" es justamente lo que los reclutadores hoy interpretan como se&ntilde;al de alarma. Las aperturas son intercambiables. Los logros son de otra persona. El tono no es de nadie. Una carta que de verdad se lee todav&iacute;a tiene una mano humana. Ac&aacute; te cuento c&oacute;mo notar la diferencia &mdash; y c&oacute;mo escribir una con la ayuda real de la IA.</p>
+
+        <p>Desde hace unos dieciocho meses, cada reclutador con el que hablamos dice lo mismo: las cartas de presentaci&oacute;n que llegan a sus bandejas suenan todas igual. No porque los candidatos se coordinaran. Porque est&aacute;n usando las mismas tres o cuatro herramientas de IA, con los mismos prompts por defecto, produciendo la misma prosa por defecto.</p>
+
+        <p>"Por medio de la presente expreso mi marcado inter&eacute;s en la posici&oacute;n de&hellip;"</p>
+
+        <p>"Con m&aacute;s de una d&eacute;cada de experiencia en&hellip;"</p>
+
+        <p>"Estoy convencido de que mis habilidades se alinean perfectamente con&hellip;"</p>
+
+        <p>Cada reclutador vio esas aperturas quinientas veces este trimestre. No est&aacute;n equivocadas, exactamente. Son ruido &mdash; se&ntilde;ales que se comprimen a cero de inmediato, y entonces el lector pasa al CV, que hubiese preferido leer desde el principio.</p>
+
+        <p>Si vas a usar IA para tu carta de presentaci&oacute;n &mdash; y deber&iacute;as &mdash; ten&eacute;s que entender las tres formas en que silenciosamente falla.</p>
+
+        <h2>Falla n&uacute;mero uno: la apertura intercambiable</h2>
+
+        <p>Un modelo de IA, dado casi nada de contexto, defaultea a la formulaci&oacute;n estad&iacute;sticamente m&aacute;s com&uacute;n en sus datos de entrenamiento. Por eso la primera l&iacute;nea de la carta promedio generada con IA es estructuralmente id&eacute;ntica a la primera l&iacute;nea de todas las dem&aacute;s cartas generadas con IA.</p>
+
+        <p>El problema no es gramatical &mdash; las oraciones est&aacute;n bien. El problema es la <em>se&ntilde;al</em>. Cuando un reclutador ve "Por medio de la presente expreso mi inter&eacute;s en la posici&oacute;n de Ingeniero Senior en Acme", ya sabe tres cosas: el candidato us&oacute; IA, no personaliz&oacute; el prompt, y est&aacute; por leer dos o tres p&aacute;rrafos m&aacute;s en el mismo registro. La mayor&iacute;a para de leer ah&iacute; mismo. Ni siquiera llegaron al motivo por el que postulaste.</p>
+
+        <p>Qu&eacute; funciona de verdad: abr&iacute; con algo espec&iacute;fico que s&oacute;lo pueda aplicar a vos y a esa empresa. Una oraci&oacute;n sobre un lanzamiento reciente. Una referencia a una charla que dio el CTO. Una observaci&oacute;n sobre el problema que resuelve el rol. El punto no es adular &mdash; el punto es demostrar, en las primeras quince palabras, que un humano ley&oacute; la descripci&oacute;n.</p>
+
+        <h2>Falla n&uacute;mero dos: logros que no son tuyos</h2>
+
+        <p>&Eacute;sta es m&aacute;s sutil y mucho m&aacute;s da&ntilde;ina. Cuando le das a la IA un prompt vago &mdash; "escrib&iacute;me una carta para un rol senior de marketing" &mdash; el modelo llena los huecos con m&eacute;tricas verosimiles pero inventadas. "Lider&eacute; un equipo que creci&oacute; los ingresos un 40%". "Implement&eacute; un nuevo CRM que ahorr&oacute; 500 horas de trabajo manual por trimestre". Los n&uacute;meros son excelentes. Pero cuando el reclutador te pregunta por ellos en la entrevista, no los pod&eacute;s defender. Porque no sucedieron.</p>
+
+        <p>Peor todav&iacute;a: si el reclutador nota que la misma frase exacta aparece en la mitad de las cartas que recibe esa semana (los modelos de IA convergen en frases parecidas ante prompts parecidos), los n&uacute;meros empiezan a sentirse sospechosamente gen&eacute;ricos entre candidatos. Ahora el reclutador est&aacute; haciendo pattern-matching contra la IA &mdash; no contra vos.</p>
+
+        <p>Qu&eacute; funciona de verdad: aliment&aacute; a la IA con tus logros reales, en tus propias palabras, y dejala que te ayude a <em>estructurarlos</em> y <em>afilarlos</em>. La materia prima tiene que ser tuya. La IA pule. No inventa.</p>
+
+        <h2>Falla n&uacute;mero tres: desajuste de tono</h2>
+
+        <p>Cada empresa tiene un tono. Una fintech de Berl&iacute;n habla distinto que un estudio de dise&ntilde;o en Sydney, que habla distinto que un laboratorio de rob&oacute;tica en Tokio, que habla distinto que un fabricante del interior de Ohio. La mayor&iacute;a de las cartas generadas con IA est&aacute;n escritas en un registro &uacute;nico: vagamente profesional, levemente entusiasta, con un leve tono corporativo estadounidense. Es el registro de los posts de LinkedIn. Es el registro de los posters motivacionales de sala de reuniones.</p>
+
+        <p>Mand&aacute;selo a una startup casual y vas a sonar como un consultor pitcheando. Mand&aacute;selo a una empresa formal y vas a sonar como un influencer de LinkedIn. De cualquiera de las dos maneras, el modelo interno del reclutador dice "no encaja con nuestra cultura" antes de que termine la carta.</p>
+
+        <p>Qu&eacute; funciona de verdad: le&eacute; la descripci&oacute;n del puesto, la p&aacute;gina "Sobre nosotros" de la empresa, y quiz&aacute; una o dos de sus publicaciones p&uacute;blicas. &iquest;Qu&eacute; tono usan? &iquest;Son formales? &iquest;Juguetones? &iquest;T&eacute;cnicos? &iquest;Sinceros? Ese es el registro en el que tu carta tiene que sentarse. La IA puede ayudarte a dar en ese registro &mdash; pero s&oacute;lo si le dec&iacute;s qu&eacute; registro buscar.</p>
+
+        <h2>Para qu&eacute; es realmente una carta de presentaci&oacute;n</h2>
+
+        <p>Esto es lo que la mayor&iacute;a de las herramientas de IA para cartas no entienden: una carta de presentaci&oacute;n no es un segundo CV. Si pas&aacute;s tres p&aacute;rrafos repitiendo tu historia laboral en prosa, el reclutador no lee nada nuevo. Ya tiene el CV. &iquest;Para qu&eacute; hacerle leer lo mismo dos veces?</p>
+
+        <p>Una carta de presentaci&oacute;n es una respuesta peque&ntilde;a y espec&iacute;fica a una pregunta: <em>por qu&eacute; este candidato particular est&aacute; postulando a este rol particular, en este momento particular.</em> Eso es todo. Lo dem&aacute;s es relleno.</p>
+
+        <p>Tres p&aacute;rrafos, m&aacute;ximo:</p>
+
+        <ul>
+            <li><strong>P&aacute;rrafo 1 &mdash; por qu&eacute; esta empresa, este rol, ahora.</strong> No por qu&eacute; est&aacute;s buscando trabajo. No tu relato de carrera. Por qu&eacute; <em>&eacute;ste</em> espec&iacute;ficamente te llam&oacute; la atenci&oacute;n.</li>
+            <li><strong>P&aacute;rrafo 2 &mdash; la o las dos o tres cosas de tu trayectoria que son inusualmente relevantes para lo que necesitan.</strong> No todo. Lo m&aacute;s relevante.</li>
+            <li><strong>P&aacute;rrafo 3 &mdash; un cierre concreto.</strong> De qu&eacute; te gustar&iacute;a conversar, qu&eacute; aport&aacute;s en la primera semana, qu&eacute; querr&iacute;as entender. No "Quedo atento a su respuesta". Cualquier otra cosa.</li>
+        </ul>
+
+        <p>Esa es la estructura. Unos pocos cientos de palabras. Sin pre&aacute;mbulos. Sin metacomentarios sobre lo entusiasmado que est&aacute;s de estar escribiendo.</p>
+
+        <h2>D&oacute;nde QuillCV traza la l&iacute;nea</h2>
+
+        <p>Generamos cartas de presentaci&oacute;n junto a cada CV en QuillCV &mdash; pero las construimos teniendo en mente las tres fallas.</p>
+
+        <ul>
+            <li><strong>Cada carta est&aacute; atada a una descripci&oacute;n espec&iacute;fica del puesto.</strong> No hay cartas "gen&eacute;ricas". La IA lee la oferta completa, para que el p&aacute;rrafo de apertura pueda citar algo real del rol &mdash; no una frase de plantilla que servir&iacute;a para cualquier empresa.</li>
+            <li><strong>Usamos s&oacute;lo los logros que est&aacute;n en tu CV y perfil.</strong> La carta no puede inventar m&eacute;tricas ni reclamar experiencia que no ten&eacute;s, porque el generador no ve datos que no le proporcionaste. Lo que sale es <em>tuyo</em>, mejor afilado. No fabricado.</li>
+            <li><strong>El tono se calibra por oferta.</strong> Leemos el lenguaje de la propia oferta para acertar el registro. Una startup juguetona de Berl&iacute;n recibe una carta distinta que un banco suizo, del mismo candidato, con los mismos logros.</li>
+            <li><strong>Es corta a prop&oacute;sito.</strong> El generador no rellena. Nada de "Por medio de la presente expreso". Nada de "Con m&aacute;s de una d&eacute;cada de experiencia". La apertura es espec&iacute;fica o no sale.</li>
+            <li><strong>Pod&eacute;s leerla, editarla y enviarla.</strong> No enviamos nada en tu nombre. Esto no es postulaci&oacute;n autom&aacute;tica disfrazada. Es un borrador &mdash; uno bueno &mdash; que es tuyo.</li>
+        </ul>
+
+        <h2>La prueba honesta</h2>
+
+        <p>Antes de mandar cualquier carta, con IA o no, correla por una prueba: reempla&ccedil;&aacute; el nombre de la empresa por el de un competidor. Si la carta sigue teniendo sentido con cualquier nombre sustituido, ya ten&eacute;s el problema de carta gen&eacute;rica otra vez &mdash; y la van a filtrar en el momento que llegue.</p>
+
+        <p>Una carta que sobrevive a esa prueba es lo bastante espec&iacute;fica para valer la pena leer. Ese es el est&aacute;ndar.</p>
+
+        <h2>Us&aacute; IA. Pero no as&iacute;.</h2>
+
+        <p>No estamos en el grupo que dice que la IA no tiene lugar en las cartas de presentaci&oacute;n. S&iacute; lo tiene. Escribir bien es dif&iacute;cil, es lento, y es lo quinto en tu lista durante una b&uacute;squeda de empleo. Una herramienta que te ayuda a estructurar, afilar y pulir tu propio material es una herramienta genuinamente &uacute;til.</p>
+
+        <p>Una herramienta que fabrica logros, defaultea a LinkedIn-speak, y abre con "Por medio de la presente expreso" no es una asistente. Es una manera de garantizar que tu postulaci&oacute;n se vea exactamente igual a las otras cien que el reclutador est&aacute; archivando en "leer despu&eacute;s" &mdash; que en la pr&aacute;ctica significa "nunca".</p>
+
+        <p>Escribila vos. Deja que la IA te ayude. No dejes que la IA la escriba por vos. La diferencia es toda la cancha.</p>
+    </article>
+</div>
+{% endblock %}

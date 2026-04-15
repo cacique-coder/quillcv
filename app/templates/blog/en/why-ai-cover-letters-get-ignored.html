@@ -1,0 +1,129 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Most AI-generated cover letters get deleted before the second paragraph.</strong> Not because AI writes badly &mdash; it writes fluently &mdash; but because "fluent" is exactly what recruiters now treat as a red flag. The openers are interchangeable. The achievements are someone else's. The tone is nobody's. A cover letter that actually gets read still has a human hand on it. Here's how to tell the difference &mdash; and how to write one AI can genuinely help with.</p>
+
+        <p>For about eighteen months now, every recruiter we've spoken to has said the same thing: the cover letters arriving in their inboxes all sound the same. Not because candidates coordinated. Because they're all using the same three or four AI tools, with the same default prompts, producing the same default prose.</p>
+
+        <p>"I am writing to express my keen interest in the position of&hellip;"</p>
+
+        <p>"With over a decade of experience in&hellip;"</p>
+
+        <p>"I am confident that my skills align perfectly with&hellip;"</p>
+
+        <p>Every recruiter has seen those openers five hundred times this quarter. They're not wrong, exactly. They're just noise &mdash; signals that get immediately compressed to zero, and then the reader moves on to the CV, which they'd rather have been reading in the first place.</p>
+
+        <p>If you're going to use AI for your cover letter &mdash; and you should &mdash; you need to understand the three ways it quietly fails.</p>
+
+        <h2>Failure mode one: the interchangeable opener</h2>
+
+        <p>An AI model, given almost no context, will default to the most statistically common phrasing in its training data. That's why the opening line of the average AI cover letter is structurally identical to the opening line of every other AI cover letter ever produced.</p>
+
+        <p>The problem isn't grammatical &mdash; the sentences are fine. The problem is <em>signal</em>. When a recruiter sees "I am writing to express my interest in the position of Senior Engineer at Acme," they already know three things: the candidate used AI, they didn't personalise the prompt, and they're about to read two or three more paragraphs in the same register. Most recruiters stop reading right there. They haven't even reached the reason you applied.</p>
+
+        <p>What actually works: open with something specific that could only apply to you and this company. A sentence about a recent product release. A reference to a talk the CTO gave. An observation about the problem the role is solving. The point isn't to flatter &mdash; the point is to prove, in the first fifteen words, that a human read the posting.</p>
+
+        <h2>Failure mode two: achievements that don't belong to you</h2>
+
+        <p>This one is subtler and much more damaging. When you hand an AI a vague prompt &mdash; "write me a cover letter for a senior marketing role" &mdash; the model fills the gaps with plausible-sounding but invented metrics. "I led a team that grew revenue by 40%." "I implemented a new CRM that saved 500 hours of manual work per quarter." Numbers are great. But when the recruiter asks about them in the interview, you can't defend them. Because they didn't happen.</p>
+
+        <p>Worse: if the recruiter notices that the exact same phrasing appears in half the cover letters they receive that week (AI models converge on similar phrases for similar prompts), the numbers start to feel suspiciously generic across candidates. Now the recruiter is pattern-matching against AI &mdash; not against you.</p>
+
+        <p>What actually works: feed the AI your real achievements, in your own words, and let it help you <em>structure</em> and <em>sharpen</em> them. The raw material has to be yours. The AI polishes. It doesn't invent.</p>
+
+        <h2>Failure mode three: tonal mismatch</h2>
+
+        <p>Every company has a tone. A Berlin fintech talks differently from a Sydney design studio which talks differently from a Tokyo robotics lab which talks differently from a rural Ohio manufacturer. Most AI cover letters are written in a single register: vaguely professional, lightly enthusiastic, faintly American-corporate. It's the register of LinkedIn posts. It's the register of motivational meeting-room posters.</p>
+
+        <p>Send that to a casual startup and you sound like a consultant pitching. Send it to a formal enterprise and you sound like a LinkedIn influencer. Either way, the recruiter's internal model says "doesn't fit our culture" long before they've finished the letter.</p>
+
+        <p>What actually works: read the job posting, the company's About page, and maybe one or two of their public posts. What tone do they use? Are they formal? Playful? Technical? Earnest? That's the register your cover letter should sit in. AI can absolutely help you hit that register &mdash; but only if you tell it what register to hit.</p>
+
+        <h2>What a cover letter is actually for</h2>
+
+        <p>Here's the thing most AI cover-letter tools miss: a cover letter is not a second CV. If you spend three paragraphs repeating your employment history in prose, the recruiter reads nothing new. They already have the CV. Why make them read it twice?</p>
+
+        <p>A cover letter is a small, specific answer to one question: <em>why is this particular candidate applying to this particular role, at this particular moment.</em> That's it. Everything else is padding.</p>
+
+        <p>Three paragraphs, tops:</p>
+
+        <ul>
+            <li><strong>Paragraph 1 &mdash; why this company, this role, now.</strong> Not why you're looking for a job. Not your career narrative. Why <em>this</em> one specifically captured your attention.</li>
+            <li><strong>Paragraph 2 &mdash; the one, two, or three things from your background that are unusually relevant to what they need.</strong> Not everything. The most relevant things.</li>
+            <li><strong>Paragraph 3 &mdash; a concrete close.</strong> What you'd like to discuss, what you bring to the first week, what you'd want to understand. Not "I look forward to hearing from you." Anything else.</li>
+        </ul>
+
+        <p>That's the structure. A few hundred words. No preamble. No meta-commentary about how excited you are to be writing.</p>
+
+        <h2>Where QuillCV draws the line</h2>
+
+        <p>We ship cover-letter generation alongside every CV on QuillCV &mdash; but we built it with all three failure modes specifically in mind.</p>
+
+        <ul>
+            <li><strong>Every cover letter is tied to a specific job description.</strong> No "generic" cover letters. The AI reads the full posting, so the opening paragraph can cite something real from the role &mdash; not a template phrase that would fit any company.</li>
+            <li><strong>We only use achievements that are actually in your CV and profile.</strong> The cover letter can't invent metrics or claim experience you don't have, because the generator can't see any data you didn't provide. What comes out is <em>yours</em>, phrased more sharply. Not fabricated.</li>
+            <li><strong>Tone is calibrated per job posting.</strong> We read the language of the posting itself to match register. A playful Berlin startup gets a different letter from a Swiss bank, from the same candidate, with the same achievements.</li>
+            <li><strong>It's short on purpose.</strong> The generator doesn't pad. No "I am writing to express." No "With over a decade of experience." The opener is specific or it doesn't ship.</li>
+            <li><strong>You can read it, edit it, and send it.</strong> We don't submit anything on your behalf. This isn't auto-apply in disguise. It's a draft &mdash; a good one &mdash; that you own.</li>
+        </ul>
+
+        <h2>The honest test</h2>
+
+        <p>Before you send any cover letter, AI-assisted or not, run it through one test: swap the company name for a competitor's. If the letter still makes sense with any company name substituted in, it's the generic cover letter problem again &mdash; and it's going to get filtered the moment it arrives.</p>
+
+        <p>A cover letter that survives that test is specific enough to be worth reading. That's the bar.</p>
+
+        <h2>Use AI. Just not like that.</h2>
+
+        <p>We're not in the camp that says AI has no place in cover letters. It does. Writing well is hard, it's slow, and it's the fifth thing on your list during a job search. A tool that helps you structure, sharpen, and polish your own material is a genuinely useful tool.</p>
+
+        <p>A tool that fabricates achievements, defaults to LinkedIn-ese, and opens with "I am writing to express" isn't an assistant. It's a way to guarantee your application looks exactly like the hundred others the recruiter is filing under "read later" &mdash; which in practice means "never."</p>
+
+        <p>Write it yourself. Let AI help you. Don't let AI write it for you. The difference is the whole ball game.</p>
+    </article>
+</div>
+{% endblock %}
