@@ -1,0 +1,120 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/es" class="blog-back">&larr; Volver al blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Las herramientas de postulación automática prometen enviar cientos de solicitudes mientras duermes.</strong> Lo que realmente hacen es convertir tu búsqueda de empleo en un juego de números donde nadie gana &mdash; ni tú, ni el reclutador, ni las personas que genuinamente se interesan por el puesto. Una postulación pensada y personalizada sigue ganándole a cien genéricas.</p>
+
+        <p>Hay una nueva ola de herramientas de búsqueda de empleo que quieren hacer que postularte sea tan fácil como deslizar a la derecha. Subís tu CV una vez, configurás unos filtros, y dejás que el bot dispare solicitudes a cada oferta que coincida vagamente con tus palabras clave. Cincuenta por día. Cien. Doscientas.</p>
+
+        <p>Suena eficiente. Se siente productivo. Y es una estrategia terrible.</p>
+
+        <h2>El problema del Tinder</h2>
+
+        <p>Estas herramientas toman prestada la peor mecánica de las apps de citas: volumen por encima de intención. Deslizar a la derecha en todo, ver qué pega. La premisa es que buscar trabajo es un juego de números &mdash; si postulás a suficientes puestos, algo va a caer.</p>
+
+        <p>Pero acá está el problema: ni siquiera leíste la mayoría de esas descripciones de puesto. No sabés qué hace el equipo, en qué consiste realmente el rol, ni si te darían ganas de ir a trabajar el lunes. La herramienta encontró algunas palabras clave y clickeó "postular" en tu nombre.</p>
+
+        <p>Eso no es buscar trabajo. Es spam con tu nombre.</p>
+
+        <h2>Por qué no funciona</h2>
+
+        <p>Los reclutadores no son tontos. Detectan una postulación genérica en segundos. Cuando tu CV no refleja el lenguaje específico de la oferta, cuando tu carta de presentación (si es que hay una) podría aplicar a cualquier empresa de cualquier industria, va directo a la pila de rechazos.</p>
+
+        <p>Esto es lo que realmente te hace postular en masa:</p>
+
+        <ul>
+            <li><strong>Tus postulaciones son filtradas por los mismos sistemas ATS que intentás vencer.</strong> Los sistemas de seguimiento de candidatos buscan palabras clave, frases y relevancia específicas. Un CV genérico que no fue adaptado a la descripción del puesto puntúa bajo &mdash; sin importar cuán calificado estés.</li>
+            <li><strong>Quemás oportunidades que realmente querías.</strong> ¿Ese puesto soñado en la empresa que admirás? Tu bot postuló con el mismo CV genérico que mandó a otras 200 empresas. No escribiste una sola línea sobre por qué querías ese trabajo específico. Las primeras impresiones solo ocurren una vez.</li>
+            <li><strong>Perdés el rastro de adónde postulaste.</strong> Cuando un reclutador llama y pregunta por qué te interesa el puesto, estás tratando de recordar de qué empresa es. No es un gran comienzo.</li>
+            <li><strong>Te devaluás.</strong> Postular en masa les señala a los empleadores que no te importa qué trabajo conseguís &mdash; solo querés cualquier trabajo. Eso es lo opuesto a lo que hace atractivo a un candidato.</li>
+        </ul>
+
+        <h2>El lado del reclutador</h2>
+
+        <p>Hablá con cualquier persona que revise postulaciones para ganarse la vida. Te va a decir que la avalancha de CVs enviados automáticamente les complicó el trabajo, no lo facilitó. Los grupos de candidatos están inflados con personas que ni siquiera están interesadas en el puesto. Los candidatos relevantes quedan enterrados bajo el ruido.</p>
+
+        <p>Algunas empresas ya están contraatacando. Agregan preguntas de filtro diseñadas para atrapar postulantes automáticos, piden cartas de presentación que mencionen detalles específicos de la oferta, o usan detectores de IA para marcar solicitudes que parecen producidas en masa.</p>
+
+        <p>La carrera armamentista no beneficia a nadie. Pero es el resultado directo de herramientas que optimizan cantidad por encima de calidad.</p>
+
+        <h2>Qué funciona de verdad</h2>
+
+        <p>Los que consiguen entrevistas de forma consistente hacen algo radical: leen la descripción del puesto. Completa. Entienden qué necesita la empresa y adaptan su postulación para mostrar cómo su experiencia se alinea con esas necesidades.</p>
+
+        <p>No es complicado, pero requiere esfuerzo:</p>
+
+        <ul>
+            <li><strong>Leé la descripción del puesto con atención.</strong> No solo el título y el salario. ¿Qué están pidiendo realmente? ¿Qué problemas resuelve este equipo? ¿Qué lenguaje usan?</li>
+            <li><strong>Adaptá tu CV a cada puesto.</strong> No significa reescribir todo desde cero &mdash; significa ajustar el énfasis, incluir palabras clave relevantes y asegurarte de que tu experiencia hable directamente de lo que buscan.</li>
+            <li><strong>Postulá a menos trabajos, pero mejor.</strong> Diez postulaciones pensadas van a superar a doscientas genéricas. Siempre.</li>
+            <li><strong>Sabé por qué querés el trabajo.</strong> Si no podés responder eso, tal vez no es el indicado. Y está bien &mdash; saltealo y dedicá el tiempo a uno que sí te importe.</li>
+        </ul>
+
+        <h2>Dónde entra QuillCV</h2>
+
+        <p>Construimos QuillCV alrededor de esta idea. Pegás una descripción de puesto, subís tu CV actual, y nuestra IA genera una versión específicamente adaptada a ese rol &mdash; usando las palabras clave correctas, el formato adecuado para tu país de destino, y destacando la experiencia que más importa para esa posición.</p>
+
+        <p>No es postulación automática. Es lo opuesto. Vos leés el puesto. Decidís que lo querés. Y después obtenés un CV que te da la mejor oportunidad.</p>
+
+        <ul>
+            <li><strong>Optimizado para ATS en cada postulación.</strong> El CV generado usa palabras clave y frases de la oferta real, para que puntúe bien en los sistemas de seguimiento de candidatos en lugar de ser filtrado.</li>
+            <li><strong>Formato específico por región.</strong> Ya sea que postules en Argentina, Estados Unidos, Alemania o Japón, tu CV sigue las convenciones que los reclutadores de ese mercado esperan.</li>
+            <li><strong>Un puesto a la vez.</strong> Cada generación está vinculada a una descripción de puesto específica. Eso fuerza la intencionalidad que las herramientas de postulación masiva destruyen.</li>
+            <li><strong>Vos tenés el control.</strong> Ves exactamente lo que se va a enviar. Podés revisar, editar y decidir. Sin caja negra, sin bot actuando en tu nombre.</li>
+        </ul>
+
+        <p>No creemos que la respuesta a un mercado laboral difícil sea gritar más fuerte. Es decir lo correcto a las personas correctas.</p>
+
+        <h2>Tu carrera merece más que un swipe</h2>
+
+        <p>Buscar trabajo es estresante. La tentación de delegarlo a un algoritmo es real. Pero tu carrera &mdash; eso en lo que pasás la mayor parte de tus horas despierto &mdash; merece más que un swipe automático.</p>
+
+        <p>Las empresas que valen la pena buscan a alguien que se interese. Alguien que se tomó el tiempo de entender el puesto y se presentó con una postulación pensada. Las herramientas que usás deberían ayudarte a hacer eso &mdash; no a saltártelo.</p>
+
+        <p>Postulá menos. Postulá mejor. Esa es toda la estrategia.</p>
+    </article>
+</div>
+{% endblock %}

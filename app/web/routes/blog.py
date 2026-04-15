@@ -18,6 +18,37 @@ LANG_LABELS = {
 POSTS = {
     "en": [
         {
+            "slug": "why-auto-apply-is-hurting-your-job-search",
+            "title": "Why Auto-Apply Tools Are Hurting Your Job Search",
+            "description": "Mass-applying to hundreds of jobs sounds efficient, but it kills your chances. Here's why intentional, tailored applications still win — and how to do it without the grind.",
+            "date": "2026-03-28",
+            "date_modified": "2026-03-28",
+            "author": "Daniel Zambrano",
+            "tags": ["job-search", "cv-tips", "career-advice", "ats"],
+            "faq": [
+                {
+                    "q": "Do auto-apply tools actually work for job searching?",
+                    "a": "Generally no. Mass-applying sends generic CVs that score poorly in Applicant Tracking Systems and signal low interest to hiring managers. Tailored applications consistently outperform high-volume generic ones.",
+                },
+                {
+                    "q": "How many jobs should I apply to per week?",
+                    "a": "Quality matters more than quantity. Ten well-researched, tailored applications will outperform two hundred generic ones. Focus on roles you genuinely want and customise your CV for each.",
+                },
+                {
+                    "q": "Why does my CV get rejected by ATS systems?",
+                    "a": "ATS systems scan for specific keywords and phrases from the job description. A generic CV that hasn't been tailored to the posting will score low, even if you're highly qualified for the role.",
+                },
+                {
+                    "q": "What's the best way to tailor a CV for each job?",
+                    "a": "Read the full job description, identify the key skills and requirements, and adjust your CV to emphasise matching experience. Use the same language the posting uses. Tools like QuillCV can automate this tailoring using AI.",
+                },
+                {
+                    "q": "Is it worth spending more time on fewer job applications?",
+                    "a": "Yes. Hiring managers can immediately spot generic applications. A thoughtful application that addresses the specific role and company stands out far more than volume ever will.",
+                },
+            ],
+        },
+        {
             "slug": "why-pii-matters-in-cv-builders",
             "title": "Why Your Personal Information Matters More Than You Think When Building a CV",
             "description": "Most CV builders ask for sensitive details — your address, phone, ID number. Here's why that should concern you, and what to look for.",
@@ -51,6 +82,37 @@ POSTS = {
     ],
     "es": [
         {
+            "slug": "por-que-aplicar-en-masa-perjudica-tu-busqueda-de-empleo",
+            "title": "Por Qué Aplicar en Masa Perjudica Tu Búsqueda de Empleo",
+            "description": "Las herramientas de postulación automática prometen enviar cientos de solicitudes, pero arruinan tus chances. Descubrí por qué las postulaciones pensadas siguen ganando.",
+            "date": "2026-03-28",
+            "date_modified": "2026-03-28",
+            "author": "Daniel Zambrano",
+            "tags": ["búsqueda-de-empleo", "consejos-cv", "carrera-profesional", "ats"],
+            "faq": [
+                {
+                    "q": "¿Las herramientas de postulación automática realmente funcionan?",
+                    "a": "En general no. Postular en masa envía CVs genéricos que puntúan bajo en los sistemas de seguimiento de candidatos y señalan poco interés a los reclutadores. Las postulaciones personalizadas consistentemente superan a las genéricas de alto volumen.",
+                },
+                {
+                    "q": "¿A cuántos trabajos debería postularme por semana?",
+                    "a": "La calidad importa más que la cantidad. Diez postulaciones bien investigadas y personalizadas superan a doscientas genéricas. Enfocate en puestos que realmente te interesen y adaptá tu CV para cada uno.",
+                },
+                {
+                    "q": "¿Por qué mi CV es rechazado por los sistemas ATS?",
+                    "a": "Los sistemas ATS buscan palabras clave y frases específicas de la descripción del puesto. Un CV genérico que no fue adaptado a la oferta puntúa bajo, incluso si estás altamente calificado para el rol.",
+                },
+                {
+                    "q": "¿Cuál es la mejor forma de adaptar un CV para cada trabajo?",
+                    "a": "Leé la descripción completa del puesto, identificá las habilidades y requisitos clave, y ajustá tu CV para enfatizar la experiencia que coincide. Usá el mismo lenguaje que usa la oferta. Herramientas como QuillCV pueden automatizar esta adaptación con IA.",
+                },
+                {
+                    "q": "¿Vale la pena dedicar más tiempo a menos postulaciones?",
+                    "a": "Sí. Los reclutadores detectan las postulaciones genéricas al instante. Una postulación pensada que aborda el puesto y la empresa específica se destaca mucho más que el volumen.",
+                },
+            ],
+        },
+        {
             "slug": "por-que-importan-tus-datos-personales-en-un-cv",
             "title": "Por Qué Tus Datos Personales Importan Más de lo Que Crees al Crear un CV",
             "description": "La mayoría de los creadores de CV piden datos sensibles — tu dirección, teléfono, número de identificación. Aquí te explicamos por qué debería importarte y qué buscar.",
@@ -83,6 +145,37 @@ POSTS = {
         },
     ],
     "pt": [
+        {
+            "slug": "por-que-se-candidatar-em-massa-prejudica-sua-busca-de-emprego",
+            "title": "Por Que Se Candidatar em Massa Prejudica Sua Busca de Emprego",
+            "description": "Ferramentas de candidatura automática prometem enviar centenas de candidaturas, mas destroem suas chances. Entenda por que candidaturas pensadas ainda vencem.",
+            "date": "2026-03-28",
+            "date_modified": "2026-03-28",
+            "author": "Daniel Zambrano",
+            "tags": ["busca-de-emprego", "dicas-cv", "carreira-profissional", "ats"],
+            "faq": [
+                {
+                    "q": "Ferramentas de candidatura automática realmente funcionam?",
+                    "a": "No geral, não. Candidatar-se em massa envia currículos genéricos que pontuam baixo nos sistemas de rastreamento de candidatos e sinalizam pouco interesse aos recrutadores. Candidaturas personalizadas consistentemente superam as genéricas de alto volume.",
+                },
+                {
+                    "q": "A quantas vagas devo me candidatar por semana?",
+                    "a": "Qualidade importa mais que quantidade. Dez candidaturas bem pesquisadas e personalizadas superam duzentas genéricas. Foque em vagas que realmente te interessam e adapte seu currículo para cada uma.",
+                },
+                {
+                    "q": "Por que meu currículo é rejeitado pelos sistemas ATS?",
+                    "a": "Sistemas ATS procuram palavras-chave e frases específicas da descrição da vaga. Um currículo genérico que não foi adaptado à vaga pontua baixo, mesmo que você seja altamente qualificado para o cargo.",
+                },
+                {
+                    "q": "Qual a melhor forma de adaptar um currículo para cada vaga?",
+                    "a": "Leia a descrição completa da vaga, identifique as habilidades e requisitos-chave, e ajuste seu currículo para enfatizar a experiência relevante. Use a mesma linguagem da vaga. Ferramentas como QuillCV podem automatizar essa adaptação com IA.",
+                },
+                {
+                    "q": "Vale a pena dedicar mais tempo a menos candidaturas?",
+                    "a": "Sim. Recrutadores identificam candidaturas genéricas na hora. Uma candidatura pensada que aborda o cargo e a empresa específica se destaca muito mais do que volume.",
+                },
+            ],
+        },
         {
             "slug": "por-que-seus-dados-pessoais-importam-em-um-curriculo",
             "title": "Por Que Seus Dados Pessoais Importam Mais do Que Você Imagina ao Criar um Currículo",
@@ -119,6 +212,18 @@ POSTS = {
 
 # Maps (lang, slug) -> {other_lang: other_slug} for hreflang on post pages
 TRANSLATIONS = {
+    ("en", "why-auto-apply-is-hurting-your-job-search"): {
+        "es": "por-que-aplicar-en-masa-perjudica-tu-busqueda-de-empleo",
+        "pt": "por-que-se-candidatar-em-massa-prejudica-sua-busca-de-emprego",
+    },
+    ("es", "por-que-aplicar-en-masa-perjudica-tu-busqueda-de-empleo"): {
+        "en": "why-auto-apply-is-hurting-your-job-search",
+        "pt": "por-que-se-candidatar-em-massa-prejudica-sua-busca-de-emprego",
+    },
+    ("pt", "por-que-se-candidatar-em-massa-prejudica-sua-busca-de-emprego"): {
+        "en": "why-auto-apply-is-hurting-your-job-search",
+        "es": "por-que-aplicar-en-masa-perjudica-tu-busqueda-de-empleo",
+    },
     ("en", "why-pii-matters-in-cv-builders"): {
         "es": "por-que-importan-tus-datos-personales-en-un-cv",
         "pt": "por-que-seus-dados-pessoais-importam-em-um-curriculo",

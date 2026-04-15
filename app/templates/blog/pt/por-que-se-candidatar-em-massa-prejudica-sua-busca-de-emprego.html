@@ -1,0 +1,120 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/pt" class="blog-back">&larr; Voltar ao blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Ferramentas de candidatura automática prometem enviar centenas de candidaturas enquanto você dorme.</strong> O que elas realmente fazem é transformar sua busca de emprego num jogo de números onde ninguém ganha &mdash; nem você, nem o recrutador, nem as pessoas que genuinamente se interessam pela vaga. Uma candidatura pensada e personalizada ainda vence cem genéricas.</p>
+
+        <p>Existe uma nova onda de ferramentas de busca de emprego que quer tornar se candidatar tão fácil quanto deslizar para a direita. Você sobe seu currículo uma vez, configura uns filtros e deixa o bot disparar candidaturas para cada vaga que vagamente corresponda às suas palavras-chave. Cinquenta por dia. Cem. Duzentas.</p>
+
+        <p>Parece eficiente. Parece produtivo. E é uma estratégia terrível.</p>
+
+        <h2>O problema do Tinder</h2>
+
+        <p>Essas ferramentas pegam emprestada a pior mecânica dos apps de relacionamento: volume acima de intenção. Deslizar para a direita em tudo, ver o que cola. A premissa é que buscar emprego é um jogo de números &mdash; se você se candidatar a vagas suficientes, algo vai dar certo.</p>
+
+        <p>Mas o ponto é: você nem leu a maioria dessas descrições de vaga. Não sabe o que o time faz, no que o cargo realmente consiste, nem se teria vontade de ir trabalhar na segunda-feira. A ferramenta encontrou algumas palavras-chave e clicou em "candidatar-se" no seu nome.</p>
+
+        <p>Isso não é buscar emprego. É spam com o seu nome.</p>
+
+        <h2>Por que não funciona</h2>
+
+        <p>Recrutadores não são bobos. Eles identificam uma candidatura genérica em segundos. Quando seu currículo não reflete a linguagem específica da vaga, quando sua carta de apresentação (se é que existe uma) poderia se aplicar a qualquer empresa de qualquer setor, vai direto para a pilha de rejeição.</p>
+
+        <p>Veja o que candidatar-se em massa realmente faz com você:</p>
+
+        <ul>
+            <li><strong>Suas candidaturas são filtradas pelos mesmos sistemas ATS que você tenta vencer.</strong> Os sistemas de rastreamento de candidatos procuram palavras-chave, frases e relevância específicas. Um currículo genérico que não foi adaptado à descrição da vaga pontua baixo &mdash; não importa o quão qualificado você seja.</li>
+            <li><strong>Você queima oportunidades que realmente queria.</strong> Aquela vaga dos sonhos na empresa que você admira? Seu bot se candidatou com o mesmo currículo genérico que mandou para outras 200 empresas. Você não escreveu uma linha sequer sobre por que queria aquele trabalho específico. Primeiras impressões só acontecem uma vez.</li>
+            <li><strong>Você perde o controle de onde se candidatou.</strong> Quando um recrutador liga e pergunta por que você se interessa pela vaga, você está tentando lembrar de qual empresa é. Não é um bom começo.</li>
+            <li><strong>Você se desvaloriza.</strong> Candidatar-se em massa sinaliza aos empregadores que você não se importa com qual emprego consegue &mdash; quer qualquer um. Isso é o oposto do que torna um candidato atraente.</li>
+        </ul>
+
+        <h2>O lado do recrutador</h2>
+
+        <p>Converse com qualquer pessoa que analisa candidaturas para viver. Ela vai te dizer que a enxurrada de currículos enviados automaticamente dificultou o trabalho, não facilitou. Os grupos de candidatos estão inflados com pessoas que nem estão interessadas na vaga. Candidatos relevantes ficam enterrados no meio do ruído.</p>
+
+        <p>Algumas empresas já estão reagindo. Adicionam perguntas de triagem para pegar candidatos automáticos, pedem cartas de apresentação que mencionem detalhes específicos da vaga, ou usam detectores de IA para marcar candidaturas que parecem produzidas em massa.</p>
+
+        <p>A corrida armamentista não beneficia ninguém. Mas é o resultado direto de ferramentas que otimizam quantidade acima de qualidade.</p>
+
+        <h2>O que realmente funciona</h2>
+
+        <p>Os candidatos que conseguem entrevistas de forma consistente fazem algo radical: leem a descrição da vaga. Inteira. Entendem o que a empresa precisa e adaptam sua candidatura para mostrar como sua experiência se alinha com essas necessidades.</p>
+
+        <p>Não é complicado, mas exige esforço:</p>
+
+        <ul>
+            <li><strong>Leia a descrição da vaga com atenção.</strong> Não só o título e o salário. O que estão realmente pedindo? Que problemas esse time resolve? Que linguagem usam?</li>
+            <li><strong>Adapte seu currículo para cada vaga.</strong> Não significa reescrever do zero &mdash; significa ajustar a ênfase, incluir palavras-chave relevantes e garantir que sua experiência fale diretamente do que procuram.</li>
+            <li><strong>Candidate-se a menos vagas, mas melhor.</strong> Dez candidaturas pensadas vão superar duzentas genéricas. Sempre.</li>
+            <li><strong>Saiba por que você quer a vaga.</strong> Se não consegue responder isso, talvez não seja a certa. E tudo bem &mdash; pule e dedique o tempo a uma que realmente te interesse.</li>
+        </ul>
+
+        <h2>Onde o QuillCV entra</h2>
+
+        <p>Construímos o QuillCV em torno dessa ideia. Você cola uma descrição de vaga, sobe seu currículo atual, e nossa IA gera uma versão especificamente adaptada àquele cargo &mdash; usando as palavras-chave certas, o formato adequado para o seu país de destino, e destacando a experiência que mais importa para aquela posição.</p>
+
+        <p>Não é candidatura automática. É o oposto. Você lê a vaga. Decide que a quer. E então recebe um currículo que te dá a melhor chance.</p>
+
+        <ul>
+            <li><strong>Otimizado para ATS em cada candidatura.</strong> O currículo gerado usa palavras-chave e frases da vaga real, para que pontue bem nos sistemas de rastreamento em vez de ser filtrado.</li>
+            <li><strong>Formato específico por região.</strong> Seja candidatando-se no Brasil, Estados Unidos, Alemanha ou Japão, seu currículo segue as convenções que os recrutadores daquele mercado esperam.</li>
+            <li><strong>Uma vaga por vez.</strong> Cada geração está vinculada a uma descrição de vaga específica. Isso força a intencionalidade que as ferramentas de candidatura em massa destroem.</li>
+            <li><strong>Você tem o controle.</strong> Vê exatamente o que será enviado. Pode revisar, editar e decidir. Sem caixa-preta, sem bot agindo em seu nome.</li>
+        </ul>
+
+        <p>Não achamos que a resposta para um mercado de trabalho difícil seja gritar mais alto. É dizer a coisa certa para as pessoas certas.</p>
+
+        <h2>Sua carreira merece mais do que um swipe</h2>
+
+        <p>Buscar emprego é estressante. A tentação de delegar para um algoritmo é real. Mas sua carreira &mdash; aquilo em que você passa a maior parte das suas horas acordado &mdash; merece mais do que um swipe automático.</p>
+
+        <p>As empresas que valem a pena procuram alguém que se importe. Alguém que dedicou tempo para entender a vaga e apareceu com uma candidatura pensada. As ferramentas que você usa deveriam te ajudar a fazer isso &mdash; não a pular essa etapa.</p>
+
+        <p>Candidate-se menos. Candidate-se melhor. Essa é toda a estratégia.</p>
+    </article>
+</div>
+{% endblock %}
