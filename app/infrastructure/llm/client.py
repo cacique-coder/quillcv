@@ -81,6 +81,25 @@ def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     return (input_tokens * pricing["input"] + output_tokens * pricing["output"]) / 1_000_000
 
 
+# Ordered list of markers that delimit the boundary between system instructions
+# (everything before the first marker) and untrusted user content (from the marker
+# onwards).  New prompt types must add their first untrusted-content marker here.
+_SYSTEM_SPLIT_MARKERS = [
+    "===BEGIN CANDIDATE CV",
+    "===BEGIN CV DATA",
+    "===BEGIN JOB DESCRIPTION",
+]
+
+
+def _split_prompt(prompt: str) -> tuple[str, str]:
+    """Split a prompt into (system_text, user_text) at the first known boundary marker."""
+    for marker in _SYSTEM_SPLIT_MARKERS:
+        if marker in prompt:
+            idx = prompt.index(marker)
+            return prompt[:idx].strip(), prompt[idx:].strip()
+    return "", prompt
+
+
 async def _log_to_db(
     transaction_id: str,
     attempt_id: str | None,
@@ -157,15 +176,7 @@ class AnthropicAPIClient(LLMClient):
     async def generate(self, prompt: str) -> LLMResult:
         import time
 
-        # Split on the first delimiter to extract system vs user content.
-        split_marker = "===BEGIN CANDIDATE CV"
-        if split_marker in prompt:
-            idx = prompt.index(split_marker)
-            system_text = prompt[:idx].strip()
-            user_text = prompt[idx:].strip()
-        else:
-            system_text = ""
-            user_text = prompt
+        system_text, user_text = _split_prompt(prompt)
 
         logger.info("LLM request model=%s prompt_chars=%d", self.model, len(prompt))
         t0 = time.monotonic()
@@ -387,14 +398,7 @@ class OpenAIClient(LLMClient):
     async def generate(self, prompt: str) -> LLMResult:
         import time
 
-        split_marker = "===BEGIN CANDIDATE CV"
-        if split_marker in prompt:
-            idx = prompt.index(split_marker)
-            system_text = prompt[:idx].strip()
-            user_text = prompt[idx:].strip()
-        else:
-            system_text = ""
-            user_text = prompt
+        system_text, user_text = _split_prompt(prompt)
 
         logger.info("LLM request model=%s prompt_chars=%d", self.model, len(prompt))
         t0 = time.monotonic()
@@ -490,14 +494,7 @@ class GeminiClient(LLMClient):
         import google.genai
         from google.genai.types import GenerateContentConfig
 
-        split_marker = "===BEGIN CANDIDATE CV"
-        if split_marker in prompt:
-            idx = prompt.index(split_marker)
-            system_text = prompt[:idx].strip()
-            user_text = prompt[idx:].strip()
-        else:
-            system_text = ""
-            user_text = prompt
+        system_text, user_text = _split_prompt(prompt)
 
         logger.info("LLM request model=%s prompt_chars=%d", self.model, len(prompt))
         t0 = time.monotonic()
