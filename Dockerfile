@@ -62,9 +62,19 @@ COPY . .
 # Minify CSS for production
 RUN python scripts/minify_css.py
 
-# Non-root user for security
-RUN useradd --system --no-create-home appuser \
+# Non-root user for security.
+# UID/GID pinned to 1000 so that a bind-mounted uploads directory on the host
+# (owned by the typical deploy user, UID 1000) is writable from inside the
+# container without extra chown gymnastics on the host.
+RUN groupadd --gid 1000 appuser \
+    && useradd --uid 1000 --gid 1000 --no-create-home --shell /usr/sbin/nologin appuser \
+    && mkdir -p /app/app/uploads \
     && chown -R appuser:appuser /app
+
+# Declared so operators know this path holds state; the concrete bind mount
+# lives in config/deploy.yml and resolves to ~deploy/storage/uploads on the host.
+VOLUME ["/app/app/uploads"]
+
 USER appuser
 
 EXPOSE 8000

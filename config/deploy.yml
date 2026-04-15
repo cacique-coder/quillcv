@@ -1,6 +1,13 @@
 service: quillcv
 image: cacique-coder/quillcv
 
+# Persistent storage: photos and base-CV uploads live on the host so they
+# survive container rebuilds. Relative paths resolve to the deploy user's
+# home on the server, so this is at /home/deploy/storage/uploads — easy to
+# cd into, rsync for backups, or tar offsite on a cron.
+volumes:
+  - "./storage/uploads:/app/app/uploads"
+
 servers:
   web:
     hosts:
