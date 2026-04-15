@@ -1,0 +1,132 @@
+{% set job_wizard_step = 3 %}
+
+<div class="wizard-panel active" id="job-generate-area">
+    <div id="job-step3-review">
+        <div class="panel-header">
+            <h2>Review &amp; Generate</h2>
+            <p class="hint">Check your selections, then generate your tailored CV and cover letter.</p>
+        </div>
+
+        {# ── Summary grid ── #}
+        <div class="review-grid">
+            {% if job.job_title %}
+            <div class="review-item">
+                <span class="review-label">Job Title</span>
+                <span class="review-value">{{ job.job_title }}</span>
+            </div>
+            {% endif %}
+
+            {% if job.company_name %}
+            <div class="review-item">
+                <span class="review-label">Company</span>
+                <span class="review-value">{{ job.company_name }}</span>
+            </div>
+            {% endif %}
+
+            {% if job.region %}
+            <div class="review-item">
+                <span class="review-label">Region</span>
+                <span class="review-value">
+                    {{ region_config.flag if region_config else '' }}
+                    {{ region_config.name if region_config else job.region }}
+                </span>
+            </div>
+            {% endif %}
+
+            {% if job.template_id %}
+            <div class="review-item">
+                <span class="review-label">Template</span>
+                <span class="review-value">{{ job.template_id | title }}</span>
+            </div>
+            {% endif %}
+
+            {% if job.job_description %}
+            <div class="review-item review-item-wide">
+                <span class="review-label">Job Description</span>
+                <span class="review-value review-preview">
+                    {{ job.job_description[:200] }}{% if job.job_description | length > 200 %}…{% endif %}
+                </span>
+            </div>
+            {% endif %}
+
+            {% if job.offer_appeal %}
+            <div class="review-item review-item-wide">
+                <span class="review-label">What Attracts You</span>
+                <span class="review-value review-preview">
+                    {{ job.offer_appeal[:200] }}{% if job.offer_appeal | length > 200 %}…{% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="review-note">
+            <p>Your profile details will be combined with the job description to generate an ATS-optimized CV and cover letter for {{ region_config.name if region_config else job.region or 'your region' }}.</p>
+        </div>
+
+        {# ── Profile completeness check ── #}
+        {% if pii_complete %}
+        <div class="profile-check profile-check--ok" role="status">
+            <span class="profile-check-icon" aria-hidden="true">&#10003;</span>
+            <div>
+                <strong>Profile complete for this region</strong>
+                <p class="hint">All required fields are filled in for {{ region_config.name if region_config else job.region or 'your region' }}.</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="pii-incomplete-banner" role="alert">
+            <div class="pii-incomplete-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+                    <path d="M12 3 C17 2, 22 7, 21 12 C22 17, 17 22, 12 21 C7 22, 2 17, 3 12 C2 7, 7 2, 12 3"
+                          stroke="var(--warning, #fbbf24)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <path d="M12 8 C12 8, 12 12, 12 13" stroke="var(--warning, #fbbf24)" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="16.5" r="1" fill="var(--warning, #fbbf24)"/>
+                </svg>
+            </div>
+            <div class="pii-incomplete-text">
+                <strong>Some profile fields are missing for {{ region_config.name if region_config else job.region or 'this region' }}</strong>
+                {% if pii_missing %}
+                <ul class="pii-missing-list">
+                    {% for field in pii_missing %}
+                    <li>{{ field }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <p>
+                    <a href="/profile" class="pii-incomplete-link">Update your profile</a>
+                    — your progress here is saved automatically.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Generate button ── #}
+        <div id="job-results">
+            <div class="panel-actions panel-actions-center">
+                <button type="button" class="btn-back"
+                        hx-get="/jobs/new/step/2?job_id={{ job.id }}"
+                        hx-target="#job-wizard-container"
+                        hx-swap="innerHTML">
+                    Back
+                </button>
+                <button type="button"
+                        class="btn-generate"
+                        id="btn-job-gen"
+                        hx-post="/jobs/{{ job.id }}/generate"
+                        hx-target="#job-results"
+                        hx-swap="innerHTML"
+                        hx-indicator="#generate-spinner"
+                        hx-disabled-elt="this"
+                        hx-on::before-request="this.innerHTML='Generating…'; this.classList.add('btn-generating');"
+                        {% if not pii_complete %}
+                        title="Complete your profile first"
+                        {% endif %}>
+                    Generate CV + Cover Letter
+                </button>
+            </div>
+            <div id="generate-spinner" class="htmx-indicator" style="text-align:center; padding:1rem;">
+                <div class="spinner"></div>
+                <p class="hint">Generating your tailored CV and cover letter…</p>
+            </div>
+        </div>
+    </div>
+</div>

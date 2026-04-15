@@ -92,6 +92,8 @@ class SavedCV(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
     user_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("users.id"), nullable=True, index=True)
     attempt_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    # Link to the Job that produced this CV (nullable for legacy rows and builder CVs).
+    job_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("jobs.id"), nullable=True, index=True)
     source: Mapped[str] = mapped_column(String(20), nullable=False)  # "ai" or "builder"
     label: Mapped[str] = mapped_column(String(255), default="")  # user-chosen name for this CV
     job_title: Mapped[str] = mapped_column(String(255), default="")  # target job title (optional)
@@ -100,6 +102,55 @@ class SavedCV(Base):
     markdown: Mapped[str] = mapped_column(Text, nullable=False)  # sanitized markdown content
     cv_data_json: Mapped[str] = mapped_column(Text, nullable=False)  # structured CV data as JSON
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class Job(Base):
+    """A target job application — links a user's profile to a specific role.
+
+    Lifecycle statuses:
+        draft       — created but generation not yet started
+        generating  — AI generation in progress
+        complete    — CV and/or cover letter generated successfully
+        error       — generation failed; see quality_review_json for details
+    """
+    __tablename__ = "jobs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(32), ForeignKey("users.id"), nullable=False, index=True)
+
+    # Job details
+    job_url: Mapped[str] = mapped_column(String(2048), default="")
+    job_title: Mapped[str] = mapped_column(String(255), default="")
+    company_name: Mapped[str] = mapped_column(String(255), default="")
+    job_description: Mapped[str] = mapped_column(Text, nullable=False)
+    offer_appeal: Mapped[str] = mapped_column(Text, default="")
+
+    # Generation config
+    region: Mapped[str] = mapped_column(String(5), nullable=False)
+    template_id: Mapped[str] = mapped_column(String(50), default="")
+
+    # Generated outputs (encrypted at rest with the server Fernet key)
+    cv_data_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cv_rendered_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cover_letter_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cover_letter_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Scores & review
+    ats_original_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ats_generated_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    quality_review_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Keywords (cached from extraction)
+    keywords_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Lifecycle
+    status: Mapped[str] = mapped_column(String(20), default="draft")
+    attempt_id: Mapped[str | None] = mapped_column(String(32), nullable=True)  # bridge to legacy attempts
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
 
 
 class ExpressionOfInterest(Base):

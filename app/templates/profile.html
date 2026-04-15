@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import form_group, text_input, text_area, reference_entry, phone_input %}
+
+{% block title %}Your Profile — QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-page-header">
+        <h2>Your Profile</h2>
+        <p class="hint">Your profile pre-fills job applications. The more you fill in, the less you need to enter each time.</p>
+    </div>
+
+    {% if saved %}
+    <div class="profile-saved-banner" role="status" aria-live="polite">
+        <span class="profile-saved-icon">&#10003;</span> Profile saved successfully.
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="form-error">{{ error }}</div>
+    {% endif %}
+
+    <div id="profile-content">
+    <form hx-post="/profile/save"
+          hx-target="#profile-content"
+          hx-swap="innerHTML"
+          enctype="multipart/form-data"
+          class="profile-form">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+
+        {# ── Section 1: Personal Details ── #}
+        <section class="profile-section" aria-labelledby="section-personal-title">
+            <div class="wizard-section-header">
+                <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                    <path d="M18 3 C25 2, 33 8, 33 18 C33 28, 26 34, 18 33 C10 33, 3 27, 3 18 C3 9, 10 2, 18 3 Z"
+                          stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                    <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                          fill="var(--accent)" font-family="inherit">1</text>
+                </svg>
+                <div>
+                    <h3 class="wizard-section-title" id="section-personal-title">Personal Details</h3>
+                    <p class="wizard-section-desc">These details appear on your CV header. They're encrypted in your vault.</p>
+                </div>
+            </div>
+
+            {% call form_group("Full Name", hint="Your name as it appears on your CV.", required=true) %}
+                {{ text_input("full_name", placeholder="e.g. Jane Doe", value=pii.get('full_name', ''), required=true) }}
+            {% endcall %}
+
+            {% call form_group("Contact Email", hint="The email address to appear on your CV — can differ from your login email.", optional=true) %}
+                {{ text_input("email", type="email", placeholder="e.g. jane@example.com", value=pii.get('email', '')) }}
+            {% endcall %}
+
+            {% call form_group("Phone Number", hint="Include country code, e.g. +61 400 123 456.", optional=true) %}
+                {{ phone_input("phone", value=pii.get('phone', ''), placeholder="+61 400 123 456") }}
+            {% endcall %}
+        </section>
+
+        <div class="wizard-section-wavy" aria-hidden="true">
+            <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+                <path d="M0 5 C25 1, 50 9, 75 5 S125 9, 150 4 S200 8, 225 5 S275 9, 300 4 S350 8, 375 5 S425 9, 450 4 S500 8, 525 5 S575 9, 600 5"
+                      stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        {# ── Section 2: Default Region ── #}
+        <section class="profile-section" aria-labelledby="section-region-title">
+            <div class="wizard-section-header">
+                <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                    <path d="M18 3 C26 3, 33 9, 33 18 C32 27, 26 34, 18 33 C10 34, 3 27, 3 18 C3 9, 11 2, 18 3 Z"
+                          stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                    <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                          fill="var(--accent)" font-family="inherit">2</text>
+                </svg>
+                <div>
+                    <h3 class="wizard-section-title" id="section-region-title">Default Region</h3>
+                    <p class="wizard-section-desc">Your default country determines which regional fields, formatting rules, and conventions to use. You can override this per job.</p>
+                </div>
+            </div>
+
+            <div class="country-select-grid">
+                {% for r in regions %}
+                <label class="country-select-card" for="profile-region-{{ r.code }}">
+                    <input type="radio" name="region" id="profile-region-{{ r.code }}" value="{{ r.code }}"
+                           {% if r.code == pii.get('region', '') %}checked{% endif %}
+                           hx-get="/wizard/region-summary/{{ r.code }}"
+                           hx-target="#profile-region-summary"
+                           hx-swap="innerHTML"
+                           hx-trigger="change"
+                           hx-include="[name='region']">
+                    <div class="country-select-inner">
+                        <span class="country-select-flag">{{ r.flag }}</span>
+                        <div class="country-select-info">
+                            <strong>{{ r.name }}</strong>
+                            <span class="country-select-meta">{{ r.language }} · {{ r.page_length }}</span>
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div id="profile-region-summary" class="region-summary" style="margin-top: 0.75rem;">
+                {% if pii.get('region') %}
+                    {% include "partials/wizard/region_summary.html" %}
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="wizard-section-wavy" aria-hidden="true">
+            <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+                <path d="M0 5 C25 9, 50 1, 75 5 S125 1, 150 6 S200 2, 225 5 S275 1, 300 6 S350 2, 375 5 S425 1, 450 6 S500 2, 525 5 S575 1, 600 5"
+                      stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        {# ── Section 3: Regional Fields ── #}
+        <section class="profile-section" aria-labelledby="section-regional-title">
+            <div class="wizard-section-header">
+                <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                    <path d="M18 3 C27 2, 33 8, 33 18 C33 28, 27 34, 18 33 C9 33, 3 27, 3 18 C3 9, 10 3, 18 3 Z"
+                          stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                    <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                          fill="var(--accent)" font-family="inherit">3</text>
+                </svg>
+                <div>
+                    <h3 class="wizard-section-title" id="section-regional-title">Regional Requirements</h3>
+                    <p class="wizard-section-desc">These fields are expected by employers in your default region. They vary by country.</p>
+                </div>
+            </div>
+
+            {% set region = pii.get('region', '') %}
+            {% set fields = region_fields if region_fields is defined else {} %}
+
+            {% if fields.get('photo') %}
+            <div class="form-group">
+                <label>CV Photo
+                    {% if fields.get('photo_level') == 'required' %}
+                    <span class="photo-level photo-required">Required in your region</span>
+                    {% elif fields.get('photo_level') == 'common' %}
+                    <span class="photo-level photo-common">Common in your region</span>
+                    {% else %}
+                    <span class="photo-level photo-optional">Optional in your region</span>
+                    {% endif %}
+                </label>
+                <div class="photo-drop-zone">
+                    <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp"
+                           hx-post="/photos/upload"
+                           hx-target="#profile-photo-result"
+                           hx-swap="innerHTML"
+                           hx-encoding="multipart/form-data"
+                           hx-indicator="#profile-photo-spinner">
+                    <p>Click or drag a photo here</p>
+                    <span class="hint">JPEG, PNG, or WebP — max 5MB</span>
+                </div>
+                <div id="profile-photo-spinner" class="htmx-indicator">
+                    <div class="spinner" style="width:24px;height:24px;border-width:2px;"></div>
+                </div>
+                <div id="profile-photo-result"></div>
+                <div class="consent-block consent-block--inline">
+                    <label class="consent-checkbox-label">
+                        <input type="checkbox" name="consent_photo" value="1"
+                               {% if pii.get('consent_photo') %}checked{% endif %}>
+                        <span class="consent-checkbox-text">
+                            I consent to QuillCV processing my photo for CV generation
+                        </span>
+                    </label>
+                </div>
+            </div>
+            {% else %}
+            <input type="hidden" name="consent_photo" value="">
+            {% endif %}
+
+            {% if fields.get('dob') %}
+            <div class="form-group">
+                <label>Date of Birth
+                    <span class="photo-level photo-required">Expected in your region</span>
+                </label>
+                <p class="hint">Some regions include date of birth on CVs as a convention.</p>
+                {{ text_input("dob", type="date", value=pii.get('dob', '')) }}
+                <div class="consent-block consent-block--inline">
+                    <label class="consent-checkbox-label">
+                        <input type="checkbox" name="consent_dob" value="1"
+                               {% if pii.get('consent_dob') %}checked{% endif %}>
+                        <span class="consent-checkbox-text">
+                            I consent to QuillCV processing my date of birth for CV generation
+                        </span>
+                    </label>
+                </div>
+            </div>
+            {% else %}
+            <input type="hidden" name="consent_dob" value="">
+            {% endif %}
+
+            {% if fields.get('nationality') %}
+            {% call form_group("Nationality", hint="Your nationality as it would appear on your CV.") %}
+                {{ text_input("nationality", placeholder="e.g. Australian", value=pii.get('nationality', '')) }}
+            {% endcall %}
+            {% else %}
+            <input type="hidden" name="nationality" value="">
+            {% endif %}
+
+            {% if fields.get('marital') %}
+            <div class="form-group">
+                <label>Marital Status</label>
+                <p class="hint">Required for CVs in some countries.</p>
+                <select name="marital_status" class="input-field">
+                    <option value="">— Select —</option>
+                    {% for opt in ["Single", "Married", "Divorced", "Widowed", "Prefer not to say"] %}
+                    <option value="{{ opt }}" {% if pii.get('marital_status') == opt %}selected{% endif %}>{{ opt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% else %}
+            <input type="hidden" name="marital_status" value="">
+            {% endif %}
+
+            {% if fields.get('visa') %}
+            <div class="form-group">
+                <label>Visa / Work Rights Status
+                    <span class="photo-level photo-required">Required for your region</span>
+                </label>
+                <select name="visa_status" class="input-field">
+                    <option value="">— Select your work rights —</option>
+                    <option value="Citizen" {% if pii.get('visa_status') == 'Citizen' %}selected{% endif %}>Citizen</option>
+                    <option value="Permanent Resident" {% if pii.get('visa_status') == 'Permanent Resident' %}selected{% endif %}>Permanent Resident</option>
+                    <option value="Work Visa" {% if pii.get('visa_status') == 'Work Visa' %}selected{% endif %}>Work Visa (employer-sponsored)</option>
+                    <option value="Working Holiday Visa" {% if pii.get('visa_status') == 'Working Holiday Visa' %}selected{% endif %}>Working Holiday Visa</option>
+                    <option value="Student Visa" {% if pii.get('visa_status') == 'Student Visa' %}selected{% endif %}>Student Visa (with work rights)</option>
+                    <option value="Partner/Spouse Visa" {% if pii.get('visa_status') == 'Partner/Spouse Visa' %}selected{% endif %}>Partner / Spouse Visa</option>
+                    <option value="Bridging Visa" {% if pii.get('visa_status') == 'Bridging Visa' %}selected{% endif %}>Bridging Visa</option>
+                    <option value="Other" {% if pii.get('visa_status') == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            {% endif %}
+
+            {% if not fields.get('photo') and not fields.get('dob') and not fields.get('nationality') and not fields.get('marital') and not fields.get('visa') %}
+            <div class="info-card">
+                {% if region %}
+                <p>Your selected region doesn't require extra personal details on CVs.</p>
+                {% else %}
+                <p>Select a default region above to see which regional fields are required.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <div class="wizard-section-wavy" aria-hidden="true">
+            <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+                <path d="M0 5 C25 1, 50 9, 75 5 S125 9, 150 4 S200 8, 225 5 S275 9, 300 4 S350 8, 375 5 S425 9, 450 4 S500 8, 525 5 S575 9, 600 5"
+                      stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        {# ── Section 4: Professional Voice ── #}
+        <section class="profile-section" aria-labelledby="section-voice-title">
+            <div class="wizard-section-header">
+                <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                    <path d="M18 3 C26 2, 33 9, 33 18 C32 27, 25 34, 18 33 C11 34, 3 27, 3 18 C4 9, 11 2, 18 3 Z"
+                          stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                    <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                          fill="var(--accent)" font-family="inherit">4</text>
+                </svg>
+                <div>
+                    <h3 class="wizard-section-title" id="section-voice-title">Professional Voice</h3>
+                    <p class="wizard-section-desc">Help AI capture <em>your</em> voice — not generic corporate speak. The more you share, the more authentic your CV will sound.</p>
+                </div>
+            </div>
+
+            {% call form_group("How would you describe yourself as a professional?", hint="Your working style, strengths, what colleagues say about you.", optional=true) %}
+                {{ text_area("self_description", rows=3, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems…", value=pii.get('self_description', '')) }}
+            {% endcall %}
+
+            {% call form_group("What are your professional values?", hint="What matters to you in how you work and what you build.", optional=true) %}
+                {{ text_area("values", rows=3, placeholder="e.g. Code quality, user-centric design, continuous learning, transparent communication…", value=pii.get('values', '')) }}
+            {% endcall %}
+        </section>
+
+        <div class="wizard-section-wavy" aria-hidden="true">
+            <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+                <path d="M0 5 C25 9, 50 1, 75 5 S125 1, 150 6 S200 2, 225 5 S275 1, 300 6 S350 2, 375 5 S425 1, 450 6 S500 2, 525 5 S575 1, 600 5"
+                      stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        </div>
+
+        {# ── Section 5: CV / Resume Upload ── #}
+        <section class="profile-section" aria-labelledby="section-cv-title">
+            <div class="wizard-section-header">
+                <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                    <path d="M18 3 C27 2, 33 9, 33 18 C33 27, 26 34, 18 33 C9 33, 3 28, 3 18 C3 9, 10 3, 18 3 Z"
+                          stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                    <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                          fill="var(--accent)" font-family="inherit">5</text>
+                </svg>
+                <div>
+                    <h3 class="wizard-section-title" id="section-cv-title">CV / Resume</h3>
+                    <p class="wizard-section-desc">Your base CV — the AI extracts your experience, skills, and achievements from this to generate tailored versions.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="profile-cv-file">Upload your CV
+                    {% if cv_filename %}
+                    <span class="optional-label">(replace existing)</span>
+                    {% else %}
+                    <span class="optional-label">(optional — you can upload per job instead)</span>
+                    {% endif %}
+                </label>
+                {% if cv_filename %}
+                <div class="profile-cv-current">
+                    <span class="profile-cv-filename">
+                        <svg viewBox="0 0 16 20" width="12" height="15" fill="none" aria-hidden="true">
+                            <path d="M3 2 C2 2, 1 3, 1 4 L1 16 C1 17, 2 18, 3 18 L13 18 C14 18, 15 17, 15 16 L15 6 L10 1 Z"
+                                  stroke="var(--text-muted)" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 1 L10 6 L15 6" stroke="var(--text-muted)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+                        </svg>
+                        {{ cv_filename }}
+                    </span>
+                    <span class="profile-cv-status">Saved</span>
+                </div>
+                {% endif %}
+                <input type="file" id="profile-cv-file" name="cv_file"
+                       accept=".pdf,.docx,.doc,.txt,.md"
+                       class="profile-cv-input"
+                       aria-describedby="profile-cv-hint">
+                <p id="profile-cv-hint" class="hint">PDF, DOCX, or TXT — max 20MB</p>
+            </div>
+        </section>
+
+        <div class="wizard-section-wavy" aria-hidden="true">
+            <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+                <path d="M0 5 C25 1, 50 9, 75 5 S125 9, 150 4 S200 8, 225 5 S275 9, 300 4 S350 8, 375 5 S425 9, 450 4 S500 8, 525 5 S575 9, 600 5"
+                      stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        {# ── Section 6: References ── #}
+        {% if fields.get('references') %}
+        <section class="profile-section" aria-labelledby="section-refs-title">
+            <div class="wizard-section-header">
+                <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                    <path d="M18 3 C26 3, 33 9, 33 18 C33 27, 26 34, 18 33 C10 33, 3 27, 3 18 C3 9, 11 2, 18 3 Z"
+                          stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                    <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                          fill="var(--accent)" font-family="inherit">6</text>
+                </svg>
+                <div>
+                    <h3 class="wizard-section-title" id="section-refs-title">References</h3>
+                    <p class="wizard-section-desc">Your region expects references on the CV. Add 2–3 professional referees — this is something AI cannot fabricate.</p>
+                </div>
+            </div>
+
+            {% set refs = pii.get('references', []) %}
+            <div id="references-list">
+                {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
+                {{ reference_entry(2, refs[1] if refs|length > 1 else {}) }}
+            </div>
+        </section>
+        {% endif %}
+
+        {# ── Save button ── #}
+        <div class="profile-actions">
+            <button type="submit" class="btn-generate" id="profile-save-btn"
+                    hx-disabled-elt="this"
+                    hx-on::before-request="this.innerHTML='Saving…';">
+                Save Profile
+            </button>
+        </div>
+
+    </form>
+    </div>{# /profile-content #}
+</div>
+{% endblock %}

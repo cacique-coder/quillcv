@@ -1,5 +1,7 @@
 <nav class="app-nav">
-    <a href="/app" class="app-nav-link {% if request.url.path == '/app' %}app-nav-link--active{% endif %}">Generate CV</a>
+    <a href="/jobs" class="app-nav-link {% if '/jobs' in request.url.path %}app-nav-link--active{% endif %}">Jobs</a>
+    <a href="/profile" class="app-nav-link {% if '/profile' in request.url.path %}app-nav-link--active{% endif %}">Profile</a>
     <a href="/builder" class="app-nav-link {% if '/builder' in request.url.path %}app-nav-link--active{% endif %}">CV Builder</a>
+    <a href="/app" class="app-nav-link {% if request.url.path == '/app' %}app-nav-link--active{% endif %}">Generate CV</a>
     <a href="/my-cvs" class="app-nav-link {% if request.url.path == '/my-cvs' %}app-nav-link--active{% endif %}">My CVs</a>
 </nav>

@@ -1,0 +1,11 @@
+{% if success %}
+<div class="profile-saved-banner profile-saved-banner--success">
+    <span class="profile-saved-icon">&#10003;</span>
+    <span>Profile saved successfully.</span>
+</div>
+{% else %}
+<div class="profile-saved-banner profile-saved-banner--error">
+    <span class="profile-saved-icon">&#10007;</span>
+    <span>{{ error or "Something went wrong. Please try again." }}</span>
+</div>
+{% endif %}

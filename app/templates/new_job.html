@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}New Job Application — QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<section class="wizard">
+    <div id="job-wizard-container">
+        {% include "partials/job_wizard/step1_job.html" %}
+    </div>
+</section>
+{% endblock %}

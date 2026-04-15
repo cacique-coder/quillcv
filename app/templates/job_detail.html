@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.company_name or "Job Application" }}{% if job.job_title %} — {{ job.job_title }}{% endif %} — QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<div class="job-detail-page">
+    <a href="/jobs" class="btn-back-link">&#8592; Back to Jobs</a>
+
+    <div class="job-detail-header">
+        <div class="job-detail-title-group">
+            <div class="job-detail-heading">
+                <h2>{{ job.company_name or "Untitled Company" }}</h2>
+                {% if job.job_title %}
+                <span class="job-detail-subtitle">{{ job.job_title }}</span>
+                {% endif %}
+            </div>
+            <span class="status-badge status-badge--{{ job.status }}">{{ job.status | title }}</span>
+        </div>
+        <div class="job-detail-meta">
+            {% if job.region %}
+            <span class="job-detail-region">
+                {% if job.region_flag %}{{ job.region_flag }}{% endif %}
+                {{ job.region }}
+            </span>
+            {% endif %}
+            {% if job.template_id %}
+            <span class="job-detail-template">{{ job.template_id | title }} template</span>
+            {% endif %}
+            <span class="job-detail-date">{{ job.created_at.strftime("%d %b %Y") }}</span>
+        </div>
+    </div>
+
+    <div id="job-results">
+
+    {% if job.status == "complete" %}
+    {# ── Complete: show results tabs ── #}
+    <div class="generate-success">
+        <span class="generate-success-icon">&#10003;</span>
+        <span>CV{% if job.cover_letter %} and cover letter{% endif %} generated using the <strong>{{ job.template_id | title }}</strong> template for <strong>{{ job.region }}</strong></span>
+    </div>
+
+    <div class="results-tabs">
+        <button class="results-tab results-tab--active" onclick="switchResultsTab('cv', this)" type="button">
+            CV / Resume
+        </button>
+        {% if job.cover_letter %}
+        <button class="results-tab" onclick="switchResultsTab('cl', this)" type="button">
+            Cover Letter
+        </button>
+        {% endif %}
+    </div>
+
+    <div id="results-tab-cv" class="results-tab-panel results-tab-panel--active">
+        {% if job.ats_score is not none %}
+        <div class="job-detail-ats-row">
+            <div class="score-circle {% if job.ats_score >= 70 %}score-good{% elif job.ats_score >= 40 %}score-ok{% else %}score-low{% endif %}">
+                <span class="score-number">{{ job.ats_score }}</span>
+                <span class="score-label">ATS</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if region_rules and region_rules.notes %}
+        <div class="region-notes">
+            <h2>{{ job.region }} Region Guidelines</h2>
+            <ul>
+                {% for note in region_rules.notes %}
+                <li>{{ note }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="generated-cv">
+            <div class="generated-cv-header">
+                <h2>Your Generated CV
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">
+                        — {{ job.template_id | title }} template ({{ job.region }})
+                    </span>
+                </h2>
+                <div class="download-actions">
+                    <a href="/jobs/{{ job.id }}/download-pdf" class="btn-download" download>
+                        <span class="download-icon">&#8681;</span> Download PDF
+                    </a>
+                    <a href="/jobs/{{ job.id }}/download-docx" class="btn-download btn-download--secondary" download>
+                        <span class="download-icon">&#8681;</span> Download DOCX
+                    </a>
+                </div>
+            </div>
+            <div class="cv-preview">
+                {{ job.generated_cv | safe }}
+            </div>
+        </div>
+
+        <div class="results-actions">
+            <a href="/jobs/{{ job.id }}/download-pdf" class="btn-generate" download>
+                <span class="download-icon">&#8681;</span> Download CV PDF
+            </a>
+            <a href="/jobs/{{ job.id }}/download-docx" class="btn-secondary" download>
+                <span class="download-icon">&#8681;</span> Download CV DOCX
+            </a>
+            {% if job.cover_letter %}
+            <a href="/jobs/{{ job.id }}/download-cover-letter-pdf" class="btn-secondary" download>
+                <span class="download-icon">&#8681;</span> Cover Letter PDF
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if job.cover_letter %}
+    <div id="results-tab-cl" class="results-tab-panel" style="display: none;">
+        <div class="generated-cv">
+            <div class="generated-cv-header">
+                <h2>Your Cover Letter
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">
+                        — {{ job.template_id | title }} template ({{ job.region }})
+                    </span>
+                </h2>
+                <div class="download-actions">
+                    <a href="/jobs/{{ job.id }}/download-cover-letter-pdf" class="btn-download" download>
+                        <span class="download-icon">&#8681;</span> Download PDF
+                    </a>
+                    <a href="/jobs/{{ job.id }}/download-cover-letter-docx" class="btn-download btn-download--secondary" download>
+                        <span class="download-icon">&#8681;</span> Download DOCX
+                    </a>
+                </div>
+            </div>
+            <div class="cv-preview">
+                {{ job.cover_letter | safe }}
+            </div>
+        </div>
+
+        <div class="results-actions">
+            <a href="/jobs/{{ job.id }}/download-cover-letter-pdf" class="btn-generate" download>
+                <span class="download-icon">&#8681;</span> Download Cover Letter PDF
+            </a>
+            <a href="/jobs/{{ job.id }}/download-cover-letter-docx" class="btn-secondary" download>
+                <span class="download-icon">&#8681;</span> Download Cover Letter DOCX
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% elif job.status == "draft" %}
+    {# ── Draft: show JD preview and generate button ── #}
+    <div class="job-detail-draft">
+        {% if job.job_description %}
+        <div class="job-detail-jd-preview">
+            <h3 class="job-detail-section-title">Job Description</h3>
+            <div class="job-detail-jd-text">
+                {{ job.job_description[:500] }}{% if job.job_description | length > 500 %}
+                <span class="job-detail-jd-more">… ({{ job.job_description | length }} chars total)</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="panel-actions panel-actions-center">
+            <button type="button"
+                    class="btn-generate"
+                    id="btn-job-generate"
+                    hx-post="/jobs/{{ job.id }}/generate"
+                    hx-target="#job-results"
+                    hx-swap="innerHTML"
+                    hx-indicator="#generate-spinner"
+                    hx-disabled-elt="this"
+                    hx-on::before-request="this.innerHTML='Generating…'; this.classList.add('btn-generating');">
+                Generate CV + Cover Letter
+            </button>
+        </div>
+        <div id="generate-spinner" class="htmx-indicator" style="text-align:center; padding:1rem;">
+            <div class="spinner"></div>
+            <p class="hint">Generating your tailored CV…</p>
+        </div>
+    </div>
+
+    {% elif job.status == "generating" %}
+    {# ── Generating: show spinner ── #}
+    <div class="job-detail-generating" aria-live="polite">
+        <div class="job-detail-progress">
+            <div class="spinner"></div>
+            <p>Generating your tailored CV and cover letter…</p>
+            <p class="hint">This usually takes 30–60 seconds. You can refresh the page to check progress.</p>
+        </div>
+    </div>
+
+    {% elif job.status == "error" %}
+    {# ── Error: show message and retry ── #}
+    <div class="error-card">
+        <h3>Generation Failed</h3>
+        <p>{{ job.error_message or "Something went wrong while generating your CV. Please try again." }}</p>
+        <div style="margin-top: 1rem;">
+            <button type="button"
+                    class="btn-generate"
+                    hx-post="/jobs/{{ job.id }}/generate"
+                    hx-target="#job-results"
+                    hx-swap="innerHTML"
+                    hx-indicator="#generate-spinner"
+                    hx-disabled-elt="this"
+                    hx-on::before-request="this.innerHTML='Retrying…';">
+                Retry Generation
+            </button>
+        </div>
+        <div id="generate-spinner" class="htmx-indicator" style="text-align:center; padding:1rem;">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    {% else %}
+    {# ── Unknown status fallback ── #}
+    <div class="job-detail-draft">
+        <p class="hint">Status: {{ job.status }}</p>
+    </div>
+    {% endif %}
+
+    </div>{# /job-results #}
+</div>
+
+<script>
+function switchResultsTab(tabId, btn) {
+    document.querySelectorAll('.results-tab-panel').forEach(function(p) { p.style.display = 'none'; p.classList.remove('results-tab-panel--active'); });
+    document.querySelectorAll('.results-tab').forEach(function(t) { t.classList.remove('results-tab--active'); });
+    var panel = document.getElementById('results-tab-' + tabId);
+    if (panel) { panel.style.display = ''; panel.classList.add('results-tab-panel--active'); }
+    if (btn) { btn.classList.add('results-tab--active'); }
+}
+</script>
+{% endblock %}
