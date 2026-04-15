@@ -88,6 +88,10 @@ async def scrape_job_url(url: str) -> dict:
         text = _clean_text(raw)
 
         if len(text) < 50:
+            # Provide a LinkedIn-specific hint when the site blocks the request
+            if "linkedin.com" in url.lower():
+                return {"success": False, "text": "", "title": "",
+                        "error": "LinkedIn blocked the request. Please copy the job description from LinkedIn and paste it below."}
             return {"success": False, "text": "", "title": "", "error": "No job description text found on that page. Try pasting manually."}
 
         # Extract an optional title from the first line if the scraper prefixed it
