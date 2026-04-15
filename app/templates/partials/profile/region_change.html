@@ -1,0 +1,10 @@
+{#
+  Response for /profile/region-change/{code}.
+
+  The radio button targets #profile-region-summary, so the first block
+  (region summary) swaps into that container. The regional-fields partial
+  renders with `oob=True`, giving it an hx-swap-oob attribute that HTMX
+  uses to also update #profile-regional-fields in Section 3.
+#}
+{% include "partials/wizard/region_summary.html" %}
+{% include "partials/profile/regional_fields.html" %}

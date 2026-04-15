@@ -1,0 +1,127 @@
+{#
+  Partial: Regional Requirements section body.
+  Rendered inline from profile.html and also returned from
+  /profile/region-change/{code} as an HTMX out-of-band swap so the section
+  stays in sync when the user picks a different default region.
+
+  Expects: pii, fields (dict from _region_fields), oob (bool)
+#}
+{% from "macros/ui.html" import form_group, text_input, text_area %}
+
+<div id="profile-regional-fields"
+     {% if oob %}hx-swap-oob="innerHTML"{% endif %}>
+
+    {% set region = pii.get('region', '') %}
+
+    {% if fields.get('photo') %}
+    <div class="form-group">
+        <label>CV Photo
+            {% if fields.get('photo_level') == 'required' %}
+            <span class="photo-level photo-required">Required in your region</span>
+            {% elif fields.get('photo_level') == 'common' %}
+            <span class="photo-level photo-common">Common in your region</span>
+            {% else %}
+            <span class="photo-level photo-optional">Optional in your region</span>
+            {% endif %}
+        </label>
+        <div class="photo-drop-zone">
+            <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp"
+                   hx-post="/photos/upload"
+                   hx-target="#profile-photo-result"
+                   hx-swap="innerHTML"
+                   hx-encoding="multipart/form-data"
+                   hx-indicator="#profile-photo-spinner">
+            <p>Click or drag a photo here</p>
+            <span class="hint">JPEG, PNG, or WebP — max 5MB</span>
+        </div>
+        <div id="profile-photo-spinner" class="htmx-indicator">
+            <div class="spinner" style="width:24px;height:24px;border-width:2px;"></div>
+        </div>
+        <div id="profile-photo-result"></div>
+        <div class="consent-block consent-block--inline">
+            <label class="consent-checkbox-label">
+                <input type="checkbox" name="consent_photo" value="1"
+                       {% if pii.get('consent_photo') %}checked{% endif %}>
+                <span class="consent-checkbox-text">
+                    I consent to QuillCV processing my photo for CV generation
+                </span>
+            </label>
+        </div>
+    </div>
+    {% else %}
+    <input type="hidden" name="consent_photo" value="">
+    {% endif %}
+
+    {% if fields.get('dob') %}
+    <div class="form-group">
+        <label>Date of Birth
+            <span class="photo-level photo-required">Expected in your region</span>
+        </label>
+        <p class="hint">Some regions include date of birth on CVs as a convention.</p>
+        {{ text_input("dob", type="date", value=pii.get('dob', '')) }}
+        <div class="consent-block consent-block--inline">
+            <label class="consent-checkbox-label">
+                <input type="checkbox" name="consent_dob" value="1"
+                       {% if pii.get('consent_dob') %}checked{% endif %}>
+                <span class="consent-checkbox-text">
+                    I consent to QuillCV processing my date of birth for CV generation
+                </span>
+            </label>
+        </div>
+    </div>
+    {% else %}
+    <input type="hidden" name="consent_dob" value="">
+    {% endif %}
+
+    {% if fields.get('nationality') %}
+    {% call form_group("Nationality", hint="Your nationality as it would appear on your CV.") %}
+        {{ text_input("nationality", placeholder="e.g. Australian", value=pii.get('nationality', '')) }}
+    {% endcall %}
+    {% else %}
+    <input type="hidden" name="nationality" value="">
+    {% endif %}
+
+    {% if fields.get('marital') %}
+    <div class="form-group">
+        <label>Marital Status</label>
+        <p class="hint">Required for CVs in some countries.</p>
+        <select name="marital_status" class="input-field">
+            <option value="">— Select —</option>
+            {% for opt in ["Single", "Married", "Divorced", "Widowed", "Prefer not to say"] %}
+            <option value="{{ opt }}" {% if pii.get('marital_status') == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% else %}
+    <input type="hidden" name="marital_status" value="">
+    {% endif %}
+
+    {% if fields.get('visa') %}
+    <div class="form-group">
+        <label>Visa / Work Rights Status
+            <span class="photo-level photo-required">Required for your region</span>
+        </label>
+        <select name="visa_status" class="input-field">
+            <option value="">— Select your work rights —</option>
+            <option value="Citizen" {% if pii.get('visa_status') == 'Citizen' %}selected{% endif %}>Citizen</option>
+            <option value="Permanent Resident" {% if pii.get('visa_status') == 'Permanent Resident' %}selected{% endif %}>Permanent Resident</option>
+            <option value="Work Visa" {% if pii.get('visa_status') == 'Work Visa' %}selected{% endif %}>Work Visa (employer-sponsored)</option>
+            <option value="Working Holiday Visa" {% if pii.get('visa_status') == 'Working Holiday Visa' %}selected{% endif %}>Working Holiday Visa</option>
+            <option value="Student Visa" {% if pii.get('visa_status') == 'Student Visa' %}selected{% endif %}>Student Visa (with work rights)</option>
+            <option value="Partner/Spouse Visa" {% if pii.get('visa_status') == 'Partner/Spouse Visa' %}selected{% endif %}>Partner / Spouse Visa</option>
+            <option value="Bridging Visa" {% if pii.get('visa_status') == 'Bridging Visa' %}selected{% endif %}>Bridging Visa</option>
+            <option value="Other" {% if pii.get('visa_status') == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+    </div>
+    {% endif %}
+
+    {% if not fields.get('photo') and not fields.get('dob') and not fields.get('nationality') and not fields.get('marital') and not fields.get('visa') %}
+    <div class="info-card">
+        {% if region %}
+        <p>Your selected region doesn't require extra personal details on CVs.</p>
+        {% else %}
+        <p>Select a default region above to see which regional fields are required.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

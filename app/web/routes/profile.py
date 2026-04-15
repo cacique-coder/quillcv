@@ -15,6 +15,7 @@ from app.cv_export.adapters.template_registry import REGIONS
 from app.identity.adapters.fastapi_deps import get_current_user
 from app.infrastructure.persistence.database import async_session
 from app.infrastructure.phone_utils import normalize_phone
+from app.web.routes.wizard import _region_fields
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -62,7 +63,39 @@ async def profile_page(request: Request):
         "pii": pii,
         "cv_filename": cv_filename,
         "regions": list(REGIONS.values()),
+        "region_fields": _region_fields(pii.get("region", "")),
         "dev_mode": request.app.state.dev_mode,
+    })
+
+
+# ---------------------------------------------------------------------------
+# GET /profile/region-change/{code} — live-update region summary + Section 3
+# ---------------------------------------------------------------------------
+
+
+@router.get("/region-change/{code}")
+async def profile_region_change(request: Request, code: str):
+    """Return region-summary HTML plus an OOB swap for Section 3 regional fields.
+
+    Fired by the radio buttons in Section 2 so picking a new default region
+    immediately reveals the conditional fields (photo, DOB, visa, etc.) that
+    the chosen country expects on a CV.
+    """
+    region_config = REGIONS.get(code, REGIONS["AU"])
+    fields = _region_fields(code)
+    pii = request.state.session.get("pii") or {}
+
+    # Mirror the chosen region into the session view of PII so the partial's
+    # "Your selected region doesn't require extra personal details" copy
+    # picks the right branch before the form is saved.
+    pii_view = {**pii, "region": code}
+
+    return templates.TemplateResponse("partials/profile/region_change.html", {
+        "request": request,
+        "region_config": region_config,
+        "fields": fields,
+        "pii": pii_view,
+        "oob": True,
     })
 
 
