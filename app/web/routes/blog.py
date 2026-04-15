@@ -153,12 +153,12 @@ POSTS = {
             "tags": ["formato-cv", "trabajo-internacional", "cv-por-país", "consejos-cv"],
             "faq": [
                 {
-                    "q": "¿Un CV y un résumé son lo mismo?",
-                    "a": "Depende de dónde estés. En EE.UU. y Canadá, un résumé es el documento corto de ventas y 'CV' se reserva para uso académico. En Reino Unido, Australia y gran parte de Europa, la palabra 'CV' se usa para lo que los estadounidenses llaman résumé. Los formatos también cambian — extensión, foto, datos personales y tono varían por país.",
+                    "q": "¿Por qué en EE.UU. usan la palabra 'resume' en vez de 'CV'?",
+                    "a": "En inglés estadounidense, 'resume' (del francés 'résumé') es el documento corto de ventas profesional, y 'CV' se reserva para uso académico. En el resto del mundo, 'CV' es el término habitual para ambos casos. Más allá del nombre, el formato cambia: extensión, foto, datos personales y tono varían según el país.",
                 },
                 {
                     "q": "¿Necesito un CV diferente para cada país al que postule?",
-                    "a": "Sí, si postulás a varias regiones. Un résumé estadounidense enviado a un empleador alemán parece incompleto (sin foto, sin fecha de nacimiento, sin firma). Un Lebenslauf alemán enviado a un empleador estadounidense genera problemas legales al incluir características protegidas. Traducir no alcanza — el formato tiene que cambiar.",
+                    "a": "Sí, si postulás a varias regiones. Un CV estadounidense enviado a un empleador alemán parece incompleto (sin foto, sin fecha de nacimiento, sin firma). Un Lebenslauf alemán enviado a un empleador estadounidense genera problemas legales al incluir características protegidas. Traducir no alcanza — el formato tiene que cambiar.",
                 },
                 {
                     "q": "¿Qué países todavía esperan foto en el CV?",
@@ -272,19 +272,19 @@ POSTS = {
         {
             "slug": "formatos-de-curriculo-pelo-mundo",
             "title": "Formatos de Currículo pelo Mundo: Por Que Um Único Currículo Não Funciona em 12 Países",
-            "description": "Seu résumé americano não é um Lebenslauf alemão. Não é um rirekisho japonês. Veja o que realmente muda país a país — e por que mandar o mesmo currículo para todo lado mata sua candidatura em silêncio.",
+            "description": "Seu currículo americano não é um Lebenslauf alemão. Não é um rirekisho japonês. Veja o que realmente muda país a país — e por que mandar o mesmo currículo para todo lado mata sua candidatura em silêncio.",
             "date": "2026-04-16",
             "date_modified": "2026-04-16",
             "author": "Daniel Zambrano",
             "tags": ["formato-currículo", "trabalho-internacional", "currículo-por-país", "dicas-cv"],
             "faq": [
                 {
-                    "q": "Um CV e um résumé são a mesma coisa?",
-                    "a": "Depende de onde você está. Nos EUA e Canadá, o résumé é o documento curto de vendas e 'CV' é reservado para uso acadêmico. No Reino Unido, Austrália e grande parte da Europa, a palavra 'CV' é usada para o que os americanos chamam de résumé. Os formatos também mudam — extensão, foto, dados pessoais e tom variam por país.",
+                    "q": "Por que nos EUA usam a palavra 'resume' em vez de 'CV'?",
+                    "a": "Em inglês americano, 'resume' (do francês 'résumé') é o documento curto de vendas profissional, e 'CV' é reservado para uso acadêmico. No resto do mundo, 'CV' é o termo usado em ambos os casos. Além do nome, o formato muda: extensão, foto, dados pessoais e tom variam conforme o país.",
                 },
                 {
                     "q": "Preciso de um currículo diferente para cada país?",
-                    "a": "Sim, se você se candidata em várias regiões. Um résumé americano enviado a um empregador alemão parece incompleto (sem foto, sem data de nascimento, sem assinatura). Um Lebenslauf alemão enviado a um empregador americano gera problemas legais por incluir características protegidas. Traduzir não basta — o formato precisa mudar.",
+                    "a": "Sim, se você se candidata em várias regiões. Um currículo americano enviado a um empregador alemão parece incompleto (sem foto, sem data de nascimento, sem assinatura). Um Lebenslauf alemão enviado a um empregador americano gera problemas legais por incluir características protegidas. Traduzir não basta — o formato precisa mudar.",
                 },
                 {
                     "q": "Quais países ainda esperam foto no currículo?",
