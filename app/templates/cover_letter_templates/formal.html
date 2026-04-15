@@ -1,0 +1,86 @@
+<style>
+    .cover-letter--formal {
+        font-family: 'Georgia', 'Times New Roman', serif;
+        color: #1a1a1a;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2.5rem 2rem;
+        line-height: 1.7;
+        font-size: 0.95rem;
+    }
+    .cover-letter--formal .cl-header {
+        margin-bottom: 1.5rem;
+        color: #444;
+        font-size: 0.9rem;
+    }
+    .cover-letter--formal .cl-date {
+        margin: 0 0 0.75rem;
+    }
+    .cover-letter--formal .cl-recipient {
+        margin: 0;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+    .cover-letter--formal .cl-company {
+        margin: 0.1rem 0 0;
+        color: #444;
+    }
+    .cover-letter--formal .cl-salutation {
+        margin: 0 0 1.25rem;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+    .cover-letter--formal .cl-body p {
+        margin: 0 0 1rem;
+    }
+    .cover-letter--formal .cl-footer {
+        margin-top: 1.5rem;
+    }
+    .cover-letter--formal .cl-signoff {
+        margin: 0 0 2rem;
+        color: #1a1a1a;
+    }
+    .cover-letter--formal .cl-name {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1rem;
+        color: #1a1a1a;
+    }
+    @media print {
+        .cover-letter--formal {
+            padding: 0;
+            max-width: 100%;
+        }
+    }
+</style>
+<div class="cover-letter cover-letter--formal">
+    <div class="cl-header">
+        {% if date %}
+        <p class="cl-date">{{ date }}</p>
+        {% endif %}
+        {% if recipient and recipient != "Hiring Manager" %}
+        <p class="cl-recipient">{{ recipient }}</p>
+        {% endif %}
+        {% if company_name %}
+        <p class="cl-company">{{ company_name }}</p>
+        {% endif %}
+    </div>
+
+    <p class="cl-salutation">{{ salutation }}</p>
+
+    <div class="cl-body">
+        <p>{{ opening }}</p>
+        {% for paragraph in body_paragraphs %}
+        <p>{{ paragraph }}</p>
+        {% endfor %}
+        {% if contribution %}
+        <p>{{ contribution }}</p>
+        {% endif %}
+        <p>{{ closing }}</p>
+    </div>
+
+    <div class="cl-footer">
+        <p class="cl-signoff">{{ sign_off }}</p>
+        <p class="cl-name">{{ name }}</p>
+    </div>
+</div>

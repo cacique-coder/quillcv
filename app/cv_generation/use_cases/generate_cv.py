@@ -18,6 +18,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.cv_export.adapters.template_registry import REGION_RULES, get_region, get_template
 from app.cv_generation.adapters.anthropic_generator import generate_tailored_cv
+from app.cv_generation.adapters.cover_letter_generator import generate_cover_letter
 from app.cv_generation.adapters.generation_log import log_generation
 from app.cv_generation.adapters.keyword_llm import extract_keywords_llm
 from app.cv_generation.adapters.pdfplumber_parser import parse_cv
@@ -37,7 +38,12 @@ from app.scoring.adapters.keyword_matcher import analyze_ats
 
 logger = logging.getLogger(__name__)
 
-templates = Jinja2Templates(directory=Path(__file__).parent.parent.parent / "templates")
+import sys as _sys
+_tpl_dir = Path(__file__).parent.parent.parent / "templates"
+templates = Jinja2Templates(directory=_tpl_dir)
+if _sys.version_info >= (3, 14):
+    from jinja2 import Environment, FileSystemLoader
+    templates.env = Environment(loader=FileSystemLoader(str(_tpl_dir)), autoescape=True, cache_size=0)
 
 # Type alias for progress callback
 ProgressCallback = Callable[[str, str], Coroutine]
@@ -180,6 +186,39 @@ async def run_generation_pipeline(
     cv_data["_llm_usage"] = llm_usage
     logger.info("Pipeline[%s] step=render template=%s html_len=%d", attempt_id, template_id, len(rendered_cv))
 
+    # 5b. Generate cover letter
+    await on_progress("Writing your cover letter", "Crafting a tailored cover letter")
+    t0 = time.monotonic()
+    cover_letter_data = await generate_cover_letter(
+        cv_data=cv_data,
+        job_description=job_description,
+        region=region_config,
+        llm=llm,
+        attempt=attempt,
+        keyword_categories=keyword_categories,
+    )
+    timings["cover_letter"] = round(time.monotonic() - t0, 2)
+    logger.info(
+        "Pipeline[%s] step=cover_letter duration=%.2fs success=%s",
+        attempt_id, timings["cover_letter"], cover_letter_data is not None,
+    )
+
+    # Restore PII in cover letter
+    if cover_letter_data and redactor:
+        cover_letter_data = redactor.restore(cover_letter_data)
+
+    # Render cover letter HTML (simple template)
+    cover_letter_html = None
+    if cover_letter_data:
+        cl_llm_usage = cover_letter_data.pop("_llm_usage", {})
+        try:
+            cover_letter_html = templates.get_template(
+                "cover_letter_templates/formal.html"
+            ).render(**cover_letter_data)
+        except Exception:
+            logger.exception("Pipeline[%s] Cover letter template render failed", attempt_id)
+        cover_letter_data["_llm_usage"] = cl_llm_usage
+
     # 6. ATS + quality review in parallel
     await on_progress("Final ATS comparison", "Scoring the result and reviewing quality")
     t0 = time.monotonic()
@@ -231,6 +270,8 @@ async def run_generation_pipeline(
         attempt_id,
         cv_data=cv_data,
         rendered_cv=rendered_cv,
+        cover_letter_data=cover_letter_data,
+        cover_letter_html=cover_letter_html,
         cv_text_preview=cv_text[:500],
         quality_review_flags=review_flags,
     )
@@ -281,6 +322,8 @@ async def run_generation_pipeline(
         "ats_original": ats_result,
         "ats_generated": ats_generated,
         "generated_cv": rendered_cv,
+        "cover_letter": cover_letter_html,
+        "cover_letter_data": cover_letter_data,
         "cv_text": cv_text[:500],
         "template": selected_template,
         "region": region_code,
