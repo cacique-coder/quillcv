@@ -23,7 +23,7 @@
 
     {# ── Job URL scraper ── #}
     <div class="job-url-input">
-        <label>Job posting URL <span class="optional-label">(optional)</span></label>
+        <label>Job posting URL <span class="optional-label">(recommended)</span></label>
         <p class="hint">Paste the link and we'll extract the description automatically. Works with Seek, Indeed, LinkedIn, and most job boards.</p>
         <div class="job-url-row">
             <input type="url" name="job_url" id="job-url-input"
@@ -45,11 +45,27 @@
         <div id="job-scrape-result"></div>
     </div>
 
-    <p class="hint" style="margin: 0.75rem 0 0.25rem; text-align: center; color: var(--text-muted);">— or paste it manually —</p>
+    {# ── Fallback toggle: shown only after a successful scrape ── #}
+    <div id="job-description-toggle-row" class="description-toggle-row" hidden>
+        <span class="description-toggle-label">Description looks wrong?</span>
+        <button type="button" id="toggle-description-btn" class="description-toggle-btn">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+                <path d="M11.5 2.5 L13.5 4.5 L5 13 L2 13.5 L2.5 10.5 Z"
+                      stroke="currentColor" stroke-width="1.3"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Paste it manually
+        </button>
+    </div>
 
-    {% call form_group("Job Description", hint="Paste the full job posting — the AI uses this to tailor keywords, tone, and structure to match what the employer is looking for.", required=true) %}
-        {{ text_area("job_description", id="job-description-field", rows=10, placeholder="Paste the job description here…", value=job.job_description if job and job.job_description else '', required=true) }}
-    {% endcall %}
+    {# ── Manual description block ── #}
+    <div id="job-description-block">
+        <p class="hint description-divider">— or paste it manually —</p>
+
+        {% call form_group("Job Description", hint="Paste the full job posting — the AI uses this to tailor keywords, tone, and structure to match what the employer is looking for.", optional=true, optional_text="required if no URL") %}
+            {{ text_area("job_description", id="job_description", rows=10, placeholder="Paste the job description here…", value=job.job_description if job and job.job_description else '') }}
+        {% endcall %}
+    </div>
 
     {% call form_group("What attracts you to this role?", hint="What excites you about this job? This helps align the CV's tone with your genuine motivation.", optional=true, optional_text="optional") %}
         {{ text_area("offer_appeal", id="offer-appeal-field", rows=3, placeholder="e.g. The chance to work on distributed systems at scale, the team's open-source culture…", value=job.offer_appeal if job and job.offer_appeal else (offer_appeal or '')) }}
@@ -70,16 +86,41 @@
 </form>
 
 <script>
-// When job scrape result fills in the job description, populate the textarea
-document.addEventListener('htmx:afterSwap', function(evt) {
-    if (evt.detail.target && evt.detail.target.id === 'job-scrape-result') {
-        var scraped = document.querySelector('#job-scrape-result [data-job-description]');
-        if (scraped) {
-            var ta = document.getElementById('job-description-field');
-            if (ta && !ta.value.trim()) {
-                ta.value = scraped.getAttribute('data-job-description');
-            }
+// Collapse the manual description block on successful scrape, expand on error.
+// The scrape-result partial itself populates the #job_description textarea, so
+// submission works whether the block is visible or not.
+(function () {
+    function syncDescriptionVisibility() {
+        var result = document.getElementById('job-scrape-result');
+        var block = document.getElementById('job-description-block');
+        var toggleRow = document.getElementById('job-description-toggle-row');
+        if (!result || !block || !toggleRow) return;
+        var hasSuccess = !!result.querySelector('.job-scrape-preview');
+        if (hasSuccess) {
+            block.hidden = true;
+            toggleRow.hidden = false;
+        } else {
+            block.hidden = false;
+            toggleRow.hidden = true;
         }
     }
-});
+
+    document.addEventListener('htmx:afterSwap', function (evt) {
+        if (evt.detail.target && evt.detail.target.id === 'job-scrape-result') {
+            syncDescriptionVisibility();
+        }
+    });
+
+    var toggleBtn = document.getElementById('toggle-description-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            var block = document.getElementById('job-description-block');
+            var toggleRow = document.getElementById('job-description-toggle-row');
+            if (block) block.hidden = false;
+            if (toggleRow) toggleRow.hidden = true;
+            var ta = document.getElementById('job_description');
+            if (ta) ta.focus();
+        });
+    }
+})();
 </script>

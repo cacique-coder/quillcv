@@ -4920,6 +4920,57 @@ select.input-field {
     color: var(--text-muted);
 }
 
+/* Manual-description fallback toggle (shown after a successful scrape) */
+.description-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin: 0.9rem 0 0.25rem;
+    font-size: 0.8rem;
+}
+.description-toggle-row[hidden] {
+    display: none;
+}
+.description-toggle-label {
+    color: var(--text-muted);
+}
+.description-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.description-toggle-btn svg {
+    color: var(--text-muted);
+    transition: color 0.15s ease;
+}
+.description-toggle-btn:hover,
+.description-toggle-btn:focus-visible {
+    border-color: var(--accent);
+    background: rgba(108, 99, 255, 0.08);
+    color: var(--accent);
+    outline: none;
+}
+.description-toggle-btn:hover svg,
+.description-toggle-btn:focus-visible svg {
+    color: var(--accent);
+}
+.description-divider {
+    margin: 0.75rem 0 0.25rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
 /* Job scrape error */
 .job-scrape-error {
     margin-top: 0.75rem;
@@ -6530,7 +6581,7 @@ select.input-field {
     padding: 2rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 .btn-back-link {
     display: inline-flex;
@@ -6543,45 +6594,124 @@ select.input-field {
 }
 .btn-back-link:hover { color: var(--accent); }
 
+.job-detail-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* Text-only delete link — matches the visual weight of the back link */
+.btn-ghost-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.35rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+.btn-ghost-danger:hover,
+.btn-ghost-danger:focus-visible {
+    color: var(--red);
+    background: rgba(248, 113, 113, 0.08);
+    outline: none;
+}
+.btn-ghost-danger svg {
+    opacity: 0.8;
+}
+
+/* Header as a card */
 .job-detail-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.6rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.35rem;
 }
-.job-detail-title-group {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-.job-detail-heading h2 {
-    margin: 0;
-    font-size: 1.5rem;
-}
-.job-detail-subtitle {
-    display: block;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-top: 0.1rem;
-}
-.job-detail-meta {
+.job-detail-title-row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
-    font-size: 0.85rem;
+}
+.job-detail-title {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+.job-detail-untitled {
     color: var(--text-muted);
+    font-style: italic;
+    font-weight: 500;
 }
-.job-detail-region { font-size: 0.9rem; }
-.job-detail-template {
-    padding: 0.15rem 0.6rem;
-    background: rgba(108, 99, 255, 0.08);
-    border-radius: 4px;
-    font-size: 0.78rem;
-    color: var(--accent);
+.job-detail-subtitle {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.4;
 }
-.job-detail-date { font-size: 0.8rem; }
+.job-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 0.65rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+}
+.job-detail-meta-item {
+    white-space: nowrap;
+}
+.job-detail-meta-sep {
+    opacity: 0.5;
+    font-weight: 600;
+}
+
+/* Scope error-card polish to the job detail page */
+.job-detail-page .error-card {
+    margin: 0;
+    padding: 1.4rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.job-detail-page .error-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.job-detail-page .error-card-icon {
+    color: var(--red);
+    flex-shrink: 0;
+}
+.job-detail-page .error-card h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+.job-detail-page .error-card-body {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+.job-detail-page .error-card-actions {
+    margin-top: 0.25rem;
+}
 
 .job-detail-ats-row {
     display: flex;
