@@ -15,7 +15,7 @@ from starlette.responses import HTMLResponse, Response
 
 logger = logging.getLogger(__name__)
 
-_SKIP_PREFIXES = ("/static/", "/favicon.ico", "/demo", "/blog", "/about", "/privacy", "/privacidad", "/privacidade", "/terms")
+_SKIP_PREFIXES = ("/static/", "/favicon.ico")
 _IS_PRODUCTION = os.environ.get("APP_ENV", "development") == "production"
 
 # ---------------------------------------------------------------------------
