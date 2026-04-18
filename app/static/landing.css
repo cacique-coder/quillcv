@@ -1,0 +1,1340 @@
+/* =============================================================
+   QuillCV landing — "Letterpress Atelier"
+   Loaded only on /  via {% block head_extra %} in landing.html
+   Uses tokens from tokens.css; adds landing-scoped palette vars.
+   ============================================================= */
+
+/* ── Scoped palette extension ────────────────────────────────── */
+
+.lp {
+    /* Shared landing typography stack */
+    --lp-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --lp-body: "Manrope", var(--font-sans);
+    --lp-hand: var(--font-hand);
+}
+
+[data-theme="light"] .lp,
+:root:not([data-theme="dark"]) .lp {
+    --lp-paper:       #f4f5f7;   /* cool off-white page */
+    --lp-paper-2:     #ffffff;   /* whiter paper for lifted cards */
+    --lp-surface:     #eef0f4;   /* subtle surface tint */
+    --lp-ink:         #14161f;   /* near-black */
+    --lp-ink-soft:    #4b4f5b;   /* slate body */
+    --lp-ink-softer:  #7b7f8b;   /* muted slate / captions */
+    --lp-rule:        #d9dbe2;   /* cool rule */
+    --lp-grain-opacity: 0.3;
+    --lp-paper-shadow: 0 20px 50px -20px rgba(20, 22, 31, 0.18),
+                       0 4px 14px -4px rgba(20, 22, 31, 0.08);
+    --lp-receipt-bg:  #ffffff;
+}
+
+[data-theme="dark"] .lp {
+    --lp-paper:       #0e0f14;
+    --lp-paper-2:     #181a22;
+    --lp-surface:     #1c1e28;
+    --lp-ink:         #f0f1f5;
+    --lp-ink-soft:    #9ca0ad;
+    --lp-ink-softer:  #6b6e7b;
+    --lp-rule:        #262832;
+    --lp-grain-opacity: 0.18;
+    --lp-paper-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6),
+                       0 4px 14px -4px rgba(0, 0, 0, 0.4);
+    --lp-receipt-bg:  #14161f;
+}
+
+/* Fallback when no [data-theme] attribute and prefers-color-scheme: dark */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .lp {
+        --lp-paper:       #0e0f14;
+        --lp-paper-2:     #181a22;
+        --lp-surface:     #1c1e28;
+        --lp-ink:         #f0f1f5;
+        --lp-ink-soft:    #9ca0ad;
+        --lp-ink-softer:  #6b6e7b;
+        --lp-rule:        #262832;
+        --lp-grain-opacity: 0.18;
+        --lp-paper-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6),
+                           0 4px 14px -4px rgba(0, 0, 0, 0.4);
+        --lp-receipt-bg:  #14161f;
+    }
+}
+
+/* ── Page container override ─────────────────────────────────── */
+
+.lp {
+    font-family: var(--lp-body);
+    color: var(--lp-ink);
+    background: var(--lp-paper);
+    position: relative;
+    overflow-x: clip;
+    line-height: 1.55;
+    margin: 0 auto;
+}
+
+/* Override marketing.css's .landing page background gradient with paper */
+body:has(.lp) { background: var(--lp-paper) !important; }
+
+/* Paper grain overlay — subtle SVG noise */
+.lp-grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: var(--lp-grain-opacity);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: multiply;
+}
+
+[data-theme="dark"] .lp-grain,
+:root:not([data-theme="light"]) .lp-grain {
+    mix-blend-mode: screen;
+}
+
+/* Generic section layout inside .lp */
+.lp section {
+    position: relative;
+    z-index: 1;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 6rem 1.5rem;
+}
+
+.lp-section-title {
+    font-family: var(--lp-display);
+    font-weight: 500;
+    font-size: clamp(1.75rem, 3.4vw, 2.6rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--lp-ink);
+    text-align: center;
+    margin-bottom: 0.6rem;
+    font-variation-settings: "opsz" 72;
+}
+
+.lp-section-title em {
+    font-style: italic;
+    color: var(--accent);
+    font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
+}
+
+.lp-section-lede {
+    text-align: center;
+    max-width: 56ch;
+    margin: 0 auto 3.5rem;
+    color: var(--lp-ink-soft);
+    font-size: 1.05rem;
+    line-height: 1.55;
+}
+
+.lp-title-rule {
+    display: block;
+    width: clamp(120px, 26vw, 260px);
+    height: 8px;
+    margin: 0.5rem auto 2.5rem;
+    color: var(--accent);
+    opacity: 0.7;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* HERO — desktop: split grid with CV mock on the right             */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-hero {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    min-height: 72vh;
+}
+
+.lp-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-family: var(--lp-body);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--lp-ink-soft);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+}
+
+.lp-stamp {
+    display: inline-block;
+    font-family: var(--lp-display);
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    padding: 0.35rem 0.65rem 0.3rem;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+    border-radius: 2px;
+    transform: rotate(-3deg);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    text-transform: uppercase;
+}
+
+.lp-hero-title {
+    font-family: var(--lp-display);
+    font-weight: 400;
+    font-size: clamp(2.6rem, 6vw, 4.4rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    color: var(--lp-ink);
+    margin: 0 0 1.5rem;
+    font-variation-settings: "opsz" 144, "wght" 500, "SOFT" 30;
+}
+
+.lp-hero-title em {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--accent);
+    font-variation-settings: "opsz" 144, "wght" 500, "SOFT" 100, "WONK" 1;
+}
+
+.lp-hero-accent {
+    position: relative;
+    color: var(--lp-ink);
+    font-style: italic;
+    font-weight: 500;
+    font-variation-settings: "opsz" 144, "wght" 500, "SOFT" 100, "WONK" 1;
+}
+
+/* Sketch underline under emphasised noun — replaces the highlighter swipe */
+.lp-hero-highlight {
+    position: relative;
+    color: var(--lp-ink);
+    font-style: italic;
+    font-weight: 500;
+    font-variation-settings: "opsz" 144, "wght" 500, "SOFT" 100, "WONK" 1;
+    display: inline-block;
+}
+.lp-hero-highlight::after {
+    content: "";
+    position: absolute;
+    left: 2%;
+    right: 2%;
+    bottom: -0.1em;
+    height: 8px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 10' preserveAspectRatio='none'><path d='M0 6 C25 1, 50 9, 75 4 S125 8, 150 4 S200 8, 225 3 S275 7, 300 5' stroke='%235b52e0' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    opacity: 0.75;
+    pointer-events: none;
+}
+[data-theme="dark"] .lp-hero-highlight::after {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 10' preserveAspectRatio='none'><path d='M0 6 C25 1, 50 9, 75 4 S125 8, 150 4 S200 8, 225 3 S275 7, 300 5' stroke='%236c63ff' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>");
+}
+
+.lp-hero-lede {
+    font-size: 1.15rem;
+    color: var(--lp-ink-soft);
+    max-width: 38ch;
+    line-height: 1.6;
+    margin: 0 0 2rem;
+}
+
+.lp-hero-cta {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+}
+
+.lp-hero-cta .btn {
+    font-family: var(--lp-body);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.lp-text-link {
+    color: var(--lp-ink);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.9rem 0.3rem;
+    border-bottom: 1.5px dashed var(--lp-ink-soft);
+    transition: color var(--duration) var(--ease-out),
+                border-color var(--duration) var(--ease-out);
+}
+.lp-text-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.lp-hero-signoff {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--lp-hand);
+    font-size: 1.35rem;
+    color: var(--lp-ink-soft);
+    margin: 0;
+    transform: rotate(-1.5deg);
+    transform-origin: left center;
+}
+
+.lp-hero-signoff svg {
+    flex-shrink: 0;
+}
+
+/* Hero mock — CV sheet scene */
+.lp-hero-mock {
+    position: relative;
+    min-height: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* The CV sheet */
+.lp-cv-sheet {
+    background: var(--lp-paper-2);
+    width: 100%;
+    max-width: 380px;
+    padding: 2rem 1.8rem;
+    border-radius: 2px 3px 1px 2px;
+    box-shadow: var(--lp-paper-shadow);
+    font-family: var(--lp-body);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--lp-ink);
+    transform: rotate(-2.5deg);
+    position: relative;
+    z-index: 1;
+    border: 1px solid color-mix(in srgb, var(--lp-ink) 6%, transparent);
+}
+
+.lp-cv-sheet::before {
+    /* Left paper punch holes */
+    content: "";
+    position: absolute;
+    left: -4px;
+    top: 18%;
+    bottom: 18%;
+    width: 8px;
+    background:
+        radial-gradient(circle, var(--lp-paper) 2.5px, transparent 3px) 0 0 / 8px 28px repeat-y;
+    opacity: 0.7;
+}
+
+.lp-cv-name {
+    font-family: var(--lp-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    color: var(--lp-ink);
+    font-variation-settings: "opsz" 72;
+}
+.lp-cv-role {
+    font-size: 0.82rem;
+    color: var(--lp-ink-soft);
+    margin-top: 0.15rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--lp-rule);
+    padding-bottom: 0.75rem;
+}
+.lp-cv-section-h {
+    font-family: var(--lp-display);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--lp-ink-soft);
+    margin-top: 1.1rem;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+}
+.lp-cv-line {
+    margin-bottom: 0.32rem;
+    color: var(--lp-ink);
+}
+.lp-cv-line--meta {
+    color: var(--lp-ink-soft);
+    font-size: 0.72rem;
+}
+.lp-cv-line--muted {
+    color: var(--lp-ink-soft);
+}
+
+/* Highlighted/circled keywords within the mock CV */
+.lp-cv-kw {
+    position: relative;
+    padding: 0 0.2em;
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+}
+.lp-cv-kw::before {
+    content: "";
+    position: absolute;
+    inset: -3px -2px;
+    border: 1.5px solid var(--accent);
+    border-radius: 40% 60% 45% 55% / 55% 45% 60% 40%;
+    opacity: 0.9;
+    transform: rotate(-1deg);
+}
+
+/* Sticky-note annotation over the CV */
+.lp-annotation {
+    position: absolute;
+    z-index: 2;
+    background: var(--lp-paper-2);
+    color: var(--lp-ink);
+    padding: 0.6rem 0.9rem 0.7rem;
+    border-radius: 4px 6px 4px 6px;
+    border: 1px solid var(--lp-rule);
+    box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.18),
+                0 2px 6px -2px rgba(0, 0, 0, 0.10);
+    transform: rotate(5deg);
+    font-family: var(--lp-hand);
+    line-height: 1;
+    text-align: center;
+}
+
+.lp-annotation--ats {
+    right: 4%;
+    top: 8%;
+    padding: 0.5rem 0.85rem;
+}
+.lp-annotation--ats .lp-annotation-label {
+    display: block;
+    font-family: var(--lp-hand);
+    font-size: 1rem;
+    color: var(--lp-ink-soft);
+    line-height: 1;
+}
+.lp-annotation--ats .lp-annotation-value {
+    display: block;
+    font-family: var(--lp-display);
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--accent);
+    margin-top: 0.15rem;
+    line-height: 1;
+}
+
+.lp-annotation--edit {
+    bottom: 10%;
+    left: -4%;
+    background: var(--lp-paper-2);
+    color: var(--lp-ink);
+    font-size: 1.1rem;
+    transform: rotate(-6deg);
+    padding: 0.7rem 0.95rem;
+    font-family: var(--lp-hand);
+    max-width: 150px;
+    text-align: left;
+}
+
+/* Pencil doodle */
+.lp-pencil {
+    position: absolute;
+    top: -4%;
+    right: 6%;
+    width: 130px;
+    transform: rotate(12deg);
+    z-index: 0;
+    opacity: 0.9;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* PROOF BAR — stats row under hero                                 */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-proof {
+    padding: 1.5rem 1.5rem !important;
+    border-top: 1px solid var(--lp-rule);
+    border-bottom: 1px solid var(--lp-rule);
+    max-width: 1120px;
+}
+.lp-proof-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    text-align: center;
+}
+.lp-proof-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+.lp-proof-num {
+    font-family: var(--lp-display);
+    font-size: 1.8rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--lp-ink);
+    font-variation-settings: "opsz" 144;
+}
+.lp-proof-label {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--lp-ink-soft);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* HOW IT WORKS — three steps, each labeled with large numeral     */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-how-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.4rem;
+    position: relative;
+}
+
+.lp-step {
+    background: var(--lp-paper-2);
+    border: 1px solid var(--lp-rule);
+    border-radius: 3px 8px 4px 6px;
+    padding: 2.2rem 1.8rem 1.8rem;
+    position: relative;
+    transition: transform var(--duration) var(--ease-out),
+                box-shadow var(--duration) var(--ease-out);
+}
+.lp-step:nth-child(2) { transform: rotate(0.6deg); }
+.lp-step:nth-child(3) { transform: rotate(-0.8deg); }
+.lp-step:hover {
+    transform: translateY(-4px) rotate(0);
+    box-shadow: var(--lp-paper-shadow);
+}
+
+.lp-step-num {
+    position: absolute;
+    top: -24px;
+    left: 20px;
+    width: 58px;
+    height: 58px;
+    background: var(--lp-paper);
+    border: 2px solid var(--lp-ink);
+    border-radius: 46% 54% 52% 48% / 54% 46% 52% 48%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--lp-display);
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: var(--lp-ink);
+    font-variation-settings: "opsz" 144;
+    transform: rotate(-4deg);
+}
+
+.lp-step h3 {
+    font-family: var(--lp-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--lp-ink);
+    margin: 1.8rem 0 0.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+.lp-step p {
+    color: var(--lp-ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* FEATURES — compact grid of capability cards                     */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-feat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+}
+.lp-feat {
+    background: var(--lp-paper-2);
+    border: 1px solid var(--lp-rule);
+    border-radius: var(--radius);
+    padding: 1.5rem 1.4rem;
+    transition: border-color var(--duration) var(--ease-out),
+                transform var(--duration) var(--ease-out);
+}
+.lp-feat:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.lp-feat-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.55rem;
+}
+.lp-feat-head svg {
+    flex-shrink: 0;
+    color: var(--accent);
+}
+.lp-feat h3 {
+    font-family: var(--lp-display);
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--lp-ink);
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+.lp-feat p {
+    color: var(--lp-ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* COUNTRY TAPESTRY — scattered country formats                    */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-countries {
+    background: var(--lp-paper-2);
+    border-top: 1px solid var(--lp-rule);
+    border-bottom: 1px solid var(--lp-rule);
+    max-width: none;
+    padding-inline: 0;
+}
+.lp-countries-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding-inline: 1.5rem;
+}
+.lp-country-list {
+    list-style: none;
+    padding: 0;
+    margin: 2.5rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.7rem;
+}
+.lp-country {
+    background: var(--lp-paper);
+    border: 1px solid var(--lp-rule);
+    border-radius: 3px;
+    padding: 0.85rem 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.88rem;
+    color: var(--lp-ink);
+    font-weight: 500;
+    transition: transform var(--duration) var(--ease-out),
+                border-color var(--duration) var(--ease-out),
+                background var(--duration) var(--ease-out);
+}
+.lp-country:hover {
+    transform: translateY(-2px) rotate(-0.8deg);
+    border-color: var(--accent);
+    background: var(--lp-paper-2);
+}
+.lp-country-flag {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+.lp-country-code {
+    font-family: var(--lp-display);
+    font-weight: 700;
+    color: var(--lp-ink);
+    letter-spacing: 0.02em;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* TRUST — margin-note style cards                                  */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-trust-tagline {
+    font-family: var(--lp-hand);
+    font-size: 1.5rem;
+    color: var(--lp-ink-soft);
+    text-align: center;
+    margin: -0.5rem 0 2rem;
+    transform: rotate(-1deg);
+    display: inline-block;
+    width: 100%;
+}
+.lp-trust-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6rem;
+}
+.lp-trust-card {
+    background: var(--lp-paper-2);
+    border: 1px solid var(--lp-rule);
+    border-left: 4px solid var(--accent);
+    padding: 1.6rem 1.5rem;
+    border-radius: 2px 10px 4px 8px;
+    position: relative;
+}
+.lp-trust-card::before {
+    /* Faint margin rule on the right */
+    content: "";
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    right: 10%;
+    width: 1px;
+    background: var(--lp-rule);
+    opacity: 0.5;
+}
+.lp-trust-card svg {
+    color: var(--accent);
+    margin-bottom: 0.85rem;
+}
+.lp-trust-card h3 {
+    font-family: var(--lp-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--lp-ink);
+    margin: 0 0 0.5rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+.lp-trust-card p {
+    color: var(--lp-ink-soft);
+    font-size: 0.93rem;
+    line-height: 1.55;
+    margin: 0;
+}
+.lp-trust-footer {
+    text-align: center;
+    margin-top: 2rem;
+}
+.lp-trust-footer a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1.5px dashed currentColor;
+    padding-bottom: 2px;
+}
+.lp-trust-footer a:hover {
+    border-style: solid;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* COMPARISON TABLE — ruled paper, hand-drawn marks                 */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-compare-wrap {
+    background: var(--lp-paper-2);
+    border: 1px solid var(--lp-rule);
+    border-radius: 4px;
+    padding: 0.75rem 0.5rem;
+    overflow-x: auto;
+    box-shadow: var(--lp-paper-shadow);
+    position: relative;
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 47px,
+        color-mix(in srgb, var(--accent) 6%, transparent) 47px,
+        color-mix(in srgb, var(--accent) 6%, transparent) 48px
+    );
+}
+.lp-compare {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--lp-body);
+}
+.lp-compare thead th {
+    font-family: var(--lp-display);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--lp-ink-soft);
+    text-align: left;
+    padding: 1rem 1.2rem 0.8rem;
+    border-bottom: 2px solid var(--lp-ink);
+    letter-spacing: 0.02em;
+}
+.lp-compare thead th.lp-compare-us {
+    color: var(--lp-ink);
+}
+.lp-compare thead th.lp-compare-us::after {
+    content: "";
+    display: block;
+    width: 60%;
+    height: 2px;
+    margin-top: 4px;
+    background: var(--accent);
+    border-radius: 2px;
+}
+.lp-compare tbody td {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--lp-rule);
+    vertical-align: top;
+    font-size: 0.92rem;
+    color: var(--lp-ink);
+    line-height: 1.45;
+}
+.lp-compare tbody tr:last-child td { border-bottom: none; }
+.lp-compare tbody td:first-child {
+    font-weight: 600;
+    color: var(--lp-ink-soft);
+    font-size: 0.88rem;
+    width: 28%;
+}
+.lp-compare-us {
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
+    border-left: 2px solid var(--accent);
+    border-right: 2px solid var(--accent);
+    color: var(--lp-ink);
+}
+.lp-compare-cell {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+.lp-hand-check { color: var(--green); flex-shrink: 0; margin-top: 2px; }
+.lp-hand-x     { color: var(--red); flex-shrink: 0; margin-top: 2px; }
+
+/* ─────────────────────────────────────────────────────────────── */
+/* WHO — postcard-style cards                                       */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-who-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6rem;
+}
+.lp-who-card {
+    background: var(--lp-paper-2);
+    border: 1px solid var(--lp-rule);
+    padding: 1.6rem 1.5rem;
+    border-radius: 2px 2px 6px 6px;
+    position: relative;
+    transition: transform var(--duration) var(--ease-out);
+}
+.lp-who-card::before {
+    /* Postcard stamp mark top-right */
+    content: "";
+    position: absolute;
+    top: -1px;
+    right: 14%;
+    width: 40%;
+    height: 6px;
+    background: repeating-linear-gradient(
+        to right,
+        var(--accent) 0 6px,
+        transparent 6px 10px
+    );
+    opacity: 0.45;
+}
+.lp-who-card:hover { transform: translateY(-3px) rotate(-0.5deg); }
+
+.lp-who-label {
+    display: inline-block;
+    font-family: var(--lp-hand);
+    font-size: 1.25rem;
+    color: var(--accent);
+    transform: rotate(-2deg);
+    margin-bottom: 0.4rem;
+}
+.lp-who-card h3 {
+    font-family: var(--lp-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--lp-ink);
+    margin: 0 0 0.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+.lp-who-card p {
+    color: var(--lp-ink-soft);
+    font-size: 0.93rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* PRICING TEASER — receipt card                                    */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-pricing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.lp-receipt {
+    background: var(--lp-receipt-bg);
+    border: 1px solid var(--lp-rule);
+    max-width: 440px;
+    width: 100%;
+    padding: 2rem 2rem 0;
+    box-shadow: var(--lp-paper-shadow);
+    font-family: var(--lp-body);
+    color: var(--lp-ink);
+    position: relative;
+    /* Jagged/torn bottom edge */
+    clip-path: polygon(
+        0 0, 100% 0, 100% calc(100% - 18px),
+        96% 100%, 92% calc(100% - 10px), 88% calc(100% - 18px),
+        84% 100%, 80% calc(100% - 10px), 76% calc(100% - 18px),
+        72% 100%, 68% calc(100% - 10px), 64% calc(100% - 18px),
+        60% 100%, 56% calc(100% - 10px), 52% calc(100% - 18px),
+        48% 100%, 44% calc(100% - 10px), 40% calc(100% - 18px),
+        36% 100%, 32% calc(100% - 10px), 28% calc(100% - 18px),
+        24% 100%, 20% calc(100% - 10px), 16% calc(100% - 18px),
+        12% 100%, 8% calc(100% - 10px), 4% calc(100% - 18px),
+        0 100%
+    );
+    padding-bottom: 3.5rem;
+}
+
+.lp-receipt-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 2px dashed var(--lp-rule);
+    margin-bottom: 1.5rem;
+    font-family: var(--lp-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    color: var(--lp-ink-soft);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.lp-receipt-stamp {
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    padding: 0.3rem 0.55rem 0.25rem;
+    transform: rotate(-4deg);
+    letter-spacing: 0.2em;
+    font-weight: 700;
+    font-size: 0.7rem;
+    border-radius: 2px;
+}
+.lp-receipt-title {
+    font-family: var(--lp-display);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--lp-ink);
+    letter-spacing: -0.015em;
+    margin: 0 0 1.2rem;
+    line-height: 1.15;
+    font-variation-settings: "opsz" 96;
+}
+.lp-receipt-items {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.2rem;
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.93rem;
+    color: var(--lp-ink);
+}
+.lp-receipt-items li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding-bottom: 0.15rem;
+}
+.lp-receipt-items li::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px dotted var(--lp-rule);
+    margin: 0 0.5rem;
+    position: relative;
+    top: -4px;
+}
+.lp-receipt-items li span:last-child {
+    color: var(--green);
+    font-weight: 600;
+    font-family: var(--lp-display);
+    font-size: 0.9rem;
+}
+.lp-receipt-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 1rem;
+    border-top: 2px dashed var(--lp-rule);
+    margin-bottom: 1.5rem;
+    font-family: var(--lp-display);
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--lp-ink);
+}
+.lp-receipt-price {
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--lp-ink);
+    font-variation-settings: "opsz" 144;
+}
+.lp-receipt-total .lp-receipt-note {
+    display: block;
+    font-family: var(--lp-body);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--lp-ink-soft);
+    margin-top: 0.25rem;
+}
+.lp-receipt .btn { width: 100%; }
+.lp-receipt-handnote {
+    text-align: center;
+    font-family: var(--lp-hand);
+    font-size: 1.4rem;
+    color: var(--lp-ink-soft);
+    margin: 1rem 0 0;
+    transform: rotate(-2deg);
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* FINAL CTA                                                         */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-cta {
+    text-align: center;
+    padding-bottom: 7rem;
+}
+.lp-cta h2 {
+    font-family: var(--lp-display);
+    font-size: clamp(2rem, 4.4vw, 3rem);
+    font-weight: 500;
+    color: var(--lp-ink);
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin: 0 0 0.8rem;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+}
+.lp-cta h2 em {
+    font-style: italic;
+    color: var(--accent);
+    font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
+}
+.lp-cta p {
+    color: var(--lp-ink-soft);
+    font-size: 1.1rem;
+    max-width: 46ch;
+    margin: 0 auto 2rem;
+}
+.lp-cta .btn { font-size: 1.05rem; padding: 1rem 2.4rem; }
+.lp-cta-annotation {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.8rem;
+    font-family: var(--lp-hand);
+    font-size: 1.4rem;
+    color: var(--lp-ink-soft);
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* WAVY SECTION DIVIDERS (thin, between sections)                  */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-divider {
+    display: block;
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    height: auto;
+}
+.lp-divider svg { display: block; width: 100%; height: 16px; }
+
+/* ─────────────────────────────────────────────────────────────── */
+/* RESPONSIVE                                                        */
+/* ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 980px) {
+    .lp-hero {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        min-height: auto;
+    }
+    .lp-hero-mock { min-height: 420px; }
+    .lp-feat-grid,
+    .lp-trust-grid,
+    .lp-who-grid,
+    .lp-how-steps { grid-template-columns: repeat(2, 1fr); }
+    .lp-country-list { grid-template-columns: repeat(4, 1fr); }
+    .lp-proof-row { grid-template-columns: repeat(2, 1fr); gap: 1.5rem 2rem; }
+}
+
+@media (max-width: 640px) {
+    .lp section { padding: 4rem 1.25rem; }
+    .lp-hero { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+    .lp-feat-grid,
+    .lp-trust-grid,
+    .lp-who-grid,
+    .lp-how-steps { grid-template-columns: 1fr; }
+    .lp-country-list { grid-template-columns: repeat(2, 1fr); }
+    .lp-hero-title { font-size: clamp(2.1rem, 9vw, 3rem); }
+    .lp-cv-sheet { max-width: 320px; transform: rotate(-1.5deg); }
+    .lp-annotation--ats { right: 0; top: 2%; transform: rotate(6deg) scale(0.85); }
+    .lp-annotation--edit { left: 0; bottom: 4%; transform: rotate(-5deg) scale(0.9); }
+    .lp-receipt { padding: 1.6rem 1.4rem 2.8rem; }
+    .lp-compare thead th,
+    .lp-compare tbody td { padding: 0.75rem 0.8rem; font-size: 0.85rem; }
+    .lp-compare tbody td:first-child { font-size: 0.8rem; }
+    .lp-receipt-price { font-size: 2.1rem; }
+}
+
+/* Step number at top left of step card — keep visible on mobile */
+@media (max-width: 640px) {
+    .lp-step { padding-top: 2.5rem; }
+    .lp-step-num { top: -20px; left: 14px; width: 48px; height: 48px; font-size: 1.3rem; }
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* BEFORE / AFTER — product demo comparison                         */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-ba-compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+.lp-ba-card {
+    background: var(--lp-paper-2);
+    border: 1px solid var(--lp-rule);
+    border-radius: var(--radius-md);
+    padding: 1.6rem 1.5rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: transform var(--duration) var(--ease-out),
+                box-shadow var(--duration) var(--ease-out),
+                border-color var(--duration) var(--ease-out);
+}
+
+.lp-ba-card--after {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--lp-rule));
+    box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--accent) 30%, transparent);
+    position: relative;
+}
+.lp-ba-card--after::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    background: linear-gradient(135deg, var(--accent), transparent 60%) border-box;
+    mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.lp-ba-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.82rem;
+    color: var(--lp-ink-softer);
+    letter-spacing: 0.02em;
+}
+.lp-ba-tag {
+    display: inline-block;
+    font-family: var(--lp-display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.55rem 0.25rem;
+    border: 1.5px solid var(--lp-rule);
+    color: var(--lp-ink-soft);
+    border-radius: 2px;
+    background: var(--lp-surface);
+}
+.lp-ba-tag--good {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.lp-ba-text {
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--lp-ink);
+    margin: 0;
+    flex: 1;
+}
+
+.lp-ba-meta {
+    display: flex;
+    gap: 2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--lp-rule);
+    margin-top: auto;
+}
+.lp-ba-meta > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.lp-ba-metric {
+    font-family: var(--lp-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--lp-ink);
+    line-height: 1;
+    font-variation-settings: "opsz" 96;
+}
+.lp-ba-meta--good .lp-ba-metric { color: var(--accent); }
+.lp-ba-metric-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--lp-ink-softer);
+}
+
+.lp-ba-arrow {
+    color: var(--accent);
+    align-self: center;
+    flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/* FAQ — native <details> list, keyboard-accessible                 */
+/* ─────────────────────────────────────────────────────────────── */
+
+.lp-faq-list {
+    max-width: 780px;
+    margin: 0 auto;
+    border-top: 1px solid var(--lp-rule);
+}
+
+.lp-faq-item {
+    border-bottom: 1px solid var(--lp-rule);
+    transition: background var(--duration) var(--ease-out);
+}
+.lp-faq-item[open] {
+    background: var(--lp-surface);
+}
+
+.lp-faq-item > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.4rem 1rem 1.4rem 3.2rem;
+    position: relative;
+    font-family: var(--lp-display);
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--lp-ink);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    font-variation-settings: "opsz" 48;
+    transition: color var(--duration) var(--ease-out);
+}
+.lp-faq-item > summary::-webkit-details-marker { display: none; }
+
+.lp-faq-item > summary::before {
+    /* Plus/minus indicator as hand-drawn circle */
+    content: "";
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    margin-top: -12px;
+    border: 1.5px solid var(--lp-rule);
+    border-radius: 46% 54% 52% 48% / 54% 46% 52% 48%;
+    transition: border-color var(--duration) var(--ease-out),
+                background var(--duration) var(--ease-out);
+}
+.lp-faq-item > summary::after {
+    /* The + / − mark inside the circle */
+    content: "+";
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    margin-top: -12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--lp-body);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--lp-ink-soft);
+    transition: transform var(--duration) var(--ease-out),
+                color var(--duration) var(--ease-out);
+    line-height: 1;
+    padding-bottom: 2px;
+}
+
+.lp-faq-item:hover > summary { color: var(--accent); }
+.lp-faq-item:hover > summary::before { border-color: var(--accent); }
+
+.lp-faq-item[open] > summary { color: var(--accent); }
+.lp-faq-item[open] > summary::before {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.lp-faq-item[open] > summary::after {
+    content: "−";
+    color: var(--accent);
+    transform: rotate(180deg);
+}
+
+.lp-faq-body {
+    padding: 0 1rem 1.6rem 3.2rem;
+    color: var(--lp-ink-soft);
+    font-size: 0.98rem;
+    line-height: 1.6;
+    max-width: 62ch;
+}
+.lp-faq-body p { margin: 0; }
+
+/* ─────────────────────────────────────────────────────────────── */
+/* Responsive additions for new sections                            */
+/* ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 980px) {
+    .lp-ba-compare {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .lp-ba-arrow { transform: rotate(90deg); margin: 0 auto; }
+}
+
+@media (max-width: 640px) {
+    .lp-ba-card { padding: 1.3rem 1.2rem 1.1rem; }
+    .lp-ba-meta { gap: 1.2rem; padding-top: 0.8rem; }
+    .lp-ba-metric { font-size: 1.2rem; }
+    .lp-faq-item > summary { font-size: 1rem; padding: 1.2rem 0.5rem 1.2rem 2.8rem; }
+    .lp-faq-body { padding: 0 0.5rem 1.4rem 2.8rem; font-size: 0.92rem; }
+}
+
+/* Respect reduced motion preference — already set globally in components.css,
+   but we add explicit overrides for heavier LP transforms. */
+@media (prefers-reduced-motion: reduce) {
+    .lp-cv-sheet,
+    .lp-annotation,
+    .lp-step,
+    .lp-step-num,
+    .lp-who-card,
+    .lp-receipt-stamp,
+    .lp-hero-signoff,
+    .lp-trust-tagline { transform: none !important; }
+    .lp-country:hover,
+    .lp-step:hover,
+    .lp-ba-card:hover,
+    .lp-who-card:hover { transform: none !important; }
+    .lp-faq-item[open] > summary::after { transform: none !important; }
+}
