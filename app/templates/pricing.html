@@ -181,7 +181,7 @@
             </ul>
             <p class="pricing-note" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Build your CV yourself — no AI, no credits needed</p>
             {% if request.state.user %}
-                <a href="/app" class="btn-cta btn-cta--full btn-cta--secondary">
+                <a href="/app" class="btn btn--secondary btn--full">
                     Start Building
                     <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
                         <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -189,7 +189,7 @@
                     </svg>
                 </a>
             {% else %}
-                <a href="/signup" class="btn-cta btn-cta--full btn-cta--secondary">
+                <a href="/signup" class="btn btn--secondary btn--full">
                     Register Your Interest
                     <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
                         <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -253,7 +253,7 @@
             {% if request.state.user %}
                 {% if request.state.balance > 0 %}
                     <p class="pricing-balance">You have <strong>{{ request.state.balance }}</strong> credits remaining</p>
-                    <a href="/app" class="btn-cta btn-cta--full">
+                    <a href="/app" class="btn btn--primary btn--full">
                         Go to App
                         <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
                             <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -263,7 +263,7 @@
                 {% elif stripe_enabled and spots_remaining > 0 %}
                     <form method="post" action="/checkout/alpha">
                         <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-                        <button type="submit" class="btn-cta btn-cta--full">
+                        <button type="submit" class="btn btn--primary btn--full">
                             Buy Alpha Pack
                             <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
                                 <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -272,12 +272,12 @@
                         </button>
                     </form>
                 {% elif spots_remaining == 0 %}
-                    <button class="btn-cta btn-cta--full btn-cta--disabled" disabled>Sold Out</button>
+                    <button class="btn btn--primary btn--full btn--disabled" disabled>Sold Out</button>
                 {% else %}
                     <p class="pricing-note">Payments coming soon</p>
                 {% endif %}
             {% else %}
-                <a href="/signup" class="btn-cta btn-cta--full">
+                <a href="/signup" class="btn btn--primary btn--full">
                     Register Your Interest
                     <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
                         <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -351,7 +351,7 @@
                 </ul>
                 <form method="post" action="/checkout/topup/{{ pack_id }}">
                     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-                    <button type="submit" class="btn-cta btn-cta--full">
+                    <button type="submit" class="btn btn--primary btn--full">
                         Buy {{ pack.credits }} Credits
                         <svg class="btn-arrow-doodle" width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden="true">
                             <path d="M2 7 C6 7, 10 7, 14 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>

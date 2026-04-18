@@ -2694,7 +2694,7 @@ select.input-field {
     margin: 0;
     font-size: 0.9rem;
 }
-.demo-sticky-cta .btn-cta--small {
+.demo-sticky-cta .btn--sm {
     white-space: nowrap;
     flex-shrink: 0;
 }
