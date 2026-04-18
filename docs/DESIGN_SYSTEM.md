@@ -120,15 +120,38 @@ Note: QuillCV's hand-drawn aesthetic deliberately uses **asymmetric radii** in p
 
 Phase 2 introduces these. Tracking here so the plan is visible.
 
-### Button
-Base class `.btn` + modifiers:
-- `.btn--primary` (gradient accent, CTA)
-- `.btn--secondary` (outlined)
-- `.btn--ghost` (text-only, low emphasis)
-- `.btn--danger` (red, destructive)
-- Sizes: `.btn--sm`, `.btn--lg`, `.btn--full`
+### Button — two intentional families
 
-Retires: `.btn-cta`, `.btn-primary` (legacy), `.btn-generate`, `.btn-download`, `.btn-apply-fixes`, `.btn-back`, `.btn-next`, `.btn-dev-fill`, `.btn-download--secondary`.
+The app has two button visual languages that serve different roles. They are **not** unified because their aesthetics are genuinely different.
+
+**Marketing family** (`.btn` + BEM modifiers, in `components.css`) — landing, pricing, auth, demo, onboarding. Hand-drawn sketchy feel.
+
+- `.btn` base — `padding: 0.9rem 2.2rem`, asymmetric `border-radius: 6px 10px 8px 12px`, `font-size: 1rem`
+- `.btn--primary` — gradient accent, shadow, hover rotation `-0.5deg`
+- `.btn--secondary` — outlined accent (2px border)
+- `.btn--ghost` — muted outline (1px border-color)
+- `.btn--sm` — smaller padding (`0.5rem 1.2rem`), smaller font (`0.85rem`)
+- `.btn--full` — full-width centered
+- `.btn--disabled` — 50% opacity, not-allowed
+
+Migrated in Phase 2a: `.btn-cta`, `.btn-cta--small`, `.btn-cta--full`, `.btn-cta--secondary`, `.btn-cta--outline`, `.btn-cta--disabled`.
+
+**App utility family** (flat legacy classes, in `app-ui.css` / `style.css` / `wizard.css`) — account, my-cvs, jobs, wizard, builder. Clean, compact, functional.
+
+- `.btn-primary` — flat accent background (context-scoped in `.cv-card-actions` and `.my-cvs-empty-actions`)
+- `.btn-secondary` — surface bg, subtle border, accent text, small padding (`0.5rem 1rem`)
+- `.btn-danger` — red background, small padding (`0.55rem 1.2rem`)
+- `.btn-sm` — size modifier (`0.4rem 0.9rem`, `0.82rem` font)
+- `.btn-next` / `.btn-back` / `.btn-generate` — wizard nav, unique asymmetric radius `5px 7px 6px 4px`
+- `.btn-download` / `.btn-download--secondary` — job download actions
+- `.btn-social--google` / `.btn-social--github` — OAuth buttons
+- `.bld-btn-next|prev|save|cancel|pdf` — builder-scoped, self-contained
+- `.cookie-btn|--accept|--decline` — cookie banner, self-contained
+
+**Rule for new buttons**:
+- New marketing/CTA button? Use the `.btn .btn--*` family.
+- New app-page button? Match the nearby context's legacy class convention.
+- Phase 4 polish may unify further when intentional visual refresh happens.
 
 ### Card / Panel
 Base `.card` + modifiers:
@@ -204,13 +227,14 @@ Load order in `base.html`:
 
 ## Phase roadmap
 
-| Phase | Scope | Visual change? |
-|---|---|---|
-| **1a** | Tokens file + design system docs | No |
-| **1b** | Split `style.css` into logical files | No |
-| **2** | Unified button + card + badge components | Minimal (normalised) |
-| **3** | CV template base + CV color tokens | No (templates identical) |
-| **4** | 2026 polish — typography rhythm, density, microinteractions | Yes (intentional) |
+| Phase | Scope | Visual change? | Status |
+|---|---|---|---|
+| **1a** | Tokens file + design system docs | No | ✅ shipped |
+| **1b** | Split `style.css` into logical files | No | ✅ shipped |
+| **2a** | Marketing CTA button family → `.btn` + BEM modifiers | No | ✅ shipped |
+| **2b** | App utility button family unification | Minimal | 📋 deferred to Phase 4 — treating app-page and marketing buttons as two intentional families for now |
+| **3** | CV template base + CV color tokens | No (templates identical) | pending |
+| **4** | 2026 polish — typography rhythm, density, microinteractions, button family unification | Yes (intentional) | pending |
 
 ---
 
