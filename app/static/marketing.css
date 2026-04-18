@@ -1,0 +1,1047 @@
+/* QuillCV marketing — landing hero, sticky notes, features, CTA, auth, pricing. See docs/DESIGN_SYSTEM.md */
+/* ── Landing Page — Hand-drawn aesthetic ────────────────── */
+
+/* Handwriting font family (loaded from Google Fonts in HTML) */
+.handwritten {
+    font-family: 'Caveat', cursive;
+}
+
+/* Fade-in animation for landing sections */
+@keyframes landingFadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes subtleFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+}
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 1; }
+}
+@keyframes doodleDrift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25%      { transform: translate(3px, -4px) rotate(3deg); }
+    50%      { transform: translate(-2px, -7px) rotate(-2deg); }
+    75%      { transform: translate(4px, -3px) rotate(2deg); }
+}
+@keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25%      { transform: rotate(1.5deg); }
+    75%      { transform: rotate(-1.5deg); }
+}
+
+/* Notebook/paper texture background — subtle grid pattern */
+.landing {
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 39px,
+            rgba(108, 99, 255, 0.03) 39px,
+            rgba(108, 99, 255, 0.03) 40px
+        );
+    background-size: 100% 40px;
+}
+
+/* Hero — with floating doodle decorations */
+.hero {
+    text-align: center;
+    padding: 7rem 2rem 5rem;
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    animation: landingFadeUp 0.8s ease-out;
+}
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(108, 99, 255, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Floating doodle elements around hero */
+.hero-doodle {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.5;
+}
+.hero-doodle--star-1 {
+    top: 15%;
+    left: 5%;
+    animation: doodleDrift 6s ease-in-out infinite;
+}
+.hero-doodle--star-2 {
+    top: 20%;
+    right: 8%;
+    animation: doodleDrift 7s ease-in-out infinite 1s;
+}
+.hero-doodle--arrow {
+    bottom: 25%;
+    right: 3%;
+    animation: doodleDrift 8s ease-in-out infinite 0.5s;
+    opacity: 0.35;
+}
+.hero-doodle--exclaim {
+    top: 30%;
+    left: 2%;
+    animation: doodleDrift 5s ease-in-out infinite 2s;
+    opacity: 0.4;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    line-height: 1.1;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+}
+.hero-accent {
+    color: transparent;
+    background: linear-gradient(135deg, var(--accent) 0%, #a78bfa 50%, #6c63ff 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    position: relative;
+    display: inline-block;
+}
+/* Hand-drawn squiggly underline under "and land interviews" */
+.sketch-underline {
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    display: block;
+}
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    max-width: 580px;
+    margin: 0 auto 1rem;
+    line-height: 1.7;
+}
+.hero-tagline {
+    font-size: 1.5rem;
+    color: var(--accent);
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+}
+.hero-cta { margin-top: 2rem; }
+.hero-note {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.hero-note strong {
+    color: var(--green);
+}
+.hero-note-alpha {
+    display: inline-block;
+    font-size: 1.15rem;
+    color: var(--yellow);
+    margin-right: 0.3rem;
+    transform: rotate(-2deg);
+}
+
+/* Small arrow doodle inside CTA button */
+.btn-arrow-doodle {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.3rem;
+    margin-bottom: 1px;
+}
+
+/* CTA Buttons — slightly sketchy border-radius */
+.btn-cta {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent) 0%, #7c6ef5 100%);
+    color: #fff;
+    padding: 0.9rem 2.2rem;
+    border-radius: 6px 10px 8px 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+    position: relative;
+}
+.btn-cta:hover {
+    background: linear-gradient(135deg, #5a52d5 0%, #6c63ff 100%);
+    box-shadow: 0 6px 25px rgba(108, 99, 255, 0.45);
+    transform: translateY(-2px) rotate(-0.5deg);
+}
+.btn-cta:active { transform: translateY(0) rotate(0deg); }
+.btn-cta--small { padding: 0.5rem 1.2rem; font-size: 0.85rem; box-shadow: none; }
+.btn-cta--full { width: 100%; text-align: center; }
+.btn-cta--secondary {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    box-shadow: none;
+}
+.btn-cta--secondary:hover {
+    background: rgba(108, 99, 255, 0.08);
+    box-shadow: none;
+    transform: translateY(-1px) rotate(0deg);
+}
+.btn-cta--outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    box-shadow: none;
+}
+.btn-cta--outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: none;
+    transform: none;
+}
+.btn-cta--disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+/* Section titles — with hand-drawn scribble underline */
+.section-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+.title-scribble {
+    display: block;
+    width: 60%;
+    max-width: 280px;
+    height: 8px;
+    margin: 0.3rem auto 0;
+}
+
+/* Wavy section dividers */
+.section-divider {
+    display: block;
+    width: 100%;
+    height: 20px;
+    margin: 0 auto;
+    max-width: 1000px;
+    padding: 0 2rem;
+    opacity: 0.5;
+}
+
+/* Sticky note base styles — the hand-drawn card look */
+.sticky-note {
+    border: none !important;
+    border-radius: 2px 4px 6px 3px !important;
+    box-shadow:
+        2px 3px 8px rgba(0, 0, 0, 0.2),
+        inset 0 0 40px rgba(0, 0, 0, 0.03);
+    position: relative;
+}
+/* Slight random rotations for sticky note feel */
+.sticky-note--yellow {
+    background: rgba(251, 191, 36, 0.08) !important;
+    border-left: 3px solid rgba(251, 191, 36, 0.3) !important;
+    transform: rotate(-1deg);
+}
+.sticky-note--pink {
+    background: rgba(248, 113, 113, 0.08) !important;
+    border-left: 3px solid rgba(248, 113, 113, 0.3) !important;
+    transform: rotate(0.8deg);
+}
+.sticky-note--blue {
+    background: rgba(96, 165, 250, 0.08) !important;
+    border-left: 3px solid rgba(96, 165, 250, 0.3) !important;
+    transform: rotate(0.5deg);
+}
+.sticky-note--green {
+    background: rgba(52, 211, 153, 0.08) !important;
+    border-left: 3px solid rgba(52, 211, 153, 0.3) !important;
+    transform: rotate(-0.7deg);
+}
+.sticky-note--lavender {
+    background: rgba(167, 139, 250, 0.08) !important;
+    border-left: 3px solid rgba(167, 139, 250, 0.3) !important;
+    transform: rotate(1.2deg);
+}
+.sticky-note--peach {
+    background: rgba(251, 146, 60, 0.08) !important;
+    border-left: 3px solid rgba(251, 146, 60, 0.3) !important;
+    transform: rotate(-1.5deg);
+}
+.sticky-note:hover {
+    transform: rotate(0deg) translateY(-4px) !important;
+    box-shadow:
+        3px 5px 15px rgba(0, 0, 0, 0.25),
+        inset 0 0 40px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* How it works — numbered steps with hand-drawn circles */
+.how-it-works {
+    padding: 5rem 2rem;
+    max-width: 960px;
+    margin: 0 auto;
+    animation: landingFadeUp 0.8s ease-out both;
+    animation-delay: 0.1s;
+}
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+    margin-top: 3rem;
+    position: relative;
+}
+/* Remove old connecting line — we use hand-drawn arrows now */
+.steps-grid::before {
+    display: none;
+}
+
+/* Hand-drawn step number circles */
+.step-number-doodle {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 1.25rem;
+}
+.step-number-doodle svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.step-number-doodle span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Caveat', cursive;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+/* Hand-drawn connecting arrows between steps */
+.step-arrows {
+    display: flex;
+    justify-content: center;
+    gap: 33%;
+    margin-top: -1.5rem;
+    padding: 0 10%;
+    pointer-events: none;
+}
+.step-arrow {
+    opacity: 0.5;
+}
+
+.step-card {
+    padding: 2.5rem 1.5rem 2rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+.step-card h3 { margin-bottom: 0.6rem; font-size: 1.1rem; font-weight: 600; }
+.step-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+
+/* Features — sticky note cards with doodle icons */
+.features {
+    padding: 5rem 2rem;
+    max-width: 1040px;
+    margin: 0 auto;
+    animation: landingFadeUp 0.8s ease-out both;
+    animation-delay: 0.2s;
+}
+.features .section-title {
+    margin-bottom: 0.5rem;
+}
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 3rem;
+}
+
+/* Doodle icons on feature cards */
+.feature-doodle {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+    opacity: 0.7;
+}
+
+.feature-card {
+    padding: 1.75rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+.feature-card::before {
+    display: none;
+}
+.feature-card h3 {
+    margin-bottom: 0.6rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+.feature-card p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; }
+
+/* Final CTA — with hand-drawn annotation arrow */
+.final-cta {
+    text-align: center;
+    padding: 5rem 2rem;
+    max-width: 100%;
+    margin: 3rem 0 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(108, 99, 255, 0.06) 100%);
+    border-top: none;
+    animation: landingFadeUp 0.8s ease-out both;
+    animation-delay: 0.4s;
+    position: relative;
+}
+.final-cta h2 {
+    margin-bottom: 0.75rem;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.final-cta p { color: var(--text-muted); margin-bottom: 0.5rem; font-size: 1.1rem; }
+
+/* Hand-drawn annotation with curvy arrow near CTA */
+.cta-annotation {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+}
+.cta-arrow {
+    display: inline-block;
+    vertical-align: middle;
+    opacity: 0.5;
+}
+.cta-annotation-text {
+    display: inline-block;
+    font-size: 1.3rem;
+    color: var(--yellow);
+    transform: rotate(-3deg);
+    vertical-align: middle;
+    margin-left: 0.25rem;
+}
+
+/* ── Auth Pages ─────────────────────────────────────────── */
+.auth-page {
+    display: flex;
+    justify-content: center;
+    padding: 3rem 1rem;
+}
+.auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+}
+.auth-card h2 { margin-bottom: 0.25rem; }
+.auth-subtitle {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+.auth-errors {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid var(--red);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: var(--red);
+}
+.auth-form { display: flex; flex-direction: column; gap: 1rem; }
+.auth-form .form-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.auth-form label { font-size: 0.85rem; font-weight: 500; }
+.auth-form input {
+    padding: 0.65rem 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.9rem;
+}
+.auth-form input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+.auth-divider::before, .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+.auth-social {
+    display: flex;
+    gap: 0.75rem;
+}
+.btn-social {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: border-color 0.2s;
+}
+.btn-social:hover { border-color: var(--text-muted); }
+.auth-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.auth-footer a { color: var(--accent); text-decoration: none; }
+.auth-footer a:hover { text-decoration: underline; }
+.auth-coming-soon-doodle {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+.auth-coming-soon-note {
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* ── Pricing Page ───────────────────────────────────────── */
+.pricing-page {
+    padding: 3rem 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+.pricing-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    font-size: 1.05rem;
+}
+.pricing-cards {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    align-items: start;
+}
+.pricing-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+.pricing-card--featured {
+    border-color: var(--accent);
+    position: relative;
+    transform: scale(1.04) translateY(-6px) rotate(0.5deg);
+    box-shadow:
+        4px 8px 24px rgba(108, 99, 255, 0.18),
+        inset 0 0 40px rgba(0, 0, 0, 0.03);
+    z-index: 1;
+}
+.pricing-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+    width: fit-content;
+}
+.pricing-badge--muted {
+    background: var(--border);
+    color: var(--text-muted);
+}
+.pricing-price {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+}
+.pricing-amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+}
+.pricing-period { color: var(--text-muted); font-size: 0.9rem; }
+.pricing-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+    flex: 1;
+}
+.pricing-features li {
+    padding-left: 1.2rem;
+    position: relative;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+.pricing-features li::before {
+    content: '\2713';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-weight: 700;
+}
+.pricing-spots {
+    text-align: center;
+    padding: 0.75rem;
+    background: rgba(108, 99, 255, 0.1);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+.spots-count { font-weight: 700; color: var(--accent); }
+.pricing-balance {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+.pricing-note {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.pricing-faq {
+    max-width: 600px;
+    margin: 0 auto;
+}
+.pricing-faq h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+}
+.faq-item {
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 0;
+}
+.faq-item h4 { margin-bottom: 0.4rem; font-size: 0.95rem; }
+.faq-item p { color: var(--text-muted); font-size: 0.85rem; }
+
+/* ── Pricing Page — Hand-drawn / crafted aesthetic ─────────── */
+
+/* Notebook ruled-line background for the whole pricing page */
+.pricing-page--crafted {
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 39px,
+            rgba(108, 99, 255, 0.03) 39px,
+            rgba(108, 99, 255, 0.03) 40px
+        );
+    background-size: 100% 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Floating doodle decorations */
+.pricing-doodle {
+    position: absolute;
+    opacity: 0.4;
+    pointer-events: none;
+    animation: doodleDrift 8s ease-in-out infinite;
+}
+.pricing-doodle--star-1 {
+    top: 3rem;
+    right: 8%;
+    animation-delay: 0s;
+}
+.pricing-doodle--star-2 {
+    top: 12rem;
+    left: 5%;
+    animation-delay: 2s;
+}
+.pricing-doodle--exclaim {
+    top: 6rem;
+    left: 10%;
+    animation-delay: 4s;
+}
+
+/* Pricing cards as sticky notes */
+.pricing-page--crafted .pricing-card {
+    border: none;
+    transition: all 0.3s ease;
+}
+.pricing-page--crafted .pricing-card--featured {
+    border: none;
+    z-index: 2;
+}
+
+/* Sketchy badge for Alpha */
+.pricing-badge--sketchy {
+    font-family: 'Caveat', cursive;
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.3rem 1rem;
+    border-radius: 3px 8px 4px 6px;
+    border: 1.5px dashed rgba(255, 255, 255, 0.3);
+    letter-spacing: 0;
+    text-transform: none;
+    transform: rotate(-1deg);
+    display: inline-block;
+    margin-bottom: 1rem;
+    width: fit-content;
+}
+
+/* Price annotation — curvy arrow with "seriously." */
+.pricing-annotation {
+    position: relative;
+    display: inline-block;
+}
+.pricing-annotation--price {
+    position: absolute;
+    bottom: -1.8rem;
+    left: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.pricing-annotation--price .annotation-arrow {
+    transform: scaleY(-1);
+}
+.pricing-annotation--price .annotation-text {
+    font-size: 1.15rem;
+    color: var(--accent);
+    opacity: 0.7;
+    white-space: nowrap;
+    transform: rotate(-2deg);
+}
+
+/* Hand-drawn checkmarks in feature lists */
+.pricing-features--checks {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+    flex: 1;
+}
+.pricing-features--checks li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+.pricing-features--checks li::before {
+    content: none;
+}
+.hand-check-icon {
+    flex-shrink: 0;
+}
+
+/* "Credits never expire" star doodle */
+.pricing-feature--highlight {
+    position: relative;
+}
+.feature-star-doodle {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.25rem;
+    margin-bottom: 1px;
+    animation: wiggle 3s ease-in-out infinite;
+}
+
+/* Spots remaining — handwritten "going fast!" annotation */
+.pricing-annotation--hurry {
+    display: inline-block;
+    font-size: 1rem;
+    color: var(--yellow);
+    margin-left: 0.5rem;
+    transform: rotate(-2deg);
+    animation: wiggle 2.5s ease-in-out infinite;
+}
+
+/* Value anchor — crafted version with circle highlight */
+.pricing-value-anchor--crafted {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+.value-highlight {
+    position: relative;
+    display: inline-block;
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    color: var(--text);
+    font-weight: 600;
+}
+.value-highlight strong {
+    position: relative;
+    z-index: 1;
+}
+.value-circle-doodle {
+    position: absolute;
+    top: -8px;
+    left: -12px;
+    width: calc(100% + 24px);
+    height: calc(100% + 16px);
+    pointer-events: none;
+}
+
+/* FAQ as notebook paper */
+.pricing-faq--notebook {
+    max-width: 620px;
+    margin: 2rem auto 0;
+    padding: 2rem 2.5rem;
+    background: var(--surface);
+    border-radius: 3px 6px 4px 8px;
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(248, 113, 113, 0.15);
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 43px,
+            rgba(108, 99, 255, 0.06) 43px,
+            rgba(108, 99, 255, 0.06) 44px
+        );
+    background-size: 100% 44px;
+    box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.15);
+    position: relative;
+}
+.pricing-faq--notebook .pricing-faq-heading {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+.faq-doodle {
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+.faq-doodle--right {
+    transform: scaleX(-1);
+}
+.pricing-faq--notebook .faq-item {
+    border-bottom: 1px solid rgba(108, 99, 255, 0.08);
+    padding: 1.25rem 0;
+}
+.pricing-faq--notebook .faq-item:last-child {
+    border-bottom: none;
+}
+.pricing-faq--notebook .faq-item h4 {
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--text);
+}
+
+/* Wavy divider within pricing page */
+.pricing-page--crafted .section-divider {
+    display: block;
+    width: 100%;
+    height: 20px;
+    margin: 2.5rem auto;
+    max-width: 700px;
+    opacity: 0.5;
+}
+
+/* Top-up cards — 3 columns */
+.pricing-cards--topup {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Keyword-rich intro paragraph below H1 */
+.pricing-intro {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 0.5rem;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+}
+
+/* Social proof trust line */
+.pricing-social-proof {
+    text-align: center;
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 0.75rem auto 1.5rem;
+    opacity: 0.85;
+}
+
+/* Section heading above the cards grid */
+.pricing-section-heading {
+    text-align: center;
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0 auto 0.5rem;
+}
+
+/* Comparison/context line below value anchor */
+.pricing-comparison {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: -1rem auto 2rem;
+    max-width: 480px;
+    opacity: 0.75;
+}
+
+/* Risk reversal note below CTA */
+.pricing-risk-reversal {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0.6rem 0 0;
+    opacity: 0.7;
+}
+
+/* Post-alpha nudge CTA line */
+.pricing-postalpha-nudge {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 1rem;
+    text-align: center;
+    line-height: 1.5;
+}
+.pricing-postalpha-nudge a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.pricing-postalpha-nudge a:hover {
+    opacity: 0.8;
+}
+
+/* Internal links within feature lists */
+.pricing-feature-link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: rgba(108, 99, 255, 0.35);
+}
+.pricing-feature-link:hover {
+    color: var(--accent);
+    text-decoration-color: var(--accent);
+}
+
+/* FAQ heading — styled to match existing h3 pattern but now an h2 */
+.pricing-faq-heading {
+    font-family: 'Caveat', cursive;
+    font-size: 1.75rem;
+    font-weight: 600;
+    text-align: center;
+    margin: 0 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* FAQ item h3 — keep visual style identical to previous h4 */
+.pricing-faq--notebook .faq-item h3 {
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+    color: var(--text-primary, var(--text));
+}
+
+/* Responsive overrides for crafted pricing */
+@media (max-width: 768px) {
+    .pricing-doodle { display: none; }
+    .pricing-annotation--price { display: none; }
+    .pricing-cards--topup { grid-template-columns: 1fr; }
+    .pricing-faq--notebook { padding: 1.5rem; }
+    .value-highlight { font-size: 1.2rem; }
+    .pricing-page--crafted .section-divider { display: none; }
+}
+
+/* Nav credits badge */
+.nav-credits {
+    color: var(--green);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .site-nav { flex-wrap: wrap; gap: 1rem; justify-content: center; }
+    .site-nav-links { gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+}
+@media (max-width: 768px) {
+    .hero { padding: 4rem 1.5rem 3rem; }
+    .hero-title { font-size: 2.2rem; }
+    .hero-subtitle { font-size: 1.05rem; }
+    .hero-tagline { font-size: 1.25rem; }
+    .hero::before { width: 300px; height: 300px; }
+    .hero-doodle { display: none; }
+    .steps-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+    .step-arrows { display: none; }
+    .features-grid { grid-template-columns: 1fr; }
+    .pricing-cards { grid-template-columns: 1fr; }
+    .pricing-card--featured { transform: rotate(0deg); box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.2), inset 0 0 40px rgba(0, 0, 0, 0.03); }
+    .who-grid { grid-template-columns: 1fr; }
+    .section-title { font-size: 1.65rem; }
+    .how-it-works,
+    .features,
+    .who-section,
+    .comparison-section { padding: 3rem 1.5rem; }
+    .final-cta { padding: 3rem 1.5rem; }
+    .final-cta h2 { font-size: 1.65rem; }
+    .comparison-table { font-size: 0.85rem; }
+    .comparison-table th,
+    .comparison-table td { padding: 0.65rem 0.75rem; }
+    /* Normalize sticky note rotations on mobile for cleaner stacking */
+    .sticky-note--yellow,
+    .sticky-note--pink,
+    .sticky-note--blue,
+    .sticky-note--green,
+    .sticky-note--lavender,
+    .sticky-note--peach { transform: rotate(0deg); }
+    .cta-annotation { display: block; margin-bottom: 1rem; }
+    .cta-arrow { width: 50px; height: 40px; }
+    .cta-annotation-text { font-size: 1.1rem; }
+    .section-divider { display: none; }
+}
