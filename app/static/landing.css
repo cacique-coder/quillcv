@@ -68,11 +68,26 @@
     position: relative;
     overflow-x: clip;
     line-height: 1.55;
-    margin: 0 auto;
+    margin: 0;
+    width: 100%;
+    min-height: 100vh;
 }
 
-/* Override marketing.css's .landing page background gradient with paper */
-body:has(.lp) { background: var(--lp-paper) !important; }
+/* Break the landing out of base.css's <main> 900px box.
+   Also kill the body radial gradient so the paper color reaches every edge. */
+main:has(.lp) {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+body:has(.lp) {
+    background: var(--lp-paper) !important;
+}
+[data-theme="dark"] body:has(.lp),
+[data-theme="light"] body:has(.lp) {
+    background: var(--lp-paper) !important;
+}
 
 /* Paper grain overlay — subtle SVG noise */
 .lp-grain {
