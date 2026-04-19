@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>QuillCV — Prototype hub</title>
+<link rel="stylesheet" href="/static/design/tokens.css?v=1"/>
+<link rel="stylesheet" href="/static/design/base.css?v=1"/>
+<script src="/static/design/icons.js?v=1"></script>
+<style>
+  body { background: var(--paper); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 60px 48px 100px; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 48px; padding-bottom: 24px; border-bottom: 1px solid var(--rule); }
+  .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .brand .mark { width: 40px; height: 40px; background: var(--ink); color: var(--paper); border-radius: 10px 14px 10px 14px; display: grid; place-items: center; transform: rotate(-3deg); }
+  .brand .word { font-family: var(--display); font-size: 28px; font-weight: 460; }
+  .head h1 { font-size: 64px; line-height: .95; font-weight: 340; }
+  .head h1 em { color: var(--accent); font-style: italic; font-family: "Caveat", cursive; }
+  .head p { color: var(--ink-2); font-family: var(--serif); font-size: 18px; max-width: 520px; margin-top: 16px; }
+
+  .group { margin-bottom: 56px; }
+  .group-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px; }
+  .group-head h2 { font-family: var(--display); font-size: 32px; font-weight: 380; }
+  .group-head .sub { color: var(--ink-3); font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+  .group-head::after { content: ""; flex: 1; height: 1px; background: var(--rule); margin-left: 8px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--paper-raised); border: 1px solid var(--rule); border-radius: var(--r-3); padding: 24px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 12px; transition: transform .12s ease, border-color .15s ease; box-shadow: var(--sh-1); position: relative; overflow: hidden; }
+  .card:hover { transform: translateY(-4px); border-color: var(--ink); }
+  .card .num { position: absolute; top: 16px; right: 20px; font-family: var(--mono); font-size: 11px; color: var(--ink-4); letter-spacing: .1em; }
+  .card .ico { width: 36px; height: 36px; border-radius: 8px 12px 8px 12px; background: var(--accent-wash); color: var(--accent-ink); display: grid; place-items: center; }
+  [data-theme="dark"] .card .ico { color: var(--accent-2); }
+  .card h3 { font-family: var(--display); font-size: 22px; font-weight: 460; }
+  .card p { font-size: 13px; color: var(--ink-3); line-height: 1.45; }
+  .card .meta { margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--rule-soft); font-family: var(--mono); font-size: 11px; color: var(--ink-3); display: flex; gap: 8px; flex-wrap: wrap; }
+  .card .meta .pill { padding: 1px 7px; background: var(--paper-sunk); border-radius: var(--r-pill); }
+
+  .tip { background: var(--ink); color: var(--paper); border-radius: var(--r-3); padding: 28px 32px; display: flex; align-items: center; gap: 24px; margin-bottom: 56px; }
+  [data-theme="dark"] .tip { background: #0a0a0c; border: 1px solid var(--rule); }
+  .tip .ico { width: 44px; height: 44px; background: var(--accent); color: white; border-radius: 10px 14px 10px 14px; display: grid; place-items: center; flex-shrink: 0; }
+  [data-theme="dark"] .tip .ico { color: #1a1230; }
+  .tip h3 { font-family: var(--display); font-size: 22px; font-weight: 460; color: inherit; margin-bottom: 4px; }
+  .tip p { font-size: 14px; opacity: .75; }
+  .tip .kbd { font-family: var(--mono); font-size: 11px; background: rgba(246,241,232,.12); padding: 2px 8px; border-radius: 3px; }
+
+  .mini { font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: .05em; }
+
+  /* Tweaks panel */
+  .tweaks { position: fixed; bottom: 24px; right: 24px; width: 340px; background: var(--paper-raised); border: 1px solid var(--rule); border-radius: var(--r-3); box-shadow: var(--sh-3); z-index: 50; display: none; max-height: calc(100vh - 48px); overflow-y: auto; }
+  .tweaks.open { display: block; }
+  .tweaks-head { padding: 16px 20px; border-bottom: 1px dashed var(--rule); display: flex; align-items: center; gap: 10px; position: sticky; top: 0; background: var(--paper-raised); border-radius: var(--r-3) var(--r-3) 0 0; z-index: 1; }
+  .tweaks-head .ic { width: 28px; height: 28px; background: var(--ink); color: var(--paper); border-radius: 7px 10px 7px 10px; display: grid; place-items: center; transform: rotate(-3deg); }
+  .tweaks-head h4 { font-family: var(--display); font-size: 18px; font-weight: 460; flex: 1; }
+  .tweaks-body { padding: 18px 20px 22px; }
+  .tweaks-body h5 { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-4); margin: 14px 0 8px; }
+  .tweaks-body h5:first-child { margin-top: 0; }
+  .tweaks-body .opts { display: flex; flex-direction: column; gap: 6px; }
+  .tweaks-body .opt { padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--paper); font-size: 13px; cursor: pointer; transition: border-color .12s, background .12s; }
+  .tweaks-body .opt:hover { border-color: var(--ink-3); }
+  .tweaks-body .opt.on { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-ink); }
+  [data-theme="dark"] .tweaks-body .opt.on { color: var(--accent-2); }
+  .tweaks-body .opt b { display: block; font-weight: 600; font-family: var(--sans); margin-bottom: 2px; }
+  .tweaks-body .opt small { display: block; font-size: 11px; opacity: .8; font-family: var(--serif); font-style: italic; line-height: 1.35; }
+  .tweaks-body .preview { margin-top: 10px; padding: 14px; background: var(--paper-sunk); border-radius: var(--r-2); border: 1px dashed var(--rule); }
+  .tweaks-body .preview .ovl { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+  .tweaks-body .preview .hd { font-family: var(--display); font-size: 22px; font-weight: 380; line-height: 1.05; letter-spacing: -0.015em; color: var(--ink); }
+  .tweaks-body .preview .hd em { color: var(--accent); font-style: italic; font-family: "Caveat", cursive; }
+  .tweaks-body .preview .sub { font-size: 12px; color: var(--ink-2); margin-top: 6px; font-family: var(--serif); }
+  .tweaks-body .pdesc { font-size: 12px; color: var(--ink-3); font-family: var(--serif); font-style: italic; margin-top: 6px; line-height: 1.4; }
+</style>
+</head>
+<body class="paper-grain" data-screen-label="Prototype hub">
+<div class="wrap">
+
+  <div class="brand">
+    <div class="mark"><span id="mark-icon"></span></div>
+    <div class="word">QuillCV</div>
+    <div class="mini" style="margin-left:auto">Prototype · v1 · Nov 2025 <span style="margin-left:6px;">· Design preview</span></div>
+  </div>
+
+  <div class="head">
+    <div>
+      <div class="overline" style="margin-bottom:14px;">✦ Full rebuild · 13 surfaces · light + dark</div>
+      <h1>The handcrafted<br/>CV studio.<br/><em>End to end.</em></h1>
+      <p>Every surface from the spec, in one navigable prototype. Click any card to enter — links between screens are wired up so you can flow through the full journey.</p>
+    </div>
+    <div style="text-align:right;">
+      <div class="mini">Start here</div>
+      <a href="/" class="btn btn-lg btn-accent" style="margin-top:8px;">Open landing →</a>
+      <div style="margin-top:14px;">
+        <a href="#" data-coming-soon="true" class="btn btn-sm">Skip to authed app</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <div class="ico"><span id="tip-icon"></span></div>
+    <div style="flex:1">
+      <h3>How to read this prototype</h3>
+      <p>Theme toggle (<span class="kbd">☼/☾</span>) lives in the sidebar of every authed screen. Sidebar nav jumps between surfaces. Crumbs in the topbar show context. The handcrafted system — paper, ink, asymmetric radii, single accent, scribbled emphasis — runs through everything.</p>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Marketing &amp; entry</h2>
+      <span class="sub">Pre-auth · public surfaces</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="/"><span class="num">01</span>
+        <div class="ico"><span data-icon="home" data-size="20"></span></div>
+        <h3>Landing</h3>
+        <p>Hero with scribbled emphasis. How-it-works. Country grid. Testimonials. Honest pricing CTA.</p>
+        <div class="meta"><span class="pill">light + dark</span><span class="pill">long-form</span></div>
+      </a>
+      <a class="card" href="/pricing"><span class="num">02</span>
+        <div class="ico"><span data-icon="star" data-size="20"></span></div>
+        <h3>Pricing</h3>
+        <p>3 plans, alpha stripe with live counter, comparison grid, 6 honest FAQs.</p>
+        <div class="meta"><span class="pill">Free / Alpha / Top-up</span></div>
+      </a>
+      <a class="card" href="/login"><span class="num">03</span>
+        <div class="ico"><span data-icon="lock" data-size="20"></span></div>
+        <h3>Auth</h3>
+        <p>Single page · login ↔ signup toggle · OAuth · privacy-first copy.</p>
+        <div class="meta"><span class="pill">single-page</span></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>First-run</h2>
+      <span class="sub">Onboarding flow · ATS aha moment</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="/onboarding"><span class="num">04</span>
+        <div class="ico"><span data-icon="sparkle" data-size="20"></span></div>
+        <h3>Onboarding · 6 steps</h3>
+        <p>Welcome → upload → enrich → region → demo ATS score → first job. Skippable throughout.</p>
+        <div class="meta"><span class="pill">P0 rebuild</span><span class="pill">aha moment</span></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Core workspace</h2>
+      <span class="sub">Authed · the daily-use surface</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="#" data-coming-soon="true"><span class="num">05</span>
+        <div class="ico"><span data-icon="home" data-size="20"></span></div>
+        <h3>Dashboard</h3>
+        <p>Recent CVs, pipeline summary, draft cards, queued tasks. Replaces /app.</p>
+        <div class="meta"><span class="pill">new</span></div>
+      </a>
+      <a class="card" href="/my-cvs"><span class="num">06</span>
+        <div class="ico"><span data-icon="doc" data-size="20"></span></div>
+        <h3>My CVs</h3>
+        <p>Grid of paper thumbnails with ATS scores, region flags, filter chips.</p>
+        <div class="meta"><span class="pill">P1 refresh</span></div>
+      </a>
+      <a class="card" href="/jobs"><span class="num">07</span>
+        <div class="ico"><span data-icon="briefcase" data-size="20"></span></div>
+        <h3>Jobs</h3>
+        <p>Kanban: saved · applied · interviewing · offer · closed. Drag-style cards with linked CVs.</p>
+        <div class="meta"><span class="pill">P1 refresh</span></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Create</h2>
+      <span class="sub">Where the work happens</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="/wizard/step/1"><span class="num">08</span>
+        <div class="ico"><span data-icon="sparkle" data-size="20"></span></div>
+        <h3>AI tailoring wizard</h3>
+        <p>5-step flow: source CV → job → emphasis → tone → review. Express mode for power users.</p>
+        <div class="meta"><span class="pill">P1 refresh</span></div>
+      </a>
+      <a class="card" href="/builder"><span class="num">09</span>
+        <div class="ico"><span data-icon="pen" data-size="20"></span></div>
+        <h3>Manual builder</h3>
+        <p>WYSIWYG paper canvas · left rail sections · right inspector · ATS hints inline.</p>
+        <div class="meta"><span class="pill">P0 rebuild</span><span class="pill">canvas</span></div>
+      </a>
+      <a class="card" href="#" data-coming-soon="true"><span class="num">10</span>
+        <div class="ico"><span data-icon="mail" data-size="20"></span></div>
+        <h3>Cover letter</h3>
+        <p>3-pane: context · notes &amp; job snippets · generated letter with hover-source highlights.</p>
+        <div class="meta"><span class="pill">P0 new</span></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-head">
+      <h2>Account &amp; data</h2>
+      <span class="sub">Privacy-forward · vault-first</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="/account/pii"><span class="num">11</span>
+        <div class="ico"><span data-icon="vault" data-size="20"></span></div>
+        <h3>My vault</h3>
+        <p>Encrypted personal data · experience · brag doc · projects · region-aware fields.</p>
+        <div class="meta"><span class="pill">P1 refresh</span><span class="pill">privacy-first</span></div>
+      </a>
+      <a class="card" href="/account"><span class="num">12</span>
+        <div class="ico"><span data-icon="settings" data-size="20"></span></div>
+        <h3>Settings</h3>
+        <p>Profile · plan · prefs · CV defaults · security · danger zone.</p>
+        <div class="meta"><span class="pill">P1 refresh</span></div>
+      </a>
+      <div class="card" style="opacity:.55; pointer-events:none;"><span class="num">13</span>
+        <div class="ico" style="background:var(--paper-sunk);color:var(--ink-3);"><span data-icon="grid" data-size="20"></span></div>
+        <h3>Templates gallery</h3>
+        <p>P2 polish · 47-template grid view. Surfaced inside Builder &amp; Wizard for now.</p>
+        <div class="meta"><span class="pill">P2 · later</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:80px; padding-top:24px; border-top:1px solid var(--rule); display:flex; justify-content:space-between; color:var(--ink-3); font-size:13px; font-family:var(--serif); font-style:italic;">
+    <span>Handcrafted, not corporate.</span>
+    <span>Designed in Sydney · for 2RK.co</span>
+  </div>
+</div>
+
+<div class="tweaks" id="tweaks">
+  <div class="tweaks-head">
+    <div class="ic" id="tweaks-icon"></div>
+    <h4>Tweaks</h4>
+    <span class="mini">Pricing framing</span>
+  </div>
+  <div class="tweaks-body">
+    <p style="font-size:12px;color:var(--ink-3);font-family:var(--serif);font-style:italic;margin-bottom:14px;line-height:1.5;">
+      "Pay once" reads like a lifetime service. Try framings that make it clear you're buying a finite bundle of credits, not unlimited access.
+    </p>
+
+    <h5>Hero framing</h5>
+    <div class="opts" id="opts-hero"></div>
+
+    <h5>Plan name (was: "Alpha")</h5>
+    <div class="opts" id="opts-name"></div>
+
+    <h5>Plan one-liner</h5>
+    <div class="opts" id="opts-desc"></div>
+
+    <h5>Live preview</h5>
+    <div class="preview">
+      <div class="ovl" id="prev-ovl">✦ Honest pricing · finite credits</div>
+      <div class="hd" id="prev-hd">15 CVs for <em>$9.99.</em></div>
+      <div class="sub" id="prev-sub">A bundle of credits. Use them when you need them. No subscription.</div>
+      <div style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--rule);">
+        <div style="font-family:var(--display);font-size:16px;font-weight:460;" id="prev-name">15-CV bundle</div>
+        <div class="pdesc" id="prev-desc">Buy a stack of 15 tailored CVs. Credits never expire. No recurring charge.</div>
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:var(--ink-4);font-family:var(--mono);margin-top:14px;line-height:1.5;letter-spacing:.02em;">
+      ✦ Selections persist. Apply to <code>pricing.html</code> &amp; <code>index.html</code> when you've picked the winners.
+    </p>
+  </div>
+</div>
+
+<script>
+  document.getElementById("mark-icon").innerHTML = window.icons("quill", 22);
+  document.getElementById("tip-icon").innerHTML = window.icons("sparkle", 22);
+  document.getElementById("tweaks-icon").innerHTML = window.icons("sparkle", 14);
+  document.querySelectorAll("[data-icon]").forEach(el => {
+    el.innerHTML = window.icons(el.dataset.icon, parseInt(el.dataset.size || "18"));
+  });
+
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "heroFraming": "bundle",
+    "planName": "credits",
+    "planDesc": "stack"
+  }/*EDITMODE-END*/;
+
+  const HERO_OPTS = [
+    { k:"bundle",   b:"A finite bundle",       s:"15 CVs for $9.99.",            sub:"A bundle of credits. Use them when you need them. No subscription.",         ovl:"✦ Honest pricing · finite credits" },
+    { k:"perCV",    b:"Per-CV pricing",        s:"66¢ per CV. No subscription.", sub:"Buy 15 tailored CVs for $9.99. Use them at your own pace.",                  ovl:"✦ Honest pricing · per-CV credits" },
+    { k:"prepaid",  b:"Prepaid credits",       s:"Prepay $9.99 → 15 CVs.",       sub:"Credits, not access. Spend them when you're job-hunting; pause when you're not.", ovl:"✦ Honest pricing · prepaid · no auto-renew" },
+    { k:"jobHunt",  b:"For one job hunt",      s:"$9.99 per job hunt.",          sub:"15 tailored CVs covers most searches. Top up if you need more — no recurring charge.", ovl:"✦ Honest pricing · pay per job hunt" },
+    { k:"creditsOnly", b:"Credits, plainly",   s:"$9.99 for 15 credits.",        sub:"One credit = one tailored CV or cover letter. No monthly fee. No expiry.",   ovl:"✦ Honest pricing · credits, no subscription" },
+    { k:"original", b:"Original (current)",    s:"Pay once. Use forever.",       sub:"Buy the credits you need, use them at your own pace.",                       ovl:"✦ Honest pricing · one-time · no subscription trap" },
+  ];
+
+  const NAME_OPTS = [
+    { k:"credits",   b:"15-CV bundle",       s:"Names what you get, not the tier name." },
+    { k:"jobhunt",   b:"Job-hunt pack",      s:"Frames purpose, not duration." },
+    { k:"prepaid",   b:"Prepaid · 15 CVs",   s:"Foregrounds the no-subscription model." },
+    { k:"pack",      b:"15-credit pack",     s:"Most precise — credit is the unit." },
+    { k:"alpha",     b:"Alpha (current)",    s:"Reads as a tier; obscures what you buy." },
+  ];
+
+  const DESC_OPTS = [
+    { k:"stack",  b:"Buy a stack of 15 CVs", s:"Concrete unit. Buy a stack of 15 tailored CVs. Credits never expire. No recurring charge." },
+    { k:"finite", b:"Finite, useful, done",  s:"15 generations, no auto-renew. Top up if you need more, walk away if you don't." },
+    { k:"hunt",   b:"For one job hunt",      s:"Enough credits for a typical job search. No subscription, no surprise charge next month." },
+    { k:"plain",  b:"Plainly: prepay",       s:"Prepay $9.99, get 15 credits, use them when you want. Nothing recurs." },
+    { k:"orig",   b:"Original (current)",    s:"One-time purchase. Lifetime 30% off when we launch proper plans." },
+  ];
+
+  let state = JSON.parse(JSON.stringify(TWEAK_DEFAULTS));
+
+  function render() {
+    const renderOpts = (id, opts, key) => {
+      const el = document.getElementById(id);
+      el.innerHTML = "";
+      opts.forEach(o => {
+        const div = document.createElement("div");
+        div.className = "opt" + (state[key] === o.k ? " on" : "");
+        div.innerHTML = `<b>${o.b}</b><small>${o.s}</small>`;
+        div.onclick = () => {
+          state[key] = o.k;
+          window.parent.postMessage({type:"__edit_mode_set_keys", edits:{[key]:o.k}}, "*");
+          render();
+        };
+        el.appendChild(div);
+      });
+    };
+    renderOpts("opts-hero", HERO_OPTS, "heroFraming");
+    renderOpts("opts-name", NAME_OPTS, "planName");
+    renderOpts("opts-desc", DESC_OPTS, "planDesc");
+
+    const h = HERO_OPTS.find(o => o.k === state.heroFraming) || HERO_OPTS[0];
+    document.getElementById("prev-ovl").textContent = h.ovl;
+    document.getElementById("prev-hd").innerHTML = h.s.replace(/(\$[\d.]+|66¢)/, m => `<em>${m}</em>`);
+    document.getElementById("prev-sub").textContent = h.sub;
+
+    const n = NAME_OPTS.find(o => o.k === state.planName) || NAME_OPTS[0];
+    document.getElementById("prev-name").textContent = n.b;
+    const d = DESC_OPTS.find(o => o.k === state.planDesc) || DESC_OPTS[0];
+    document.getElementById("prev-desc").textContent = d.s;
+  }
+
+  window.addEventListener("message", e => {
+    const d = e.data || {};
+    if (d.type === "__activate_edit_mode") {
+      document.getElementById("tweaks").classList.add("open");
+    } else if (d.type === "__deactivate_edit_mode") {
+      document.getElementById("tweaks").classList.remove("open");
+    }
+  });
+
+  render();
+  // Register listener first, then announce availability
+  window.parent.postMessage({type:"__edit_mode_available"}, "*");
+</script>
+</body>
+</html>

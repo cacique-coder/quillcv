@@ -11,6 +11,11 @@ from app.web.templates import templates
 router = APIRouter()
 
 
+@router.get("/prototype")
+async def prototype(request: Request):
+    return templates.TemplateResponse("prototype.html", {"request": request})
+
+
 @router.get("/")
 async def landing(request: Request):
     user = await get_current_user(request)
