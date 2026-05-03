@@ -27,3 +27,9 @@ data/
 
 # Nginx TLS certificates (never commit)
 nginx/ssl/
+
+# Janus AI tooling (symlinked from another repo)
+.claude
+
+# Local dev artifacts (screenshots, feature-discovery scratch, etc.)
+tmp/
