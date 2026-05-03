@@ -1,0 +1,113 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>A career change CV fails when it hides the pivot or apologises for it.</strong> Employers aren't put off by intentional career changes &mdash; they're put off by candidates who seem confused about why they're applying. Own the shift, frame it as a decision, and your CV gets a lot stronger.</p>
+
+        <p>Career changes are more common than they've ever been. People retrain mid-career, pivot out of industries that contracted, move from one discipline to an adjacent one after years of expanding their scope. Hiring managers see it regularly. Most are fine with it.</p>
+
+        <p>The problem isn't the change. The problem is how it gets presented &mdash; which is usually badly.</p>
+
+        <h2>Why career change CVs fail</h2>
+
+        <p>There are two failure modes. The first is hiding the pivot. The candidate buries their career history in a sea of generic language, hoping no one notices the industry switch until the interview. But CVs don't work that way. Hiring managers spot a mismatched background immediately, and a CV that seems to be obscuring something feels dishonest before the interview even starts.</p>
+
+        <p>The second failure mode is the vague, all-purpose summary. Something like: <em>"Dynamic professional with diverse experience across multiple industries seeking a challenging new opportunity."</em> That sentence applies to everyone and no one. It tells the reader you haven't committed to the direction you're moving in, which makes them wonder why they should commit to you.</p>
+
+        <p>The underlying issue in both cases is the same: the candidate hasn't decided to own the change. They're still apologising for it, even in writing.</p>
+
+        <h2>Transferable skills &mdash; finding yours</h2>
+
+        <p>Most career changers underestimate how much their existing experience crosses over. The overlap is almost always larger than it looks from the inside.</p>
+
+        <p>Try this exercise. Take two columns. In the left column, write down what you actually did in your previous role &mdash; not your job title, but the specific actions. Managed vendor relationships. Produced monthly reports for 12 stakeholders. Trained a team of five on a new CRM. Ran client-facing presentations. Resolved escalated complaints. In the right column, write what your target role requires. Then draw lines between them.</p>
+
+        <p>A teacher moving into corporate L&D finds that curriculum design, facilitation, assessment, and stakeholder communication all transfer directly. A logistics coordinator moving into project management realises they've been running projects all along &mdash; timelines, cross-functional coordination, risk management, vendor relationships &mdash; without the title. A nurse moving into health tech brings clinical workflow knowledge that no developer on that team has.</p>
+
+        <p>Once you've mapped the overlap, you have the core of your career change CV. Lead with that material. Don't bury it.</p>
+
+        <h2>Structure choices matter</h2>
+
+        <p>Some career changers reach for a functional CV format, thinking it lets them hide their industry background and lead with skills. This is a mistake.</p>
+
+        <p>Functional CVs &mdash; those that list skills upfront and move experience to the back &mdash; are widely read as a red flag. Hiring managers know why people use them: to obscure gaps, weak history, or unconventional backgrounds. They tend to produce suspicion rather than interest. Most recruiters will skip straight to the employment history anyway.</p>
+
+        <p>A standard reverse-chronological CV with a strong summary is almost always the better choice. Your history is visible and honest. The summary does the interpretive work of explaining the direction. That combination reads as confident, not evasive.</p>
+
+        <h2>The summary is everything</h2>
+
+        <p>For a career changer, the professional summary carries more weight than it does for anyone else on the job market. It's the one place on a CV where you can speak directly to the reader &mdash; explain the direction, frame the change, and make the case before they've read a single bullet point.</p>
+
+        <p>The summary should do three things: name what you're moving toward, acknowledge what you're bringing from your previous career, and signal that this is intentional. Here's what that looks like across different pivots:</p>
+
+        <p><strong>Teacher &rarr; L&D Specialist:</strong> <em>"Learning and Development professional with seven years' experience designing and facilitating curriculum in high-pressure educational environments. Transitioning from classroom teaching to corporate L&D, bringing expertise in instructional design, needs analysis, and stakeholder-facing delivery. Holds a Certificate IV in Training and Assessment."</em></p>
+
+        <p><strong>Finance &rarr; Product Management:</strong> <em>"Product Manager with a background in financial analysis, combining three years of data-driven decision-making in investment banking with formal product training via General Assembly. Experienced in stakeholder alignment, requirements definition, and translating business needs into product roadmaps."</em></p>
+
+        <p><strong>Journalism &rarr; UX Writing:</strong> <em>"UX Writer with a journalism background, bringing five years of audience-focused content creation and editorial discipline to digital product teams. Experienced in content strategy, information hierarchy, and writing clearly under constraint."</em></p>
+
+        <p>Notice what each of these does: it doesn't hide the previous career. It uses it as the foundation for the new direction. The pivot is named, not buried.</p>
+
+        <h2>Addressing the gap in the cover letter</h2>
+
+        <p>Your cover letter needs one clear sentence about the change. Just one. Something like: <em>"After seven years in financial audit, I decided to move into data analytics &mdash; a direction I've been building toward for the past eighteen months through coursework and two freelance projects."</em></p>
+
+        <p>That's enough. Don't write three paragraphs explaining yourself. The more you over-explain, the more uncertain you sound. State it, back it up briefly, and move on to why you're right for this particular role.</p>
+
+        <p>Hiring managers aren't looking for a confession. They're looking for clarity about where you're headed and confidence that you've thought it through.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV is built around the idea that your CV should speak directly to the job description in front of it. For career changers, that matters more than it does for anyone else. The AI reads both your existing CV and the job posting, then generates a version that surfaces your transferable skills in the language the employer is actually using.</p>
+
+        <p>It also handles the structural choices automatically &mdash; leading with a tailored summary that acknowledges your background, organising your experience to foreground the most relevant material, and matching the format expectations of your target market. Whether you're applying in Australia, the US, or the UK, the output follows the conventions of that region.</p>
+
+        <p>You don't need to figure out how to translate your old career into new language. That's what the tool is for.</p>
+
+        <p>The hardest part of a career change CV isn't the formatting. It's deciding to own the decision. Once you've done that, everything else is execution.</p>
+    </article>
+</div>
+{% endblock %}

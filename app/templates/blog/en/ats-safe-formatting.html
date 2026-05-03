@@ -1,0 +1,128 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Most CV formatting mistakes are invisible until your application disappears.</strong> Applicant Tracking Systems are text parsers, not readers &mdash; and the design choices that make your CV look polished are often the same ones that make it unreadable to a machine. Here's what to avoid and what actually works.</p>
+
+        <p>You spent hours on that CV. Carefully spaced sections, a clean two-column layout, your name in a tasteful custom font at the top. It looks great in the PDF preview.</p>
+
+        <p>Then it goes through an Applicant Tracking System and comes out the other side as scrambled text &mdash; or nothing at all.</p>
+
+        <p>The gap between "looks good" and "parses correctly" is wider than most people realise. These are the formatting mistakes that cost candidates interviews they deserved.</p>
+
+        <h2>How ATS reads your CV</h2>
+
+        <p>An ATS doesn't see your CV the way a human does. It doesn't look at the layout, appreciate the spacing, or notice that you used a sophisticated colour palette. It extracts text &mdash; raw characters in a sequence &mdash; and then searches that text for keywords, dates, job titles, and structured data.</p>
+
+        <p>The parser works left to right, top to bottom, through whatever the PDF or DOCX file exposes as its text layer. If your layout puts your name in a text box, your skills in a table, or your content in two parallel columns, the parser often can't reconstruct the intended reading order. It might read your left-column text and right-column text interleaved, or skip certain elements entirely.</p>
+
+        <p>The result: a hiring manager searches for "Python" and your application doesn't show up, even though Python is right there in the skills section of your beautifully designed PDF. You never get seen.</p>
+
+        <h2>The seven formatting killers</h2>
+
+        <p><strong>1. Tables</strong><br>
+        What it is: CV sections laid out in a table grid, often used to align dates with descriptions or to create a two-column skills list.<br>
+        Why it fails: Many parsers extract table text in an unexpected order &mdash; sometimes cell by cell rather than row by row &mdash; which can merge your job titles with the wrong dates or scramble your skills list.<br>
+        Safe alternative: Plain text with consistent spacing. Use tab stops or simple formatting rather than table cells.</p>
+
+        <p><strong>2. Text boxes</strong><br>
+        What it is: A floating text box overlaid on the page, common in design-heavy templates for contact details, summaries, or sidebars.<br>
+        Why it fails: Text boxes are often not part of the main document text layer. Many parsers skip them entirely. Your contact information or summary may simply not exist as far as the ATS is concerned.<br>
+        Safe alternative: Keep all content in the main document body.</p>
+
+        <p><strong>3. Headers and footers</strong><br>
+        What it is: Page headers or footers containing your name, contact details, or page numbers.<br>
+        Why it fails: ATS parsers frequently ignore document headers and footers. If your email address or phone number is only in the footer, it may not be parsed at all.<br>
+        Safe alternative: Include all contact information in the main body of the first page.</p>
+
+        <p><strong>4. Two-column layouts</strong><br>
+        What it is: A CV split into a left sidebar (skills, education, contact) and a main right column (work experience).<br>
+        Why it fails: Parsers read left to right, line by line &mdash; meaning they often read across both columns row by row rather than processing each column separately. Your work history ends up interleaved with your contact details in a way that's unreadable and unsearchable.<br>
+        Safe alternative: Single-column layout. It's not less professional &mdash; it's just less risky.</p>
+
+        <p><strong>5. Graphics and icons</strong><br>
+        What it is: Visual icons next to your contact details, skill-level bar charts, company logos, or decorative dividers.<br>
+        Why it fails: Images aren't text. A parser can't read them. A row of skill bars showing "Python: 4/5" is meaningless to an ATS &mdash; as far as the system is concerned, Python isn't on your CV.<br>
+        Safe alternative: List skills as plain text. "Python, Django, PostgreSQL" is parseable. A bar chart is not.</p>
+
+        <p><strong>6. Custom or embedded fonts</strong><br>
+        What it is: Non-system fonts downloaded and embedded in the document for a distinctive visual style.<br>
+        Why it fails: If the font isn't embedded correctly, or the parsing environment doesn't support it, text may not render at all. System fonts (Arial, Calibri, Georgia, Times New Roman) are safe everywhere.<br>
+        Safe alternative: Stick to system fonts. The difference in appearance is minor. The difference in reliability is significant.</p>
+
+        <p><strong>7. PDFs from design tools</strong><br>
+        What it is: CVs created in Canva, Adobe InDesign, Figma, or similar tools and exported as PDF.<br>
+        Why it fails: These tools produce PDFs optimised for print or screen rendering, not text extraction. The PDF structure is fundamentally different from a Word-generated PDF, and many ATS parsers handle them poorly. Content can appear correct visually while being entirely unextractable as text.<br>
+        Safe alternative: Create your CV in Word, Google Docs, or a purpose-built CV tool. Export to PDF from there, or submit the DOCX directly when accepted.</p>
+
+        <h2>The plain text test</h2>
+
+        <p>There's a quick and reliable way to check whether your CV will parse. Copy the entire text content of your PDF and paste it into a plain text editor &mdash; Notepad on Windows, TextEdit in plain text mode on Mac. Then read it.</p>
+
+        <p>Does it read as coherent, correctly ordered text? Does your contact information appear first? Does each job entry have the right title, company, dates, and descriptions in the right sequence? Are your skills listed as readable words?</p>
+
+        <p>If it reads like a normal document, it will parse. If sections are jumbled, if your name and email address are missing, if your two-column layout has turned into interleaved noise &mdash; then it won't parse correctly either, no matter how good it looks in the PDF preview.</p>
+
+        <p>Fix the plain text version and you fix the ATS problem.</p>
+
+        <h2>Looking good AND passing ATS</h2>
+
+        <p>The good news is that a well-formatted, ATS-safe CV doesn't have to look bland. Single-column layouts can be clean and professional. Consistent use of bold and spacing creates visual hierarchy without tables or text boxes. Good typography &mdash; appropriate font size, line spacing, section headings in a larger font weight &mdash; makes a document look considered without relying on design tricks that break parsing.</p>
+
+        <p>The CVs that both impress human readers and pass ATS screening tend to share the same characteristics: clear structure, standard section headings (Work Experience, Education, Skills, not creative alternatives), and all content in the main text body. That's not a constraint. That's the format that works.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>Every CV template in QuillCV is built around ATS-safe formatting by default. No tables, no text boxes, no two-column layouts, no embedded custom fonts. The templates are designed to look professional while passing the plain text test without any manual intervention.</p>
+
+        <p>When you generate a CV through QuillCV, the output is a single-column, cleanly structured document with your content in the main body layer &mdash; the format that both humans and parsers handle correctly. You don't need to audit your formatting choices or remember which elements break which parsers. The structure is handled.</p>
+
+        <p>Your energy goes into the content. The formatting takes care of itself.</p>
+
+        <p>A beautiful CV that never gets read is just an expensive exercise in design. Get the basics right and let your actual experience do the work.</p>
+    </article>
+</div>
+{% endblock %}

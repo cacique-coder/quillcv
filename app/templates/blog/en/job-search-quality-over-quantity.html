@@ -1,0 +1,116 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Volume is not a strategy &mdash; it&rsquo;s a cope.</strong> The math shows that 20 tailored applications at a 15% response rate produces more conversations than 200 generic ones at 1%. The second approach takes ten times longer and leaves you with fewer interviews, not more.</p>
+
+        <p>Everyone in your life has probably given you the same advice at some point: apply to more jobs. Cast a wide net. It&rsquo;s a numbers game. That advice is not completely wrong &mdash; you do need to apply to enough positions to find the right one. The problem is what it implies: that the number is the variable that matters most. It isn&rsquo;t.</p>
+
+        <h2>The math everyone quotes</h2>
+
+        <p>The &ldquo;numbers game&rdquo; framing has a surface logic to it. If you apply to 10 jobs and get no responses, applying to 100 feels like it should increase your odds. More shots, more chances. Right?</p>
+
+        <p>This is only true if each shot has roughly the same probability of landing. And for most job seekers sending generic applications, the response rate on those applications isn&rsquo;t just low &mdash; it&rsquo;s near zero. You can&rsquo;t improve your outcome by scaling something that doesn&rsquo;t work.</p>
+
+        <p>The conventional advice also ignores a crucial variable: <strong>your time</strong>. Every application takes time. If you spend 20 minutes on a generic application and 90 minutes on a tailored one, the tailored version costs 4.5x more. But if it&rsquo;s 15x more likely to get a response, the math has already flipped in your favor.</p>
+
+        <h2>The math that actually matters</h2>
+
+        <p>Let&rsquo;s run the actual numbers.</p>
+
+        <p><strong>Scenario A &mdash; Volume strategy:</strong> 200 generic applications, 1% response rate = 2 conversations. Time investment: roughly 67 hours at 20 minutes each.</p>
+
+        <p><strong>Scenario B &mdash; Targeted strategy:</strong> 20 tailored applications, 15% response rate = 3 conversations. Time investment: roughly 30 hours at 90 minutes each.</p>
+
+        <p>Scenario B produces more conversations in less than half the time. And those conversations come from roles you actually researched and wanted, which makes them higher quality conversations &mdash; you&rsquo;re more prepared, more engaged, and more likely to convert to an offer.</p>
+
+        <p>The 1% and 15% figures aren&rsquo;t made up. Research on job application response rates consistently shows that tailored applications receive responses at dramatically higher rates than generic ones. Some studies put the gap even wider. The exact numbers depend on your field and experience level, but the direction is never in doubt.</p>
+
+        <h2>What happens to a generic application</h2>
+
+        <p>Understanding why generic applications fail helps make the alternative obvious.</p>
+
+        <p>Step one: the Applicant Tracking System. Most companies above a certain size run applications through ATS software before a human ever sees them. The ATS compares your CV against the job description using keyword matching, scoring your relevance to the role. A generic CV that hasn&rsquo;t been tailored to this specific posting &mdash; that doesn&rsquo;t use the same language, doesn&rsquo;t include the same qualifications, doesn&rsquo;t mirror the structure of what the employer asked for &mdash; scores poorly. It gets filtered out. No human sees it.</p>
+
+        <p>Step two: the skim. If your application does get through, a recruiter typically spends six to ten seconds on an initial scan. They&rsquo;re looking for signals that you understood the role. A generic summary, a CV that reads like it could have been sent anywhere, a cover letter that opens with &ldquo;I am writing to express my interest in&rdquo; &mdash; these are signals that you didn&rsquo;t do the work. The application goes to the decline pile.</p>
+
+        <p>Step three: direct to bin. Some companies have started adding screening questions specifically designed to catch auto-applicants. If you can&rsquo;t answer a question that requires reading the job description, you&rsquo;re out before you start.</p>
+
+        <h2>The compound effect of tailoring</h2>
+
+        <p>There&rsquo;s an asymmetry that the volume strategy misses entirely: each tailored application makes you better at the next one.</p>
+
+        <p>When you research a company before applying, you learn things. You learn what the industry values. You learn what language resonates in that sector. You learn what differentiates companies in the space &mdash; and therefore what they&rsquo;re likely looking for in a hire. That knowledge carries forward. Your tenth tailored application is significantly stronger than your first, because you&rsquo;ve accumulated real intelligence about the market.</p>
+
+        <p>The person firing off 200 generic applications learns almost nothing. Each application is identical. There&rsquo;s no feedback loop, no improvement, no sharpening. They just get tired.</p>
+
+        <p>Tailoring also forces a filter you need anyway: deciding whether you actually want the job. If you can&rsquo;t invest 90 minutes in researching a company and writing a targeted application, that&rsquo;s useful information. Maybe you don&rsquo;t really want it. Better to find that out now than after three rounds of interviews.</p>
+
+        <h2>How to think about your funnel</h2>
+
+        <p>The right mental model for a job search is a deliberate funnel, not a scatter-shot blast.</p>
+
+        <p>Set a weekly target you can actually execute well. For most people actively searching, that&rsquo;s somewhere between five and fifteen applications per week &mdash; enough to maintain momentum without sacrificing quality. Here&rsquo;s what that looks like in practice:</p>
+
+        <ul>
+            <li><strong>Research first.</strong> Before you write a single word of your application, spend 20 minutes on the company. What do they do? What are they known for? What do their employees say about working there? What&rsquo;s the team structure? This isn&rsquo;t just good strategy &mdash; it also helps you decide if you actually want the job.</li>
+            <li><strong>Map your experience to their language.</strong> Look at the job description and identify the key skills, qualifications, and phrases they use. Make sure your CV reflects those terms, accurately and naturally.</li>
+            <li><strong>Write one thing specific.</strong> Even a short, targeted paragraph &mdash; whether in a cover letter or in your application notes &mdash; that references something specific about this company goes further than a generic statement of interest.</li>
+            <li><strong>Track your pipeline.</strong> Know what stage every application is at. When did you apply? Did you get a response? When is the next follow-up? Treat it like a sales pipeline, because it is one.</li>
+        </ul>
+
+        <p>Applied with intention, this approach produces more interviews per hour invested than any volume strategy ever will.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV is built for this kind of intentional application. You identify a role you want. You paste in the job description. We generate a CV that&rsquo;s specifically tailored to that posting &mdash; with the right keywords, the right structure for your target country, and your experience framed in terms that match what the employer asked for.</p>
+
+        <p>It&rsquo;s not about applying faster. It&rsquo;s about making each application as strong as it can be without spending your entire day rewriting your CV from scratch. The research and the decision to apply are still yours &mdash; we handle the tailoring.</p>
+
+        <p>The job search is a numbers game. You just need to know which numbers actually count.</p>
+    </article>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>An ATS doesn't read your CV &mdash; it parses it.</strong> Understanding the difference between those two things explains why well-qualified candidates get filtered out and what you can do about it.</p>
+
+        <p>There's a lot of mythology around Applicant Tracking Systems. Some people treat them like omniscient gatekeepers that have mysterious opinions about your career. Others dismiss them as a minor obstacle easily bypassed.</p>
+
+        <p>The reality is more mundane &mdash; and more useful. An ATS is fundamentally a text extraction and matching system. Once you understand what it's actually doing, optimizing for it stops feeling like guesswork.</p>
+
+        <h2>What ATS actually does</h2>
+
+        <p>When you submit your CV to a job listing that uses an ATS, here's roughly what happens:</p>
+
+        <p>First, the system extracts text from your document. It pulls out words, strips formatting, and tries to identify sections &mdash; work history, education, skills, contact details. This extraction step is where many CVs already start losing points.</p>
+
+        <p>Second, it matches that extracted text against the requirements in the job description. Specific keywords, required skills, years of experience, qualifications. The system compares what you provided against what the role asked for and assigns a relevance score.</p>
+
+        <p>Third, recruiters see that score alongside your CV. In a high-volume role, they may filter by score threshold and only review applications above a certain number. Your CV might never be seen by human eyes if it doesn't clear that bar.</p>
+
+        <p>There's no AI understanding nuance here. No reading between the lines. If the job description says "agile methodology" and your CV says "iterative development," those might be semantically equivalent to a person but scored differently by a keyword matcher.</p>
+
+        <h2>The 5 things that tank your score</h2>
+
+        <p><strong>1. Wrong or missing keywords.</strong> This is the biggest factor. If the job posting lists specific skills, tools, or qualifications and they don't appear in your CV, you score low on those criteria &mdash; even if you have the experience. Read the job description carefully and mirror its language. Not just the skills list at the bottom, but the language throughout the body of the posting. That's where the meaningful signal is.</p>
+
+        <p><strong>2. Unrecognized section headings.</strong> ATS systems are trained to find standard section names: "Work Experience," "Education," "Skills," "Summary." Recruiters sometimes use softer headings like "My Story," "Where I've Been," or "Career Journey." These can confuse the parser entirely &mdash; the system may not know to look for experience information inside a section called something unexpected. Use conventional headings. Save the creativity for your bullet points.</p>
+
+        <p><strong>3. Tables and columns.</strong> Multi-column layouts look polished in a PDF, but they're an ATS nightmare. Most parsers read left to right, top to bottom &mdash; the same way a plain text document flows. A two-column layout gets extracted in a way that mixes content from both columns into a scrambled sequence. Skills from column two end up embedded mid-sentence in a work experience bullet from column one. The text becomes unreadable to the system, and your score drops.</p>
+
+        <p><strong>4. Graphics, icons, and images.</strong> The icons representing your skills. The progress bars showing your language proficiency. The small photo some templates include at the top. All of these render as blank space or are dropped entirely when the ATS extracts text. Any information embedded in an image &mdash; including text formatted as a graphic &mdash; is invisible to the parser. If it's not in extractable text, it doesn't exist.</p>
+
+        <p><strong>5. Text in headers and footers.</strong> Many CV templates put contact information &mdash; email, phone, LinkedIn, location &mdash; in the document header. Others add a footer with page numbers or a tagline. A significant proportion of ATS systems don't parse headers and footers at all. Your name and email might simply not be captured. Keep all critical information in the main body of the document.</p>
+
+        <h2>What a good ATS score looks like</h2>
+
+        <p>A CV that scores well has a few things in common. The text is clean and extractable &mdash; no tables, no graphics, no information locked in headers or footers. The section headings are conventional. The keywords from the job description appear in context, not just stuffed into a skills list at the bottom.</p>
+
+        <p>That last point matters. Keyword stuffing &mdash; dumping every term from the job description into a hidden text block or jammed into a list without context &mdash; used to work. It mostly doesn't anymore. Modern ATS platforms look for keywords in context. "Managed a team using agile methodology to deliver three consecutive releases on schedule" scores better than a list entry that just says "agile."</p>
+
+        <p>The ideal CV reads naturally to a human and parses cleanly to a machine. Those two goals are not in conflict &mdash; they point to the same thing: clear, well-structured prose with relevant language, in standard sections, with no formatting tricks that break extraction.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>We generate CVs that score well by design. Every template we use is built for ATS compatibility &mdash; clean text, standard section headings, no tables or columns, no graphics. When you provide a job description, we analyze its keywords and requirements and weave them into your CV in context, not as a stuffed list.</p>
+
+        <p>You don't need to manually audit every keyword or worry whether your formatting breaks the parser. The output is structurally optimized before you even open it. Your job is to review the content and make sure it accurately reflects your experience &mdash; ours is to make sure it gets read in the first place.</p>
+
+        <p>The ATS is not your enemy. A CV that makes it easy for the ATS to do its job is simply a well-written CV &mdash; and that's what gets you to the human on the other side.</p>
+    </article>
+</div>
+{% endblock %}

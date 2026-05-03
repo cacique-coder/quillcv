@@ -1,0 +1,117 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>The "no experience" problem is mostly a framing problem.</strong> Most graduates and career starters have more relevant material than they think &mdash; the issue is that they either don't recognise it or don't know how to present it. A first CV that's honest, specific, and tailored will beat a padded one every time.</p>
+
+        <p>If you're writing your first CV, you've probably felt the catch-22: you need experience to get a job, but you need a job to get experience. It's frustrating, and it's real. But it's also a lot more solvable than it seems, because the definition of "experience" is broader than most people starting out believe.</p>
+
+        <h2>The mistake first-time job seekers make</h2>
+
+        <p>There are two failure modes for the first CV, and they're opposites.</p>
+
+        <p>The first is leaving sections blank or nearly empty &mdash; a half-page document with just a degree and a part-time retail job listed. The candidate genuinely believes they have nothing else to offer. They do, they just haven't listed it.</p>
+
+        <p>The second is padding. Generic filler to make the page look full: "excellent communication skills," "team player," "fast learner," hobbies listed in excessive detail, references to interests that have no connection to the role. A hiring manager recognises padding immediately, and it signals the same thing as a blank page: the candidate isn't sure what actually matters.</p>
+
+        <p>Both mistakes come from the same place &mdash; uncertainty about what a first CV is supposed to demonstrate. It's not supposed to show decades of professional experience. It's supposed to show capability, initiative, and relevance. You probably have more of those than you're giving yourself credit for.</p>
+
+        <h2>What you actually have</h2>
+
+        <p>Walk through each of these categories and be honest about what's there:</p>
+
+        <ul>
+            <li><strong>Academic projects.</strong> Did you complete a semester-long group project? Build something for a class? Research and write a substantial paper? Projects with real scope, real deliverables, and measurable outcomes are experience. List them like you'd list a job: what the project was, what your role was, what the outcome was.</li>
+            <li><strong>Part-time and casual work.</strong> Retail, hospitality, tutoring, delivery &mdash; these roles are full of transferable skills. Customer service is stakeholder management. Cash handling is financial accountability. Shift supervision is team leadership. Training a new colleague is knowledge transfer. You're not just "worked at a cafe." You managed high-volume customer interactions, operated under time pressure, and maintained service standards. Say that.</li>
+            <li><strong>Volunteering.</strong> Volunteering is work without a paycheck. If you've coached a junior sports team, coordinated a community event, helped at a charity shop, or contributed to a student society, that's real experience with real skills attached. Coordination, communication, reliability, and initiative are all visible in volunteer work.</li>
+            <li><strong>Extracurriculars with substance.</strong> Treasurer of a university club is financial management experience. Editor of a student publication is content production and editorial judgement. Captain of a sports team is leadership and performance under pressure. These aren't fillers &mdash; they're genuine evidence of capability.</li>
+            <li><strong>Relevant coursework and tools.</strong> If the job asks for Excel and you spent a semester building financial models in Excel for your accounting degree, say so. Relevant coursework, software proficiency gained through study, and tools you've used in class or on projects are all legitimate entries in a skills section.</li>
+        </ul>
+
+        <h2>How to structure a graduate CV</h2>
+
+        <p>For a first CV, education comes first. Your degree is your primary qualification, and it belongs at the top. Include your institution, degree title, graduation year (or expected graduation year), and your GPA or grade classification if it's strong.</p>
+
+        <p>Then work experience &mdash; any paid work, including part-time and casual. Then a skills section covering technical tools, software, and relevant competencies. Then extracurriculars, volunteering, and projects, if they haven't already appeared under experience.</p>
+
+        <p>Keep it to one page. A one-page graduate CV isn't a limitation &mdash; it's the appropriate length. Trying to stretch it to two with padding is immediately visible, and it actually makes you look less confident, not more thorough. One tight, well-filled page beats two loose ones.</p>
+
+        <p>The professional summary at the top should be three to five sentences. Lead with your field and what you're bringing: <em>"Recent marketing graduate with hands-on experience in digital content and social media analytics. Completed a 12-week internship at a regional agency, managing three client social accounts and contributing to a campaign that grew organic reach by 34%. Currently seeking an entry-level role in digital marketing or brand communications."</em> That's specific, credible, and clear about direction.</p>
+
+        <h2>Achievement framing at entry level</h2>
+
+        <p>The classic CV advice &mdash; lead with achievements, not duties &mdash; applies to graduate CVs too. You just need to look in the right places.</p>
+
+        <p>The achievement formula is simple: what you did, at what scale or in what context, with what outcome. It doesn't require years of professional experience to apply.</p>
+
+        <ul>
+            <li><em>"Led a team of four in a semester-long project to design and prototype a mobile app. Delivered on time with the highest UX score in the cohort."</em></li>
+            <li><em>"Trained three new staff members over six months in food handling compliance procedures. All passed their certifications first attempt."</em></li>
+            <li><em>"Managed the club's social media presence for 12 months, growing followers from 200 to 1,100 and increasing event attendance by 60%."</em></li>
+        </ul>
+
+        <p>Each of these is an achievement. Each is from a student or entry-level context. Each is more compelling than "Responsible for social media" or "Assisted with training."</p>
+
+        <h2>The one thing that matters more than anything else</h2>
+
+        <p>Tailoring. Even with limited experience, a CV tailored to the specific role is dramatically more effective than a generic one sent to every opening.</p>
+
+        <p>Read the job description carefully. What skills do they emphasise? What tools do they mention? What kind of person are they describing? Then review your own material and adjust which experiences you lead with, which skills you highlight, and which project or coursework examples you include. The structure stays the same &mdash; the emphasis shifts to match what that employer is looking for.</p>
+
+        <p>A tailored entry-level CV from a candidate who clearly read the job description will consistently beat a stronger-on-paper generic one. The tailoring signals something employers value: that you're genuinely interested in this particular role, not just any job that would have you.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV works for first CVs too. Upload whatever you have &mdash; a draft, a previous version, even a simple list of your experiences &mdash; paste in the job description, and the AI generates a tailored version that uses the right language for that role, highlights the most relevant parts of your background, and follows ATS-safe formatting conventions.</p>
+
+        <p>The tool is particularly useful if you're applying across different types of roles and need to shift emphasis between applications &mdash; presenting the same underlying experience differently for a marketing role versus a project coordination role versus a client-facing position.</p>
+
+        <p>Your experience is more than you think. A first CV is just a matter of presenting it honestly and strategically.</p>
+
+        <p>Everyone started with no experience. What separates the candidates who land interviews is that they figured out how to describe what they actually have &mdash; not what they wish they had.</p>
+    </article>
+</div>
+{% endblock %}

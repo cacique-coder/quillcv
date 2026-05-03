@@ -1,0 +1,107 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Keyword matching is simpler than the ATS-optimization industry wants you to believe.</strong> You don&rsquo;t need a paid tool, a subscription service, or a certification to do this well &mdash; you need a job description, a text document, and 20 minutes. Here&rsquo;s the exact process.</p>
+
+        <p>There&rsquo;s a whole cottage industry built around &ldquo;ATS optimization,&rdquo; and most of it is noise. The core concept, though, is real: Applicant Tracking Systems score your CV against the job description using keyword matching, and a low score means a human may never see your application. Missing keywords cost you interviews. It&rsquo;s that concrete.</p>
+
+        <p>The good news is that fixing it doesn&rsquo;t require specialized software. Here&rsquo;s what you need to know and how to do it manually, for free, right now.</p>
+
+        <h2>Why keywords matter more than you think</h2>
+
+        <p>When you submit an application through a company&rsquo;s careers portal or a job board, it almost certainly passes through an ATS first. The software parses your CV, extracts text, and compares it to the job description &mdash; looking for matches on skills, qualifications, job titles, and role-specific language.</p>
+
+        <p>Applications that score below a threshold get filtered out. The hiring manager never sees them. If you&rsquo;re genuinely qualified for a role but your CV uses different language than the job description &mdash; &ldquo;customer experience&rdquo; instead of &ldquo;customer success,&rdquo; or &ldquo;budget management&rdquo; instead of &ldquo;P&amp;L ownership&rdquo; &mdash; you can fail a keyword screen on a role you&rsquo;re a strong fit for.</p>
+
+        <p>Beyond automated filtering, recruiters also run keyword searches directly. When a company receives 400 applications, the recruiter might search the database for &ldquo;Salesforce&rdquo; or &ldquo;B2B SaaS&rdquo; to narrow the pool. If that term isn&rsquo;t in your CV, you don&rsquo;t appear in the search &mdash; even if you have the experience.</p>
+
+        <h2>Hard skills vs. soft skills keywords</h2>
+
+        <p>Not all keywords are equal, and understanding the difference helps you prioritize.</p>
+
+        <p><strong>Hard skills keywords</strong> are specific, verifiable, and carry the most weight in automated scoring. These are tool names, software platforms, technical certifications, methodologies, and role-specific terms: Salesforce, JIRA, Python, Six Sigma, PMP, SOC 2, Agile, SQL, AWS. If a job description lists these as requirements and they&rsquo;re not in your CV, you will score poorly. Full stop.</p>
+
+        <p><strong>Soft skills keywords</strong> matter too, but in a different way. Terms like &ldquo;cross-functional collaboration,&rdquo; &ldquo;stakeholder management,&rdquo; &ldquo;executive communication,&rdquo; and &ldquo;team leadership&rdquo; are used by recruiters when they search for candidates at certain seniority levels. They carry less automated weight but signal level and fit to a human reader. Include the ones that genuinely apply to you.</p>
+
+        <p>The mistake is assuming soft skills keywords don&rsquo;t matter at all, or that hard skills are the only thing worth optimizing. Both contribute to your overall match score. The job description usually tells you which ones the employer cares about most &mdash; whatever appears multiple times is a priority signal.</p>
+
+        <h2>The free manual process &mdash; five steps</h2>
+
+        <p>This is the actual process. It takes 20 minutes if you&rsquo;re focused.</p>
+
+        <p><strong>Step 1: Copy the full job description into a text document.</strong> The whole thing &mdash; not just the requirements section. The intro paragraph about the company, the responsibilities section, the qualifications, the &ldquo;nice to have&rdquo; list. All of it. Job descriptions repeat their most important terms, and capturing the full text ensures you catch every repetition.</p>
+
+        <p><strong>Step 2: Highlight every skill, tool, qualification, and role-specific phrase.</strong> Go through the document and mark anything that represents a specific capability or requirement. That includes named software, technical skills, credentials, methodologies, industry terms, and job-title-adjacent phrases. Don&rsquo;t edit as you go &mdash; just identify.</p>
+
+        <p><strong>Step 3: Group by essential vs. nice-to-have.</strong> Essential terms are ones that appear more than once, appear in the requirements section (not just &ldquo;preferred&rdquo;), or are clearly the core of the role. Nice-to-haves are the terms that only show up in the &ldquo;bonus points&rdquo; section or appear once in passing. Focus your optimization effort on the essentials first.</p>
+
+        <p><strong>Step 4: Check which ones are already in your CV &mdash; and whether you&rsquo;re using the same language.</strong> This is where most of the gap lives. You might have the experience, but if you called it something different, you won&rsquo;t match. Open your CV alongside your keyword list. For each essential keyword: is it there? Does it use the same phrasing, or a synonym that an ATS might not recognize as equivalent?</p>
+
+        <p><strong>Step 5: Update your CV to include the missing ones naturally.</strong> This is not about stuffing your CV with keywords. It&rsquo;s about making sure the language you use accurately reflects the language of the role. If you managed budgets and the job description says &ldquo;P&amp;L ownership&rdquo; &mdash; and that&rsquo;s genuinely what you did &mdash; use their phrase. If they want &ldquo;Agile delivery&rdquo; and you worked in Agile teams, say so explicitly. Accuracy and alignment, not fabrication.</p>
+
+        <h2>Common mistakes</h2>
+
+        <p>A few traps are worth naming explicitly because they&rsquo;re surprisingly common.</p>
+
+        <p><strong>Keyword stuffing.</strong> Listing keywords in a block of text at the bottom of your CV, or repeating them an unnatural number of times, used to work on older ATS systems. Modern platforms &mdash; and definitely human readers &mdash; penalize it. Keywords should appear in context, within your experience bullets and summary.</p>
+
+        <p><strong>White text tricks.</strong> Hiding keywords in white text on a white background was a thing. ATS systems now detect this, and if a recruiter spots it, your application is immediately disqualified. Don&rsquo;t do it. It&rsquo;s also unnecessary &mdash; the honest approach works fine.</p>
+
+        <p><strong>Ignoring acronyms and their expansions.</strong> &ldquo;PM&rdquo; and &ldquo;Project Manager&rdquo; are not always treated as equivalent by ATS software. If the job description uses both the abbreviation and the full phrase, include both in your CV. Same applies to &ldquo;CRM&rdquo; vs. &ldquo;Customer Relationship Management,&rdquo; &ldquo;SEO&rdquo; vs. &ldquo;Search Engine Optimization,&rdquo; and so on. When in doubt, use both forms at least once.</p>
+
+        <p><strong>Optimizing for one version of the job title.</strong> If you&rsquo;re applying for roles that might be called &ldquo;Product Manager,&rdquo; &ldquo;Product Owner,&rdquo; or &ldquo;Product Lead,&rdquo; make sure your CV reflects whichever term each specific employer uses. Tailor per application, not once for every application.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>Everything described in the five steps above is what QuillCV does automatically for every application. You paste in the job description and upload your existing CV. Our system identifies the essential keywords, checks which are present in your CV and which are missing, and generates a tailored version that incorporates the relevant terms naturally &mdash; within your actual experience, not stuffed at the bottom of the document.</p>
+
+        <p>The manual process is free and genuinely works. QuillCV does the same work faster, without the spreadsheet, and without missing the acronym variants.</p>
+
+        <p>The keywords were always in the job description. Most people just never read it that carefully.</p>
+    </article>
+</div>
+{% endblock %}

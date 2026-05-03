@@ -2879,6 +2879,21 @@ select.input-field {
 }
 .blog-meta time { font-variant-numeric: tabular-nums; }
 .blog-meta-sep { opacity: 0.4; }
+.blog-tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.15em 0.5em;
+    border-radius: 3px;
+    line-height: 1.6;
+}
+.blog-tag--diy {
+    background: #e6f4ea;
+    color: #1e7e34;
+    border: 1px solid #b7dfbe;
+}
 
 /* ── Blog: Language switcher ─────────────────────────────── */
 .blog-lang-switch {

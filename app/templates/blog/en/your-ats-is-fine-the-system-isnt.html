@@ -1,0 +1,118 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>The ATS isn't the villain.</strong> It's a symptom of a hiring system designed around the employer's convenience &mdash; one where candidates spend months preparing for a process that takes seconds on the other side.</p>
+
+        <p>Spend five minutes in any job search forum and you'll find two warring camps. One side blames the ATS: "Algorithms are rejecting qualified people. Fix the technology." The other side dismisses the grievance: "Stop complaining and network. Build projects. Get certifications. The ATS is just a filter for people who didn't try hard enough."</p>
+
+        <p>Both camps have a point. Neither has the full picture.</p>
+
+        <h2>The debate</h2>
+
+        <p>The "ATS is broken" argument goes like this: automated screening systems reject candidates before a human ever sees the CV, keyword matching is blunt and arbitrary, and a genuinely qualified person with an unconventional background can disappear into the void simply because their CV doesn't match the exact phrasing in a job description.</p>
+
+        <p>The counterargument goes like this: companies get hundreds of applications for every role. Without some form of filtering, the process would be unmanageable. And plenty of people do land jobs &mdash; through referrals, through demonstrable skills, through relationships they built before the role was even posted.</p>
+
+        <p>Here's the thing: both of these statements are true at the same time.</p>
+
+        <h2>Recruiters aren't wrong</h2>
+
+        <p>The advice to network, build a portfolio, and keep certifications current isn't bad advice. It's accurate. A strong referral from someone inside the company will, in most cases, outperform a cold application &mdash; even a perfectly optimized one. In fields like software, design, and marketing, a portfolio that shows real work often carries more weight than any document.</p>
+
+        <p>Hiring managers are human. They remember the person who helped them in a professional forum six months ago. They notice when a candidate has contributed to open source code they actually use. Context that comes from a relationship is something a CV can't manufacture.</p>
+
+        <p>So yes: networking matters. Projects matter. Certifications matter (in fields where they signal real competence). None of that is wrong.</p>
+
+        <h2>But candidates aren't wrong either</h2>
+
+        <p>Here's what that advice glosses over: doing all of it is a second full-time job. And most people already have a first one.</p>
+
+        <p>Building a portfolio takes months. Getting a meaningful certification costs hundreds of dollars and dozens of hours. Growing a professional network that will actually produce referrals takes years &mdash; and it requires access to the right rooms in the first place. If you're early in your career, between jobs and burning through savings, or navigating a field where you don't have existing connections, the gap between "just network more" and something actionable is enormous.</p>
+
+        <p>The advice is structurally sound. The timeline is brutal. And it almost always comes from people who already have networks, portfolios, and the financial runway to invest in both.</p>
+
+        <p>Telling a junior candidate to "build projects on the side" while they're working a full-time job to pay rent is technically correct advice that ignores all the reasons it's easier said than done.</p>
+
+        <h2>The asymmetry nobody talks about</h2>
+
+        <p>The real problem isn't the ATS. It's the asymmetry baked into the entire system.</p>
+
+        <p>A candidate might spend four to six hours on a single application: researching the company, tailoring the CV, writing a cover letter, preparing for a potential call. Multiply that across twenty or thirty applications &mdash; which is a modest number for an active job search &mdash; and you're looking at 80 to 180 hours of unpaid labor.</p>
+
+        <p>On the employer's side, a recruiter might spend 10 seconds scanning each CV. An ATS might filter 90% of applicants before a human looks at anything. One hire comes out the other end.</p>
+
+        <p>The candidate bears almost all the cost. The employer bears almost none of the friction. That imbalance doesn't get talked about, because it's systemic and there's no obvious villain. The ATS is convenient to blame because it's concrete. The actual problem &mdash; that the system was designed around employer convenience, not candidate fairness &mdash; is harder to name and impossible to fix with a resume tip.</p>
+
+        <h2>What you can actually control</h2>
+
+        <p>None of that analysis changes what you have to do this week if you need a job. You can't redesign the system. What you can do is stop losing the round that's most preventable.</p>
+
+        <p>The CV is the threshold document. It doesn't get you the job &mdash; but a weak one will cost you the interview. And unlike building a portfolio or growing a network, improving your CV for a specific role is something you can do in an afternoon.</p>
+
+        <p>Specifically:</p>
+
+        <ul>
+            <li><strong>Match the language in the job description.</strong> ATS systems aren't clever &mdash; they look for the words in the posting. If the job says "stakeholder management" and your CV says "client liaison," you may not match even if your experience is identical.</li>
+            <li><strong>Use standard section headings.</strong> "Work Experience," not "Where I've Been." The parser needs to recognize the structure.</li>
+            <li><strong>Lead with outcomes, not duties.</strong> "Reduced onboarding time by 40%" lands differently than "Responsible for onboarding."</li>
+            <li><strong>Tailor per role.</strong> One-size CV is better than no CV. A tailored CV is better than both.</li>
+        </ul>
+
+        <p>These aren't magic. They won't overcome every structural disadvantage in the system. But they keep your application in the game long enough for a human to see it &mdash; and that's the first gate you need to clear.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>We built QuillCV to handle the CV side of the equation. You paste in a job description, we analyze the keywords, structure, and requirements, and generate a tailored CV that's optimized for that specific role and formatted for the hiring conventions in your target market.</p>
+
+        <p>We're not solving asymmetry. We're not building your network or writing your portfolio. Those are on you, and we'd be lying if we said otherwise.</p>
+
+        <p>What we do is make sure your CV isn't the thing that loses it for you &mdash; that you're not filtered out in round one because of a keyword gap or a formatting problem that a 20-minute rewrite would have fixed. You still have to do the hard work. We just make the document part faster and more effective.</p>
+
+        <p>The system is imperfect. Work within its constraints while you play the longer game. That's not defeatism &mdash; it's strategy.</p>
+    </article>
+</div>
+{% endblock %}

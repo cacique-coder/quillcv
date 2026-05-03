@@ -1,0 +1,107 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>The same CV that lands interviews in Sydney will get ignored in Frankfurt &mdash; not because your experience is wrong, but because the format signals the wrong things.</strong> Australia, the UK, and Germany have genuinely different expectations, and getting them right is a practical matter, not an optional nicety.</p>
+
+        <h2>Why the same CV doesn't travel well</h2>
+
+        <p>Job seekers who apply internationally often assume that a strong CV is a strong CV. To some extent that's true &mdash; achievements over duties, clear structure, no typos. But the conventions around what to include, how long it should be, whether to include a photo, how formal the tone should be, and what personal details belong on a professional document vary significantly by country. Sending the wrong format sends the wrong signal before your experience has even been read.</p>
+
+        <h2>Australia &mdash; what to know</h2>
+
+        <p>The Australian job market uses "CV" and "resume" interchangeably. In practice, they're the same document, and two pages is the established standard for experienced professionals. Graduates can often get away with one strong page. Going beyond two pages is generally acceptable for senior roles with extensive publication records or project portfolios, but otherwise reads as padding.</p>
+
+        <p>References are listed at the end &mdash; either the full contact details of two or three referees, or the phrase "referees available on request." Listing referees by name is common and expected in a way it isn't in the US market.</p>
+
+        <p>Tone can be slightly more direct and less formal than UK applications. Australian hiring culture is relatively non-hierarchical, and a CV that reads as stiff or overly formal can actually work against you in certain sectors. That said, financial services, law, and government roles follow more traditional conventions.</p>
+
+        <p>No photo. A personal statement or professional summary at the top is optional but increasingly common, especially for competitive or senior roles. Include your city and state, but a full street address is unnecessary.</p>
+
+        <h2>United Kingdom &mdash; what to know</h2>
+
+        <p>UK CVs are formal, structured, and typically two pages. No photo &mdash; including one is considered unusual and potentially problematic from a discrimination standpoint. No date of birth, nationality, or marital status. The personal details section should be limited to your name, location (city is fine), phone, email, and LinkedIn.</p>
+
+        <p>A personal statement at the top of the CV is common and often expected. It's typically three to five sentences covering your professional identity, core strengths, and what you're looking for. This isn't the same as a US-style objective statement &mdash; it should be substantive and specific to the role.</p>
+
+        <p>Cover letters are expected for most applications in the UK, particularly in professional services, the public sector, and any role at a company with a traditional culture. A CV without a cover letter in these contexts signals either laziness or unfamiliarity with local norms.</p>
+
+        <p>References should appear as "References available on request" rather than listed in full. Giving out referees' contact details without confirming their availability is considered poor practice.</p>
+
+        <h2>Germany &mdash; what to know</h2>
+
+        <p>The German application document is called a <em>Lebenslauf</em> &mdash; literally "life course" &mdash; and it follows a more structured and personal format than Anglophone CVs. A professional photo is standard and expected. Not including one reads as an oversight, not a progressive statement. The photo should be recent, high quality, and professionally framed &mdash; not a cropped party shot.</p>
+
+        <p>Date of birth and nationality are standard personal details to include. Marital status is sometimes included, though less universally than it was a decade ago. A handwritten or typed signature at the bottom of the document is traditional and still expected in formal applications, particularly in conservative industries.</p>
+
+        <p>German CVs are formal in tone and highly structured. Each entry lists dates precisely (month and year), and gaps in employment history attract more scrutiny than in Australian or US markets. Be prepared to account for any extended breaks.</p>
+
+        <p>If applying in German &mdash; which is expected for most non-international roles &mdash; the language must be formal, grammatically impeccable, and use standard German rather than regional or colloquial variants. Translating an English CV through a machine translator and submitting it is a reliable way to be disqualified immediately.</p>
+
+        <p>Cover letters in Germany are called <em>Anschreiben</em> and are essentially mandatory. They follow a formal business letter format, including the date, recipient's name and address, and a formal salutation. Length is typically one page, and the tone is more formal than English-language cover letters.</p>
+
+        <h2>The three things all three markets agree on</h2>
+
+        <p>Despite their differences, Australia, the UK, and Germany share some core expectations that hold regardless of local conventions:</p>
+
+        <ul>
+            <li><strong>ATS keyword matching matters everywhere.</strong> Large employers in all three markets use Applicant Tracking Systems. Your CV needs to reflect the language of the job description to survive the initial screening, regardless of which country you're applying in.</li>
+            <li><strong>Achievements over duties.</strong> "Responsible for managing a team" is weaker than "Led a team of eight through a platform migration, delivering on time and 12% under budget" in every market. Quantified, outcome-focused bullets outperform duty lists universally.</li>
+            <li><strong>Clean formatting is non-negotiable.</strong> Regardless of whether a photo is appropriate or a personal statement is expected, a cluttered, poorly structured CV undermines confidence in the candidate's attention to detail in every market.</li>
+        </ul>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV generates region-specific CV formats automatically. When you select Australia, the UK, or Germany as your target market, the output reflects the conventions of that country &mdash; appropriate personal details, photo handling, section structure, and formatting standards. You don't have to research what's expected; the tool applies it.</p>
+
+        <p>For Germany specifically, the photo upload feature integrates directly into the German-format output. For Australian and UK applications, personal details are trimmed to what's appropriate. ATS optimisation applies in all cases &mdash; keywords from the job description are woven into the generated content regardless of which market you're targeting.</p>
+
+        <p>Moving between markets is already complicated enough. Your CV format shouldn't be one of the things you have to figure out from scratch each time.</p>
+
+        <p>Know what's expected, give them what they're looking for, and let your actual experience speak for itself.</p>
+    </article>
+</div>
+{% endblock %}

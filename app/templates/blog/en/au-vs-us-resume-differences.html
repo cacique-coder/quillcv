@@ -1,0 +1,119 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>A CV that works in Sydney will not necessarily work in San Francisco.</strong> The two markets share a language and most of the same skills &mdash; but the conventions around what to include, how long to go, and what to omit are different enough that sending the wrong format can cost you the interview.</p>
+
+        <p>These aren't cultural abstractions. They're specific, concrete differences &mdash; the kind that show up in recruiter feedback as "this looks a bit off for our market" or, more often, just silence. If you're applying in both markets or making a move between them, here's what you need to know.</p>
+
+        <h2>1. Length</h2>
+
+        <p><strong>Australia:</strong> Two to three pages is completely normal and expected for anyone with more than a few years of experience. Recruiters in AU markets aren't looking for brevity &mdash; they want detail. Four pages isn't alarming for a senior candidate.</p>
+
+        <p><strong>United States:</strong> One page is the strong default for anyone with under ten years of experience. Two pages is acceptable for senior professionals, but it needs to earn those pages. Anything beyond two is almost universally considered too long. US recruiters spend an average of six seconds on an initial review &mdash; they are not going to page three.</p>
+
+        <p>If you're moving from AU to US, your first edit is almost certainly cutting your document in half. Be ruthless. If you're moving from US to AU, you have permission to expand &mdash; add detail to your bullet points, flesh out your responsibilities, and stop treating white space as a failure.</p>
+
+        <h2>2. Photo</h2>
+
+        <p><strong>Both markets: never include a photo.</strong> This is one of the few areas where AU and US are in complete agreement. In Australia, photos are considered unprofessional on a CV and simply aren't expected. In the US, photos are avoided because of legal considerations around discrimination &mdash; if a recruiter sees a photo, it creates potential liability. Either way, leave it out. If a specific role or industry requires one, they'll ask separately.</p>
+
+        <h2>3. References</h2>
+
+        <p><strong>Australia:</strong> It's standard practice to list two or three referees directly on the CV &mdash; full name, title, company, and contact details. Leaving them off entirely can look odd. If you'd prefer not to list names publicly, "References available on request" is acceptable but less common than it used to be.</p>
+
+        <p><strong>United States:</strong> References are never included on a resume. The convention is to have a separate reference sheet prepared and share it only when asked &mdash; which typically happens late in the interview process, not at initial application. Writing "References available on request" is considered filler and is better left out entirely.</p>
+
+        <h2>4. Personal details</h2>
+
+        <p><strong>Australia:</strong> Date of birth, nationality, and visa status occasionally appear &mdash; particularly for visa holders where right-to-work is relevant, or for roles where the candidate wants to be transparent about their status. It's not standard, but it's not unusual. Recruiters won't penalize you for including it or leaving it out.</p>
+
+        <p><strong>United States:</strong> Never include age, date of birth, nationality, marital status, or any personal information beyond name, contact details, and city. US employment law is designed to prevent these factors from influencing hiring decisions &mdash; including them on a resume signals a lack of familiarity with US market norms and, in some cases, puts a recruiter in an awkward legal position.</p>
+
+        <h2>5. Date format</h2>
+
+        <p><strong>Australia:</strong> Day/month/year is the standard &mdash; so a start date would be written as January 2020 or 01/2020, but the day-first convention means full dates appear as 15/03/2020. For employment dates on a CV, month and year (Jan 2020 &ndash; Mar 2023) is the cleanest format.</p>
+
+        <p><strong>United States:</strong> Month/year is standard for employment history &mdash; March 2020 or 03/2020. Never write day-first in a US document. If you write 03/04/2020 meaning the 3rd of April, a US reader will read it as March 4th. The difference matters when employment dates need to be verified.</p>
+
+        <h2>6. Objective vs summary</h2>
+
+        <p><strong>United States:</strong> A professional summary is almost universal &mdash; two to four sentences at the top of the resume that frame your experience, key skills, and what you bring to the role. It replaced the old "objective statement" (which stated what you were looking for, not what you offered) roughly a decade ago. If you still have an objective statement on a US resume, update it.</p>
+
+        <p><strong>Australia:</strong> A "career objective" still appears more commonly in AU documents, especially for early-career candidates. A summary is equally accepted and arguably stronger, but an objective isn't the red flag it would be in the US. Either format works &mdash; just make sure it's tailored to the specific role rather than left as a generic statement.</p>
+
+        <h2>7. Tone</h2>
+
+        <p><strong>Australia:</strong> Slightly less formal, more direct, and more likely to sound like a person wrote it. AU hiring culture is relatively egalitarian &mdash; seniority is respected but formality for its own sake is not. Bullet points that read naturally tend to land better than heavily polished corporate-speak.</p>
+
+        <p><strong>United States:</strong> Achievement-driven and metrics-heavy. US hiring culture responds strongly to quantified results &mdash; percentages, revenue figures, team sizes, timelines. If you can put a number on it, put a number on it. The expectation is that your CV reads like a highlight reel of impact, not a job description of duties.</p>
+
+        <h2>8. Document name</h2>
+
+        <p><strong>Australia:</strong> "CV" is the standard term. "Resume" is understood but used less frequently outside of multinational or US-adjacent environments.</p>
+
+        <p><strong>United States:</strong> "Resume" is universal. Calling your document a CV in a US application is technically fine but signals that you may not be familiar with local conventions &mdash; a small thing, but easily avoided. Name your file accordingly: FirstName-LastName-Resume.pdf for US applications, FirstName-LastName-CV.pdf for Australian ones.</p>
+
+        <h2>9. Education placement</h2>
+
+        <p><strong>Australia:</strong> Education can appear at the top, middle, or bottom of the document depending on your career stage and how central your degree is to the role. There's no fixed rule. Senior professionals often place it after work experience; recent graduates often lead with it.</p>
+
+        <p><strong>United States:</strong> Education goes at the bottom of the resume for anyone who has been in the workforce for more than a year or two. The exception is recent graduates, who lead with education because it's their primary credential. Once you have substantial work experience, the convention is strict: work history first, education last.</p>
+
+        <h2>The one thing both markets agree on</h2>
+
+        <p>ATS optimization and tailoring matter everywhere. Whether you're applying in Melbourne or Manhattan, the CV that gets read is the one that uses the language from the job description, has clean extractable text, and speaks directly to what the role requires. The formatting conventions differ. The fundamental logic of matching your document to the opportunity does not.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV automatically applies the right formatting conventions for your target country. Select Australia and you get a CV built to AU standards &mdash; appropriate length, referee section, date format, and tone. Select the US and you get a resume built for that market &mdash; one page (or tight two), no personal details, achievement-first bullet points, and the right terminology throughout.</p>
+
+        <p>You don't need to keep a mental checklist of what changes between markets. The format is handled. Your job is to make sure the content is accurate and reflects your actual experience. Ours is to make sure it lands the way a local recruiter expects.</p>
+
+        <p>The wrong format in the right market is a distraction. The right format lets your experience speak for itself.</p>
+    </article>
+</div>
+{% endblock %}

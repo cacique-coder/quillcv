@@ -1,0 +1,115 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>The rules that got you to mid-level don't apply at Director and above.</strong> Format, framing, length, and the sections that matter all shift when you're positioning yourself as someone accountable for outcomes at organizational scale.</p>
+
+        <p>Most professionals carry the CV habits they learned early in their careers &mdash; one page if possible, task-oriented bullets, keep it modest. Those habits work up to a point. At Director, VP, and C-suite level, they start actively working against you. A standard CV at senior level reads like someone underselling themselves. Here's how the document needs to change.</p>
+
+        <h2>When the rules change</h2>
+
+        <p>The shift typically happens around Director level, though it depends more on role scope than title. The clearest signals that you're in executive territory:</p>
+
+        <ul>
+            <li>You manage managers, not individual contributors directly</li>
+            <li>You're accountable for a P&amp;L, a budget line, or an organizational function rather than a project or team output</li>
+            <li>You're being headhunted &mdash; recruiters are approaching you &mdash; rather than responding purely to postings</li>
+            <li>The decisions you make have multi-year consequences for the organization</li>
+        </ul>
+
+        <p>If any of these describe you, a standard CV isn't just modest &mdash; it's a category error. Boards, executive search firms, and C-suite hiring committees are reading your CV differently. They're not checking whether you can do the job. They're assessing whether you're a known quantity in your space, whether your trajectory is credible for the role, and whether your framing matches the level of accountability they're hiring for.</p>
+
+        <h2>Length</h2>
+
+        <p>Yes, longer is right. Two to three pages for most executive CVs; occasionally four for very senior roles with significant board, advisory, or public profile elements.</p>
+
+        <p>The one-page rule is sensible early-career advice that many professionals never stop applying. At senior level, a single page signals either a thin career history or a failure to understand the context. A hiring committee for a VP of Engineering role at a $500M company wants to see the scope of what you've built, the scale you've operated at, and the track record across multiple organizations. You can't communicate that in one page without compressing everything to the point of meaninglessness.</p>
+
+        <p>The caveat matters though: three tight pages beat five padded ones. Every line must earn its place. Cut roles older than 20 years unless they're foundational to your professional identity. Cut bullets that describe tasks rather than outcomes. Cut anything that a mid-level professional would also list. What remains should be distinctively yours at the level you're targeting.</p>
+
+        <h2>Achievement framing at senior level</h2>
+
+        <p>The shift from operational to strategic framing is the most important change to make. Mid-level bullets describe what you did. Executive bullets describe what changed because of what you did &mdash; at organizational scale.</p>
+
+        <p>Compare these two descriptions of the same person's work:</p>
+
+        <p><em>Standard framing:</em> "Managed a cross-functional team of 12 engineers and designers to deliver the mobile platform on time and under budget."</p>
+
+        <p><em>Executive framing:</em> "Restructured the mobile team from a feature-delivery function to a product-led organization, reducing time-to-ship from 14 weeks to six and enabling the division to enter two new markets in the same fiscal year."</p>
+
+        <p>The first describes a person doing their job. The second describes a person changing how the organization operates. That's the framing shift. Your bullets should answer: <strong>what changed, at what scale, with what consequence for the business?</strong></p>
+
+        <p>Financial impact is the most legible executive signal. Revenue influenced, cost removed, P&amp;L scope managed, funding secured. Where you can state it precisely, do. Where the numbers are genuinely confidential, frame the magnitude: "eight-figure annual cost base," "portfolio of twelve enterprise accounts," "team of 85 across three time zones."</p>
+
+        <h2>New sections that matter</h2>
+
+        <p>Executive CVs often include sections that wouldn't make sense at mid-level.</p>
+
+        <p><strong>Board and advisory roles.</strong> If you sit on any boards &mdash; company boards, non-profit boards, advisory boards &mdash; list them. They signal that other organizations trust your judgment at governance level. Even advisory roles at startups are worth including if they're substantive and current.</p>
+
+        <p><strong>Significant publications and keynote talks.</strong> A Harvard Business Review piece, a keynote at an industry conference with 2,000 attendees, a widely-read LinkedIn article series. These build your public profile as a leader in your space. Not blog posts from 2018 &mdash; genuinely significant contributions to the professional discourse in your field.</p>
+
+        <p><strong>Executive education.</strong> A Harvard Advanced Management Program, an INSEAD executive course, a Stanford GSB program. These are credentials that signal ongoing investment in leadership development at the appropriate tier. A weekend workshop doesn't belong here; a three-month executive program at a top-tier institution does.</p>
+
+        <p><strong>Compensation expectations.</strong> In some markets and contexts &mdash; particularly executive search &mdash; stating your compensation expectations or current package in your CV is normal. In others it isn't. Check the convention for your market and industry before including this. When in doubt, leave it off the CV and address it directly with the recruiter.</p>
+
+        <h2>The executive summary</h2>
+
+        <p>A standard professional summary is 3&ndash;4 lines. An executive summary is 4&ndash;6 lines, more specific, and positioned differently. It's not a statement of what you want &mdash; it's a statement of what you are.</p>
+
+        <p>Think of it as your professional positioning statement. It should communicate: your leadership identity, the type of organization and problem you work best in, your most distinctive achievement or area of expertise, and the scope at which you've operated.</p>
+
+        <p>An executive summary that works positions you as a known quantity in your space. Someone reading it should feel they've understood your professional profile in the time it takes to read a short paragraph &mdash; not learned a list of your responsibilities.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>Executive CV generation requires understanding both the role's strategic context and how to frame a career at leadership level. QuillCV applies executive framing automatically when you're targeting Director, VP, or C-suite roles &mdash; adjusting summary length, bullet framing, and section structure to match the level you're positioning for.</p>
+
+        <p>The goal is a document that reads like it was written by someone who understands what executive hiring looks like &mdash; because the people reviewing it do.</p>
+
+    </article>
+</div>
+{% endblock %}

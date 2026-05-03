@@ -1,0 +1,114 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Getting certified isn't the trap &mdash; using certifications as a reason not to apply yet is.</strong> In some fields, credentials genuinely matter and hiring teams actively screen for them. In others, they're a comfortable form of procrastination that costs real money and time without moving your job search forward by a single position.</p>
+
+        <p>The advice is everywhere. Recruiters mention it in LinkedIn posts. Career coaches put it in their slide decks. Blogs about re-entering the workforce after a break make it sound non-negotiable: before you apply, upskill. Get certified. Show initiative.</p>
+
+        <p>They're not entirely wrong. But the advice gets applied too broadly, and a lot of people spend months &mdash; and thousands of dollars &mdash; getting certified for roles they were already qualified for.</p>
+
+        <h2>The advice you've heard</h2>
+
+        <p>The reasoning behind the certification advice is sound in theory. If there's a genuine skills gap between you and the role you're targeting, addressing it before you apply makes the application stronger. A certification signals that you've done the work, that you're aware of the gap, and that you took action rather than hoping nobody would notice.</p>
+
+        <p>For some roles, certifications are also actively screened for. If the job posting requires AWS Certified Solutions Architect and you don't have it, that's not a preference &mdash; it's a filter. The ATS will drop your application before a human reads it.</p>
+
+        <p>The problem isn't the principle. It's the pattern that develops when the advice gets applied regardless of context: keep certifying, keep learning, keep preparing &mdash; and keep not applying.</p>
+
+        <h2>When certifications actually help</h2>
+
+        <p>There are fields where credentials carry genuine weight and hiring teams explicitly screen for them:</p>
+
+        <ul>
+            <li><strong>Cloud computing:</strong> AWS Certified Solutions Architect, Azure Administrator, Google Cloud Professional Cloud Architect &mdash; these are actively required or strongly preferred in job postings and are worth pursuing if you're targeting cloud roles.</li>
+            <li><strong>Cybersecurity:</strong> CISSP, CompTIA Security+, CEH &mdash; hiring managers in security take certifications seriously. Entry-level roles increasingly list CompTIA as a baseline requirement.</li>
+            <li><strong>Project management:</strong> PMP (Project Management Professional) is a near-requirement for senior PM roles in enterprise and government sectors. Prince2 carries equivalent weight in certain UK and Australian markets.</li>
+            <li><strong>Finance and accounting:</strong> CFA, CPA, and equivalent designations aren't optional in investment management or public accounting. They're table stakes.</li>
+            <li><strong>Healthcare and education:</strong> Regulated professions where registration and qualification are legally required before you can practise.</li>
+        </ul>
+
+        <p>In these fields, getting the certification is the right call. It's not procrastination &mdash; it's a legitimate prerequisite or a genuine competitive differentiator.</p>
+
+        <h2>When they don't</h2>
+
+        <p>Outside of those specific contexts, certifications frequently don't move the needle &mdash; and sometimes work against you.</p>
+
+        <ul>
+            <li><strong>Generic online certificates from course platforms.</strong> A Udemy certificate or a "Professional Certificate" from a MOOC platform is evidence that you completed a course. That's not nothing, but it's much less than a credential. Experienced hiring managers know exactly how much effort a 10-hour online course requires.</li>
+            <li><strong>Certifications in adjacent skills that don't address the core gap.</strong> If you're applying for a senior software engineering role and the feedback is that you lack leadership experience, a leadership certificate from an online platform doesn't address that. The gap is experience, not credentials.</li>
+            <li><strong>Stacking certifications in a field you're already qualified in.</strong> If you have ten years in marketing and you spend four months getting a digital marketing certificate before applying for senior roles, the certificate adds nothing. The experience is what they're hiring. The certificate is noise.</li>
+            <li><strong>Certificates used to fill time instead of filling applications.</strong> This is the trap in its clearest form. If you're not applying because you feel like you need one more qualification, and then one more after that, the certifications have become a substitute for the discomfort of rejection &mdash; not a genuine investment in your qualifications.</li>
+        </ul>
+
+        <h2>The cost nobody talks about</h2>
+
+        <p>A serious certification isn't free &mdash; in time, money, or opportunity cost.</p>
+
+        <p>A quality certification takes 40 to 100 hours of study, sometimes more. The exam itself costs between $200 and $1,500 depending on the credential. Study materials, practice tests, and prep courses add more on top of that. For a certification that actively helps your application, that's a reasonable investment. For one that won't make a meaningful difference, it's several months and several hundred dollars spent on a line that nobody was looking for.</p>
+
+        <p>The opportunity cost is the part that stings most. Those are hours you weren't applying, networking, or building the portfolio that would actually demonstrate the skills employers want to see. A developer who spent three months on a side project they can show in an interview is usually better positioned than one who spent three months getting a certificate in a technology they already use daily.</p>
+
+        <h2>What to do while you're upskilling</h2>
+
+        <p>If you genuinely need to close a skills gap, close it &mdash; but don't stop applying while you do. Apply with what you have now. The worst outcome is a rejection you were going to get anyway. The best outcome is an interview that tells you exactly what you actually need to work on, from the people who are hiring.</p>
+
+        <p>When you do list certifications-in-progress on your CV, be accurate and specific. "Currently studying for AWS Solutions Architect Associate exam (expected completion: [month])" is honest and shows initiative. Listing a course as a certification you hold is not.</p>
+
+        <p>Learning is evidence of initiative. Use it that way &mdash; as something that shows you're serious and growing, not as a prerequisite you need to clear before you're allowed to try.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV helps you present the skills and experience you already have as compellingly as possible. The AI tailors your CV to reflect the specific language of the job description, surfaces the most relevant parts of your background, and frames your experience in the terms the employer is using.</p>
+
+        <p>You don't need to be certified to have a strong CV. You need a CV that accurately and strategically represents what you actually bring. That's what we help with.</p>
+
+        <p>The certifications worth getting, get them. The ones that are keeping you from applying &mdash; skip them and send the application. The best information you can get right now is feedback from the actual hiring process, not another course completion notification.</p>
+
+        <p>Preparation has a point of diminishing returns. Recognise when you've reached it.</p>
+    </article>
+</div>
+{% endblock %}

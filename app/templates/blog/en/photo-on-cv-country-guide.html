@@ -1,0 +1,118 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>There is no universal answer to whether you should include a photo on your CV &mdash; the right call depends entirely on where you&rsquo;re applying.</strong> In some countries a missing photo is conspicuous; in others, including one signals that you don&rsquo;t understand the local market. Getting this wrong is an avoidable mistake.</p>
+
+        <p>This is a question job seekers often get wrong because they apply the conventions of their home country to a market that has different norms &mdash; or they follow generic advice that ignores geography entirely. The reality is that photo conventions vary significantly across the countries where QuillCV operates, and understanding those differences takes a few minutes to learn.</p>
+
+        <h2>Why this question has no universal answer</h2>
+
+        <p>The variation in photo norms comes from two different forces pulling in opposite directions: <strong>cultural and professional tradition</strong> on one side, and <strong>anti-discrimination law and hiring practice</strong> on the other.</p>
+
+        <p>In many countries, including a professional headshot on a CV is a long-standing norm. It&rsquo;s expected. Omitting it can make your application look incomplete or unusual. Recruiters in those markets are used to seeing photos and factor them into the professional presentation of the document.</p>
+
+        <p>In other countries &mdash; primarily those with strong equal opportunity employment frameworks &mdash; including a photo is actively discouraged. Employers in these markets are often legally advised not to consider physical appearance in hiring decisions, and many companies train their HR teams to discard applications with photos, or to ask applicants to resubmit without one, to reduce the risk of bias claims.</p>
+
+        <p>The geography matters. If you include a photo on a US application, some recruiters will question your understanding of American workplace norms. If you omit a photo on a German Lebenslauf, the document will look non-standard to a German hiring manager.</p>
+
+        <h2>Countries where a photo is expected or preferred</h2>
+
+        <p><strong>Germany</strong> &mdash; The Lichtbild (application photo) is a deeply ingrained part of the German Bewerbung (formal application). A professional headshot in the top right corner of the first page is standard. It should be recent, professionally taken if possible, and show you in professional attire with a neutral or light background. Omitting it won&rsquo;t automatically disqualify you, but it will make your document look non-standard to a German reader.</p>
+
+        <p><strong>France</strong> &mdash; A photo is common but not mandatory. Most French CVs include one, typically in the top right corner, and it&rsquo;s considered part of the professional presentation of the document. In practice, the vast majority of candidates include it, and omitting it is noticeable at the senior end of the market.</p>
+
+        <p><strong>Brazil</strong> &mdash; Photo inclusion on a Brazilian curr&iacute;culo varies by industry and role level. For client-facing roles, sales, hospitality, and roles where appearance is considered professionally relevant, a photo is common and sometimes expected. For purely technical or back-office roles, it&rsquo;s less universal. When in doubt, include one &mdash; it&rsquo;s rarely penalized in the Brazilian market.</p>
+
+        <p><strong>India</strong> &mdash; Photos are widely included on Indian CVs, particularly for corporate and formal roles. The convention is strong enough that a CV without a photo can look unusual. A professional headshot in the top right corner is the standard placement.</p>
+
+        <p><strong>UAE</strong> &mdash; The Gulf professional market generally expects a photo on applications. This is consistent across most sectors, including finance, hospitality, and technical fields. Professional presentation matters significantly in this market, and a high-quality headshot is part of that.</p>
+
+        <p><strong>Japan</strong> &mdash; Japan has one of the most formalized CV conventions in the world. The rikumsho (standard Japanese CV form) includes a dedicated photo box, and a professional headshot is expected without exception for almost all formal employment applications. The photo should be a formal headshot, typically on a plain white or light background, in business attire.</p>
+
+        <h2>Countries where a photo is actively avoided</h2>
+
+        <p><strong>United States</strong> &mdash; Do not include a photo on a US CV or resume. This is not just convention &mdash; it&rsquo;s tied directly to equal employment opportunity law. US employers are prohibited from making hiring decisions based on race, color, religion, sex, national origin, age, disability, and other protected characteristics. Including a photo creates potential legal exposure for the employer and signals to recruiters that you may not understand US hiring norms. Many US HR professionals will discard applications with photos automatically.</p>
+
+        <p><strong>United Kingdom</strong> &mdash; Same advice as the US. UK employment discrimination law under the Equality Act 2010 covers the same categories, and including a photo on a UK CV is considered unusual and potentially disadvantageous. Recruiters are trained to avoid considering appearance, and a photo puts them in an awkward position. Leave it out.</p>
+
+        <p><strong>Canada</strong> &mdash; Canada&rsquo;s human rights framework makes photo inclusion similarly problematic. Canadian employers are advised not to request or consider photos in the screening process, and including one unsolicited can flag a lack of familiarity with Canadian hiring norms. Standard Canadian CVs do not include photos.</p>
+
+        <p><strong>Australia</strong> &mdash; Australia follows the same pattern as the US and UK. The Fair Work Act and anti-discrimination legislation mean that Australian employers are trained to screen without considering personal characteristics, and photos are not expected on Australian CVs. Including one will not help you and may subtly work against you.</p>
+
+        <p><strong>New Zealand</strong> &mdash; Consistent with Australia. NZ CVs do not include photos as standard practice. The hiring culture is informal relative to much of Asia and continental Europe, and personal appearance is not a relevant factor in professional screening.</p>
+
+        <h2>The in-between cases</h2>
+
+        <p><strong>Netherlands</strong> &mdash; The Netherlands is genuinely mixed. Including a photo is common and not unusual, but Dutch employers are also aware of bias concerns, and some have explicit policies against requesting photos. In practice, many Dutch CVs include a small professional photo, and it&rsquo;s generally acceptable. If you&rsquo;re applying to a large multinational with a US-headquartered HR function, lean toward omitting it; for Dutch SMEs and traditional sectors, inclusion is fine.</p>
+
+        <p><strong>Switzerland</strong> &mdash; Similar to Germany in professional culture, Swiss CVs traditionally include a photo &mdash; particularly for roles in German-speaking cantons. French-speaking Switzerland is somewhat more mixed, in line with French norms. For most Swiss applications, a professional headshot is appropriate and expected.</p>
+
+        <h2>If you do include a photo: what makes a good one</h2>
+
+        <p>In markets where a photo is expected, the quality of that photo matters. A poor photo is worse than no photo at all.</p>
+
+        <ul>
+            <li><strong>Headshot only.</strong> Shoulders and head, nothing below. Not a cropped group photo, not a travel selfie with a background removed badly.</li>
+            <li><strong>Neutral background.</strong> White, light grey, or a plain muted color. The focus should be on you, not what&rsquo;s behind you.</li>
+            <li><strong>Professional dress.</strong> Appropriate to the sector you&rsquo;re applying in. A suit for finance and law; smart-casual is fine for tech. Match the industry.</li>
+            <li><strong>Looking directly at the camera.</strong> A natural, confident expression. Not a smile so forced it looks uncomfortable, not a serious expression so severe it looks unapproachable.</li>
+            <li><strong>Recent.</strong> The photo should look like you look now. A headshot from ten years ago isn&rsquo;t just misleading &mdash; it can create an awkward moment in interviews.</li>
+            <li><strong>Well-lit.</strong> Natural light from a window works well. Avoid harsh shadows across your face.</li>
+        </ul>
+
+        <p>If you don&rsquo;t have a professional headshot, a modern smartphone and a plain wall will get you most of the way there. It doesn&rsquo;t need to be expensive. It just needs to look professional.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV handles photo placement automatically based on your selected target country. If you&rsquo;re generating a German Lebenslauf, the photo slot is included in the template and your uploaded image is placed appropriately. If you&rsquo;re generating a US or Australian resume, the photo is omitted entirely &mdash; regardless of whether you&rsquo;ve uploaded one &mdash; because it would work against you in that market.</p>
+
+        <p>You don&rsquo;t need to know the convention for each country. We&rsquo;ve built it in. What you need to know is which market you&rsquo;re targeting &mdash; the rest follows from there.</p>
+
+        <p>The countries that matter most in your job search have real differences in what they expect. Getting the basics right &mdash; including something as simple as whether to include a photo &mdash; signals that you know how the market works. That&rsquo;s a small advantage that costs you nothing.</p>
+    </article>
+</div>
+{% endblock %}

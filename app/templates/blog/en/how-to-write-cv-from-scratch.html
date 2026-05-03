@@ -1,0 +1,172 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>A strong CV is not a career diary &mdash; it's a targeted argument that you're the right person for a specific role.</strong> This guide covers every section, every decision, and the ATS rules that determine whether your CV gets read by a human at all.</p>
+
+        <p>Most CV advice falls into one of two traps: it's either too vague ("make sure your CV stands out!") or too focused on formatting aesthetics and not enough on substance. This guide tries to be neither. It's structured around the decisions you'll actually need to make, in roughly the order you'll face them.</p>
+
+        <h2>Before you start</h2>
+
+        <p>Before you write a single word, understand the two audiences your CV needs to satisfy &mdash; and the order it meets them.</p>
+
+        <p>The first audience is an <strong>Applicant Tracking System (ATS)</strong>. For most corporate roles and any company with a careers portal, your CV gets parsed by software before a human ever sees it. The ATS extracts text, identifies sections, and matches keywords against the job description. If it can't parse your CV cleanly &mdash; because of tables, columns, graphics, or non-standard section headings &mdash; your score drops regardless of your qualifications.</p>
+
+        <p>The second audience is a <strong>recruiter who'll give your CV about seven seconds on the first pass</strong>. That's not cynicism; it's what the research consistently shows. In that seven seconds, they're scanning for role relevance, tenure stability, and whether you look worth reading more carefully. Your CV needs to surface the most important signals immediately &mdash; not bury them in a wall of dense prose.</p>
+
+        <p>These two constraints point to the same design: clean structure, conventional headings, clear hierarchy, and well-chosen language that mirrors the role you're applying for. Write with both audiences in mind and you'll be well ahead of most applications in the pile.</p>
+
+        <h2>Contact details</h2>
+
+        <p>Your contact section should be the first thing at the top of the document. Keep it simple and complete.</p>
+
+        <p><strong>Include:</strong> your full name (in a slightly larger font to anchor the page), a professional email address, your phone number with country code if you're applying internationally, your city and country, and your LinkedIn URL if the profile is active and current.</p>
+
+        <p><strong>Do not include:</strong> your full street address &mdash; city and country are sufficient; your date of birth unless the application explicitly requires it; a photo unless you're applying in a country where it's expected (Germany, Japan, and some Middle Eastern markets); your nationality unless relevant; your marital status.</p>
+
+        <p>One note on email: if you're still using a university email or an account from an early-2000s provider with an embarrassing handle, change it. A professional email is one with your name and a mainstream provider. It takes ten minutes to set up and it matters more than people admit.</p>
+
+        <h2>The professional summary</h2>
+
+        <p>A professional summary sits below your contact details and above your work experience. It's 3&ndash;4 sentences, written in third person or implied first person (no "I"), and its job is to tell the recruiter immediately what you are and why they should keep reading.</p>
+
+        <p>The formula: <strong>role + years of experience + top strength + the value you bring</strong>.</p>
+
+        <p>Here's what that looks like for a mid-level professional: <em>"Senior product manager with eight years of experience across fintech and enterprise SaaS. Specializes in 0-to-1 product development and cross-functional alignment in complex organizations. Track record of launching products used by over two million people. Currently seeking a leadership role in a growth-stage company with a strong engineering culture."</em></p>
+
+        <p>That summary takes twelve seconds to read and tells the recruiter: what you are, how experienced you are, what you're best at, and what you're looking for. It's not poetry. It's a fast filter that works in your favor.</p>
+
+        <p>Don't write a summary that could apply to any professional in any field. "Motivated team player with strong communication skills and a passion for results" describes roughly half the planet. Be specific enough that removing your name from the summary would make it wrong for most other people.</p>
+
+        <h2>Work experience</h2>
+
+        <p>This is the core of your CV, and where most of the craft is. Structure each role with: company name, your job title, start and end dates (month and year), location, and then 3&ndash;5 bullet points.</p>
+
+        <p>List roles in reverse chronological order &mdash; most recent first. Recruiters expect this. Deviating from it without good reason is a red flag.</p>
+
+        <p>The bullets are where most CVs fail. The default is description: "Responsible for managing the marketing team." That tells the reader nothing about whether you were any good at it. The goal is achievement, not description.</p>
+
+        <p>The achievement formula is: <strong>action verb + context + result</strong>. "Led a team of six marketers to redesign the onboarding email sequence, reducing churn in the first 30 days by 22%." That's a bullet worth reading. The action verb makes you the agent. The context gives it scale and specificity. The result is why it matters.</p>
+
+        <p>Not every bullet needs a number. Some results are genuinely hard to quantify, and forcing a metric where there isn't a clean one produces vague claims ("improved performance by up to 30%") that recruiters see through immediately. Better to be honest and specific about what you did than to invent precision you can't back up. "Rebuilt the internal documentation structure, making onboarding for new engineers measurably faster" is weaker than a hard number but stronger than a fabricated one.</p>
+
+        <p><strong>Short tenures:</strong> if you have roles under a year, don't hide them &mdash; but don't over-explain them either. A single short tenure in a ten-year career is unremarkable. A pattern of short tenures needs to be addressable in the interview. If the short role was a contract, label it as such: "Six-month contract."</p>
+
+        <p><strong>Gaps:</strong> list them honestly and briefly. "Career break &mdash; parental leave, 2023&ndash;2024" or "Role made redundant in company restructure." One confident phrase is all you need. Gaps are common. The over-explanation draws more attention than the gap itself.</p>
+
+        <h2>Education</h2>
+
+        <p>For most professionals with more than two or three years of work experience, education goes <em>after</em> work experience. The exception is recent graduates, who should lead with education until their work experience overtakes it in relevance.</p>
+
+        <p><strong>Include:</strong> your degree and field of study, institution name, year of graduation. If you graduated within the last three years, you can include relevant modules, your dissertation topic if it's pertinent, or your GPA if it's strong and you're applying in a market where GPA is expected (the US more than most).</p>
+
+        <p><strong>Omit:</strong> high school once you have a university degree, unless you're a school leaver. Individual subject grades unless they're directly relevant and impressive. Graduation year if you're concerned about age discrimination &mdash; you're not legally required to include it, though omitting it looks slightly evasive.</p>
+
+        <p>If you have an advanced degree, list it first. If you have multiple degrees from similar tiers, list the most recent or most relevant first.</p>
+
+        <h2>Skills</h2>
+
+        <p>The skills section is often either underpopulated (a five-word list at the bottom) or absurdly inflated (forty soft skills that mean nothing without evidence). Neither works.</p>
+
+        <p>For <strong>technical skills</strong>, group them by category: programming languages, frameworks, data tools, platforms, and so on. The grouping makes the section scannable. Include things you can actually discuss in an interview &mdash; not skills you "know a bit" from one course five years ago.</p>
+
+        <p>For <strong>soft skills</strong>: only list them if you back them up in your experience bullets. "Strong communicator" listed in a skills section with no supporting evidence is noise. "Facilitated weekly cross-functional reviews across engineering, product, and sales during a company-wide replatforming" in your experience section demonstrates communication without needing to label it.</p>
+
+        <p>Don't list Microsoft Office as a skill unless the role specifically mentions it and you're applying for an administrative position. For most professional roles, it's assumed. Listing it as a featured skill signals either inexperience or poor judgment about what to include.</p>
+
+        <h2>Optional sections</h2>
+
+        <p>Beyond the core sections, a range of optional sections may strengthen your CV depending on your field and career stage.</p>
+
+        <p><strong>Certifications:</strong> include if they're actively screened for in your target roles. A PMP for a project manager, AWS certifications for a cloud engineer, a CFA for a finance professional. Include the issuing body and year. Don't pad the list with certifications that aren't relevant to the roles you're applying for.</p>
+
+        <p><strong>Projects:</strong> valuable for tech and creative professionals, especially if your best work was done outside formal employment. Include project name, a one-line description, your role, and a link if there's something publicly viewable.</p>
+
+        <p><strong>Languages:</strong> always include if you're multilingual. Use standard proficiency levels &mdash; native, professional, conversational &mdash; and be honest. "Conversational Spanish" is fine. "Professional working proficiency" when you can barely hold a meeting is not.</p>
+
+        <p><strong>Volunteering:</strong> include if it's substantive and recent. A board role at a community organization, a significant contribution to an open-source project, or a mentorship program shows something real. Listing a one-time participation from 2016 does not.</p>
+
+        <h2>Formatting</h2>
+
+        <p>This is where most people spend too much of their energy and make the most ATS-hostile decisions. Here are the constraints that actually matter.</p>
+
+        <p><strong>Layout:</strong> single column. Two-column layouts break ATS parsing in ways that are difficult to predict. A recruiter's eye naturally scans top-to-bottom; a well-structured single column respects that.</p>
+
+        <p><strong>Fonts:</strong> use a standard serif or sans-serif. Calibri, Arial, Georgia, Garamond, or similar. Body text at 10&ndash;12pt, section headings at 12&ndash;14pt. Anything smaller than 10pt is hard to read on screen; anything larger than 14pt for body text looks unpolished.</p>
+
+        <p><strong>Spacing:</strong> generous white space makes a document easier to scan. Don't compress everything together to fit one page. Use consistent spacing between sections.</p>
+
+        <p><strong>No tables, no text boxes, no graphics, no icons.</strong> These elements render unpredictably across ATS platforms and often cause key information to be dropped entirely.</p>
+
+        <p><strong>Length:</strong> one page if you have fewer than five years of experience; two pages for most professionals; three pages for very senior roles where the additional content is substantive. Length is a tool, not a goal. Don't pad to fill a page, and don't compress ten years of meaningful work onto one page out of misplaced adherence to a rule that doesn't apply to you.</p>
+
+        <p><strong>File format:</strong> PDF, named <code>FirstName-LastName-CV.pdf</code>. Not "cv.pdf," not "my resume final v3.pdf," not a Word document unless the application explicitly requires it.</p>
+
+        <h2>ATS optimization</h2>
+
+        <p>Three principles cover most of ATS optimization. First, <strong>mirror the language of the job description</strong>. If the role says "stakeholder management," use that phrase, not "managing relationships with internal clients." They may be equivalent to you; they're not equivalent to a keyword matcher.</p>
+
+        <p>Second, <strong>include both spelled-out and abbreviated versions</strong> of key terms where they differ: "Search Engine Optimization (SEO)," "agile / Scrum." Some ATS systems match on one but not the other.</p>
+
+        <p>Third, <strong>use standard section headings</strong>. "Work Experience," "Education," "Skills," "Professional Summary." Not creative alternatives. The parser needs to classify your sections correctly to score them appropriately.</p>
+
+        <h2>Country considerations</h2>
+
+        <p>CV conventions vary meaningfully by country. Length expectations, photo requirements, personal details, and even section ordering differ between markets. The Australian CV and the US resume are more similar than either is to a German Lebenslauf or a Japanese rirekisho. If you're applying across borders, a one-size-fits-all approach will work poorly.</p>
+
+        <p>We cover country-specific formats in detail in separate posts. The core international rule of thumb: research expectations for each target market before applying, and don't assume what's standard in your home country applies everywhere.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>This guide gives you a complete picture of what a strong CV looks like and why. You can write one yourself using it &mdash; and if you have the time and enjoy the process, you should.</p>
+
+        <p>QuillCV generates a tailored version of your CV for each specific job in minutes. It analyzes the job description, extracts the keywords and requirements, and produces a CV that mirrors the role's language, uses ATS-compatible formatting throughout, and applies the right country format for the market you're targeting. You review it, adjust anything that doesn't feel accurate, and submit.</p>
+
+        <p>Writing one strong general CV is a few hours of work. Tailoring it well for each application &mdash; across different roles, different companies, different countries &mdash; is ongoing effort. That's the part we handle.</p>
+
+    </article>
+</div>
+{% endblock %}

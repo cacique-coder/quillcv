@@ -1,0 +1,119 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Spring is peak hiring season, and most CVs aren't ready for it.</strong> March through May is when the best companies fill the most roles. If your CV hasn't been touched since last year, it may cost you a conversation you could have had.</p>
+
+        <p>This isn't a full rewrite. It's an audit &mdash; a systematic pass through your CV to catch everything that's drifted out of date, out of focus, or out of working order. Set aside an hour. Work through this list. You'll be done before the season peaks.</p>
+
+        <ol>
+            <li>
+                <strong>Update your most recent role's achievements.</strong>
+                <p>Your most recent position is the first thing recruiters focus on. If the last six months included a significant delivery, a promotion, a process improvement with a measurable result, or anything that demonstrates impact, it belongs on your CV. Don't let strong recent work go undocumented because you haven't updated the document since you first took the role.</p>
+            </li>
+            <li>
+                <strong>Check your employment dates are correct and current.</strong>
+                <p>It sounds trivial. It isn't. CVs updated piecemeal over years sometimes have date errors that nobody caught: a role listed as ongoing when it ended two years ago, incorrect start months, years that don't add up correctly. A recruiter who spots a date inconsistency will wonder what else is wrong. Verify every date, especially the current role's start date and any roles with only a year listed instead of month and year.</p>
+            </li>
+            <li>
+                <strong>Review your professional summary &mdash; does it still reflect your current direction?</strong>
+                <p>Summaries are written at a moment in time for a particular goal. If your direction has shifted &mdash; a new specialization, a change in the type of role you're targeting, a seniority shift &mdash; your summary may still be pointing the old way. Read it fresh. Does it describe the professional you are now, or the one you were two years ago? Rewrite if it doesn't.</p>
+            </li>
+            <li>
+                <strong>Run the keyword check for your target roles.</strong>
+                <p>Pull up three or four current job postings for the roles you're targeting. Compare the language in those postings to the language in your CV. Are the key terms &mdash; specific tools, methodologies, qualifications &mdash; present in your document? ATS systems match keywords. If the job posting says "stakeholder management" and your CV says "managing internal relationships," you may score lower than a candidate with equivalent experience whose language matches. Update your CV to mirror the current language of your target roles.</p>
+            </li>
+            <li>
+                <strong>Remove anything over 15 years old unless it's directly relevant.</strong>
+                <p>Work history from more than 15 years ago is usually noise rather than signal. A role from 2008 is rarely what's going to get you the interview in 2027. Exception: if that older role is foundational to your professional identity &mdash; a founding role, a career-defining position, a role in a highly specialized field where continuity matters &mdash; keep it. Otherwise, cut or condense to a single line.</p>
+            </li>
+            <li>
+                <strong>Verify all links work.</strong>
+                <p>LinkedIn, GitHub, portfolio sites, case study links, published articles. Broken links signal either inattention or that the linked content no longer exists &mdash; neither is a good look. Click every link from the PDF. Verify it loads. Check that the content at the other end still represents you well.</p>
+            </li>
+            <li>
+                <strong>Check your LinkedIn matches your CV.</strong>
+                <p>Recruiters cross-reference constantly. Job titles, company names, dates, and the broad shape of your career should align between your CV and your LinkedIn profile. Discrepancies &mdash; even small ones like different job titles for the same role &mdash; create doubt. If your CV has been updated but your LinkedIn hasn't, now is the time.</p>
+            </li>
+            <li>
+                <strong>Add any new certifications, courses, or qualifications.</strong>
+                <p>Completed something in the last year? A professional certification, an online course with a credential, an industry qualification? If it's relevant to your target roles, it belongs on your CV. Even short courses from credible providers signal ongoing professional development &mdash; which matters more now than it used to in a market where skills currency is scrutinized closely.</p>
+            </li>
+            <li>
+                <strong>Update your skills section &mdash; remove outdated tools, add current ones.</strong>
+                <p>Skills sections drift. Technologies you listed because they were relevant in 2021 may now be deprecated, replaced, or simply no longer worth featuring. New tools you use daily may not appear at all. Do a fresh pass: remove anything you'd be uncomfortable discussing in an interview, and add any current tools or platforms that appear in your target job postings.</p>
+            </li>
+            <li>
+                <strong>Check your contact details.</strong>
+                <p>Phone number, email address, city and country. If you've moved, changed your phone, or switched email providers, your CV may be directing interested parties to a dead end. This is an embarrassingly common reason for missed opportunities. Verify every contact detail is current and that you actively monitor the listed email.</p>
+            </li>
+            <li>
+                <strong>Review the formatting in a PDF preview.</strong>
+                <p>Changes made in a word processor don't always render cleanly to PDF. A bullet that appeared correct in edit mode may have shifted. Spacing may have broken. A page may have split at an awkward point. Open the actual PDF, the file you'd submit, and read through it as a recruiter would. Fix anything that looks wrong.</p>
+            </li>
+            <li>
+                <strong>Check your file name.</strong>
+                <p>The file should be named <code>FirstName-LastName-CV.pdf</code>. Not <code>cv_final_v3_march.pdf</code>. Not <code>resume (2).pdf</code>. Not your old name if you've had a name change. The file name is the first impression of your organizational sense. It's a small thing that takes ten seconds and signals competence.</p>
+            </li>
+            <li>
+                <strong>Check for any unexplained recent gaps.</strong>
+                <p>If your most recent role ended several months ago and your CV doesn't acknowledge the gap in any way, a recruiter will notice. You don't need a paragraph &mdash; a brief phrase in the employment dates is enough: "Career break &mdash; caregiving," or "Freelance consulting, 2026&ndash;present." Silence about a recent gap reads as evasion; brief acknowledgment reads as honesty.</p>
+            </li>
+            <li>
+                <strong>Review your education section.</strong>
+                <p>Once you have a degree and several years of experience, high school education doesn't belong on your CV. Module lists from a degree you completed a decade ago don't belong either. Check whether your education section reflects your current career stage. Senior professionals sometimes carry education sections that take up significant space with information that's long since been overtaken by their work history.</p>
+            </li>
+            <li>
+                <strong>Ask yourself: if a recruiter called about this CV tomorrow, would you feel confident?</strong>
+                <p>This is the real test. Not whether the CV is technically complete, but whether you'd be comfortable walking into a conversation based on what it says. If there's something on it you'd want to explain away, qualify, or apologize for &mdash; a title that overstates your seniority, achievements you can't back up, a skills list that includes things you'd struggle to discuss &mdash; fix it now. The confidence you feel about your CV comes through when you're in the interview.</p>
+            </li>
+        </ol>
+
+        <p>Spring is short. The companies worth working for hire in March, April, and May &mdash; then slow down over summer. This audit takes an hour. Don't let a stale CV cost you a conversation you could have had.</p>
+
+    </article>
+</div>
+{% endblock %}

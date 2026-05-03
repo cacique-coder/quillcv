@@ -1,0 +1,124 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Most CVs describe jobs. The ones that land interviews describe impact.</strong> The difference between a duty and an achievement isn't a numbers problem &mdash; it's a framing problem &mdash; and you can fix it for almost any role, even ones that never touch a spreadsheet.</p>
+
+        <p>The "quantify your achievements" advice gets thrown at every job seeker regardless of field. And then a primary school teacher or a ward nurse sits down to write their CV and stares at the screen, wondering what metric they're supposed to put on "taught a class" or "provided patient care."</p>
+
+        <p>This is where most people give up and fall back to listing duties. Which is exactly what everyone else does. Which is exactly why most CVs look the same.</p>
+
+        <p>There's a better way. And it works whether your job produces revenue reports or it doesn't.</p>
+
+        <h2>Duties vs achievements: the difference</h2>
+
+        <p>A duty tells a recruiter what your job was. An achievement tells them what you did with it.</p>
+
+        <p>"Responsible for client onboarding" tells me the task was assigned to you. "Redesigned the client onboarding process and reduced time-to-active from three weeks to ten days" tells me what you did with that responsibility and what changed as a result.</p>
+
+        <p>ATS systems score keyword matches either way &mdash; the word "onboarding" appears in both. But the human who reads past the ATS filter makes a judgment call about which candidate sounds like someone who gets things done and which sounds like someone who showed up. You want to be in the first group.</p>
+
+        <p>This matters even more in roles where everyone has the same basic duties. Every nurse does patient assessments. Every teacher writes lesson plans. Every project manager runs meetings. The CV that stands out is the one that shows what you did with those standard responsibilities &mdash; what you improved, built, fixed, or delivered.</p>
+
+        <h2>The formula: action + context + result</h2>
+
+        <p>Every strong CV bullet follows a pattern. You don't need to memorize it as a formula, but it's useful to check your work against it:</p>
+
+        <p><strong>[Strong action verb] + [what you did / the scale / the context] + [what happened as a result]</strong></p>
+
+        <p>The action verb does the heavy lifting at the start: led, built, redesigned, reduced, trained, implemented, launched, streamlined. Not "was responsible for," not "helped with," not "assisted in." Own what you did.</p>
+
+        <p>The context gives scale and specificity: for a team of 12, across three departments, covering 200 students, in a 6-month project, from scratch, across two sites. Without context, results are hard to evaluate. With it, they're compelling.</p>
+
+        <p>The result closes the loop: reduced errors by 30%, cut average wait time from 45 to 20 minutes, onboarded eight new hires in the first quarter, completed two weeks ahead of schedule. Results don't have to be percentages &mdash; they can be scale, frequency, time, or quality.</p>
+
+        <h2>When you don't have hard numbers</h2>
+
+        <p>You don't need a financial metric to write a strong achievement. Numbers are the clearest signal, but they're not the only one. Consider what you can qualify along these dimensions:</p>
+
+        <ul>
+            <li><strong>Scale:</strong> How many people, students, patients, clients, products, sites?</li>
+            <li><strong>Frequency:</strong> Daily, weekly, per quarter? How often did this happen?</li>
+            <li><strong>Time:</strong> How long did it take? Did you hit a deadline? Did you reduce a timeline?</li>
+            <li><strong>Team:</strong> How many people were involved? Did you lead them?</li>
+            <li><strong>Before and after:</strong> What was the situation before you intervened? What changed?</li>
+            <li><strong>Scope:</strong> Was this the first time something was done? Did you build from scratch?</li>
+        </ul>
+
+        <p>A nurse who reduced average patient wait times, a teacher who achieved the school's highest literacy improvement rate in a low-decile cohort, an operations manager who implemented a process that's still in place three years later &mdash; none of these need a revenue figure. They need specificity and an outcome.</p>
+
+        <h2>Before &amp; after examples</h2>
+
+        <p><strong>Primary school teacher</strong><br>
+        <strong>Before:</strong> Responsible for teaching literacy and numeracy to Year 3 students.<br>
+        <strong>After:</strong> Designed and delivered a differentiated literacy program for 28 Year 3 students, with 85% achieving at or above expected level &mdash; up from 61% the previous year.</p>
+
+        <p><strong>Operations manager</strong><br>
+        <strong>Before:</strong> Managed day-to-day warehouse operations and oversaw staff scheduling.<br>
+        <strong>After:</strong> Restructured shift scheduling for a 40-person warehouse team, reducing overtime costs by 22% while maintaining same-day dispatch rate above 97%.</p>
+
+        <p><strong>UX designer</strong><br>
+        <strong>Before:</strong> Responsible for designing user interfaces across web and mobile products.<br>
+        <strong>After:</strong> Led UX redesign of the core mobile onboarding flow, reducing drop-off at step 3 from 48% to 19% based on post-launch analytics over 90 days.</p>
+
+        <p><strong>Registered nurse</strong><br>
+        <strong>Before:</strong> Provided patient care and medication administration in a surgical ward.<br>
+        <strong>After:</strong> Managed care for up to 8 post-surgical patients per shift in a high-acuity ward; implemented a bedside handover protocol adopted across the unit that reduced after-handover queries by roughly a third.</p>
+
+        <p><strong>Project manager</strong><br>
+        <strong>Before:</strong> Managed projects from initiation through to delivery, coordinating with stakeholders and managing timelines.<br>
+        <strong>After:</strong> Delivered a 14-month infrastructure migration project on schedule and 8% under budget, coordinating a cross-functional team of 11 across three time zones and two vendors.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>One of the hardest parts of writing achievement-focused bullet points is objectivity &mdash; it's difficult to evaluate your own experience from the outside. When you upload your existing CV and a target job description, QuillCV helps reframe what you've provided as outcomes where possible. We look at what you've described, match it against what the role values, and rewrite your experience in the language of impact rather than duty.</p>
+
+        <p>You'll still need to verify the specifics &mdash; the numbers, the team sizes, the timeframes. We can't invent those. But we can reshape generic descriptions into achievement-oriented statements that reflect what you've actually done in the terms that matter most to the people reading your application.</p>
+
+        <p>Every role creates results. Your job is to find them. Our job is to make sure they're stated clearly enough that a recruiter reading for six seconds can't miss them.</p>
+    </article>
+</div>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Post-interview silence is one of the most demoralizing parts of job searching, and in the majority of cases it has nothing to do with how you performed.</strong> Understanding why it actually happens &mdash; and what to do about it &mdash; makes it easier to move forward without spiraling.</p>
+
+        <p>You researched the company. You prepared answers. The interview went well &mdash; or at least, it felt like it did. You sent a thank-you the next day. And then: nothing. A week passes. Two weeks. You send a follow-up. Nothing.</p>
+
+        <p>This is so common it has a name now. Being ghosted after an interview is a near-universal job search experience. It&rsquo;s also genuinely awful, because the silence leaves you with no information and nowhere to put the uncertainty.</p>
+
+        <p>Here&rsquo;s the honest picture of what&rsquo;s actually happening.</p>
+
+        <h2>First &mdash; it&rsquo;s rarely about your interview</h2>
+
+        <p>The instinct when silence hits is to replay the interview and find the moment you lost it. The answer you stumbled on. The question you should have asked. The salary discussion that went awkward.</p>
+
+        <p>For the most part, that analysis is misdirected. Research consistently shows that a significant proportion of post-interview ghosting is process-related rather than performance-related. One study of hiring managers found that in over 60% of cases where candidates went uncontacted after an interview, the delay or silence was caused by internal factors that had nothing to do with candidate quality.</p>
+
+        <p>If the interview happened, you already cleared the first filter. The CV did its job. The recruiter or hiring manager thought enough of your application to spend time with you. What happens next is often outside your control &mdash; and often has nothing to do with you at all.</p>
+
+        <h2>The real reasons</h2>
+
+        <p>Here is what&rsquo;s actually happening on the other side of the silence:</p>
+
+        <p><strong>An internal candidate emerged.</strong> This is one of the most common reasons. Many companies are required to post roles externally even when they have an internal candidate in mind. They interview external candidates to fulfill the process. If the internal candidate decides they want the role after all, external candidates are simply not contacted. It feels personal. It isn&rsquo;t.</p>
+
+        <p><strong>The role was put on hold.</strong> Budget cycles, restructures, leadership changes, and shifting priorities all affect hiring. A role that was live when you interviewed may have been paused by the time a decision needed to be made. This happens with surprising frequency, and most companies handle it poorly &mdash; candidates are not told because &ldquo;it&rsquo;s easier&rdquo; or simply because nobody on the hiring team took responsibility for the communication.</p>
+
+        <p><strong>The hiring manager changed.</strong> If the person who interviewed you left, changed roles, or got pulled onto another priority, the hiring process for your role may have been effectively abandoned. No one owns the process, so no one sends the update.</p>
+
+        <p><strong>A budget freeze.</strong> Even at large, well-funded companies, headcount approvals can be reversed at short notice. The team had approval to hire in Q2, then something changed, and the role was frozen. The people involved in the interview process often have no clear instruction on what to tell candidates, so they tell them nothing.</p>
+
+        <p><strong>A company restructure started.</strong> If a company is going through a reorganization &mdash; even a minor one &mdash; hiring often pauses entirely while reporting lines and team structures are worked out. Candidates in the pipeline are left waiting.</p>
+
+        <p><strong>They just have poor process.</strong> Some companies are simply disorganized. The recruiter moved on, the hiring manager is stretched, nobody owns the candidate experience, and the ATS has 30 open roles with no one actively managing the pipeline. This is frustrating but very common. It&rsquo;s not a reflection of your value.</p>
+
+        <h2>What to do &mdash; the follow-up sequence</h2>
+
+        <p>There&rsquo;s a sequence that works well and doesn&rsquo;t make you look desperate or aggressive.</p>
+
+        <p><strong>Within 24 hours of the interview:</strong> Send a short, specific thank-you note. Reference one thing from the conversation &mdash; a topic that came up, something you found interesting about their approach, a question they asked that you&rsquo;ve been thinking about since. This is not optional. It&rsquo;s expected in the US and UK markets, and it&rsquo;s a useful signal of professionalism in most others.</p>
+
+        <p><strong>When the stated timeline passes:</strong> If the interviewer said &ldquo;we&rsquo;ll be in touch by the end of next week&rdquo; and that date has passed, send a brief follow-up. Keep it short. &ldquo;I wanted to follow up on my interview for the [Role] position &mdash; I understand you were aiming to make a decision around [date]. I&rsquo;m still very interested in the role and happy to provide anything else that would be helpful.&rdquo; That&rsquo;s it.</p>
+
+        <p><strong>One more follow-up if the silence continues:</strong> If another week passes with no response, one final message is appropriate. Something like: &ldquo;I realize you&rsquo;re likely very busy, and I don&rsquo;t want to pester you. I&rsquo;m still interested in this role and wanted to check whether the process is still active before I commit to another opportunity.&rdquo; That last line is useful &mdash; it gives them a reason to respond and frames your follow-up as practical rather than anxious.</p>
+
+        <p><strong>Then move on.</strong> Two follow-ups with no response is a complete sequence. Anything beyond that shifts from professional persistence to something that could genuinely harm your candidacy &mdash; or at minimum, your own mental wellbeing.</p>
+
+        <h2>When to genuinely move on</h2>
+
+        <p>Two follow-ups with no response means you move on. Not metaphorically &mdash; actually. Take the role off your mental pipeline. Stop checking your email for that company&rsquo;s name. Put your energy into other applications.</p>
+
+        <p>This is important: letting one company&rsquo;s unresponsiveness stall your entire search is a cost you shouldn&rsquo;t pay. While you&rsquo;re waiting, other opportunities are moving. The job that was right for you might be at a company that has a functioning hiring process and will actually tell you where you stand.</p>
+
+        <p>One caveat: if the company does come back months later &mdash; which happens, especially after budget freezes lift &mdash; you can respond with professionalism and decide at that point whether you&rsquo;re still interested. You don&rsquo;t owe them urgency just because they&rsquo;re finally paying attention.</p>
+
+        <h2>What it&rsquo;s not telling you about your CV</h2>
+
+        <p>Ghosting after an interview is almost never a CV problem. Your CV already did everything it was supposed to do &mdash; it got you into the room. The fact that you got to the interview stage means the document worked. Whatever happened after that is a different failure at a different stage of a different process.</p>
+
+        <p>It&rsquo;s worth saying this clearly because the temptation after repeated ghosting is to start over &mdash; to rewrite your CV, change your approach, lower your targets. Sometimes that&rsquo;s the right move. But if you&rsquo;re getting to interviews and then hitting silence, the CV isn&rsquo;t the issue. The issue is the pipeline dynamics on the other side of the table, the quality of the companies you&rsquo;re targeting, and sometimes just bad luck with timing.</p>
+
+        <p>If you&rsquo;re sending applications and not getting to interviews, that&rsquo;s when you look at the CV. These are different problems.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>Our part of this process ends when you walk into the interview. QuillCV is built to give you the best possible shot at getting that interview &mdash; an ATS-optimized CV tailored to each role, formatted correctly for your target market, with your experience positioned in terms the employer is looking for.</p>
+
+        <p>What happens after the interview is between you and them. We can&rsquo;t control whether the hiring manager changes or the budget gets frozen. What we can do is make sure that when an interview opportunity comes up, your CV was the reason you got it.</p>
+
+        <p>The silence isn&rsquo;t a verdict on your value. It&rsquo;s an information gap &mdash; and most of the time, it says far more about the company&rsquo;s process than it does about you.</p>
+    </article>
+</div>
+{% endblock %}

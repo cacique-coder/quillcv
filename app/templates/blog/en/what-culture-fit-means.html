@@ -1,0 +1,102 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>"Culture fit" is one of the most common phrases in job ads and one of the least defined.</strong> It can mean genuine working-style compatibility &mdash; or it can be polite cover for something the company shouldn't admit out loud. Here's how to tell the difference.</p>
+
+        <h2>The phrase nobody defines</h2>
+
+        <p>You'll see it everywhere. "Must be a strong culture fit." "Looking for someone who thrives in our culture." "Cultural alignment is important to us." Rarely does the job ad say anything more specific than that.</p>
+
+        <p>That vagueness is itself a signal. When a company has a clearly articulated culture &mdash; one they've thought about, debated, and written down &mdash; they tend to describe it. They say things like "we move fast and document everything," or "our team works autonomously; check-ins are weekly, not daily," or "we're a distributed team that over-communicates in writing." Those are real descriptions. You can evaluate yourself against them.</p>
+
+        <p>When the ad just says "culture fit," it usually means one of two things: the hiring manager hasn't been given language to describe their culture, or the description would be too revealing if they tried.</p>
+
+        <h2>What companies say vs. what they mean</h2>
+
+        <p>The spectrum is wide. On the good end, "culture fit" genuinely means working style. Some teams are heads-down and asynchronous. Others are collaborative and meeting-heavy. Some move fast and tolerate ambiguity; others are process-driven. These are real differences, and a mismatch on any of them will make both parties miserable. Screening for them isn't wrong.</p>
+
+        <p>In the middle of the spectrum, "culture fit" means personality type. "We want someone who's passionate, low-ego, and doesn't mind rolling up their sleeves." That's still defensible &mdash; most teams do have a working personality, and it matters whether you'll click with the people you spend 40 hours a week with.</p>
+
+        <p>On the bad end, "culture fit" becomes demographic filtering. Teams that keep hiring the same profile &mdash; same university pipeline, same social background, same demographic &mdash; often justify it as culture fit. There's research on this. Studies of hiring decisions find that "culture fit" judgments correlate more strongly with shared leisure interests and social class markers than with actual job performance. That's not a culture; it's a preference for people who feel familiar.</p>
+
+        <p>The problem is you can't always tell from the outside which version a company is running.</p>
+
+        <h2>How to read between the lines</h2>
+
+        <p>Some signals help narrow it down. Look at the <strong>team page</strong>. Does it show genuine diversity across gender, background, and experience level &mdash; or does everyone look like a variation of the same person? The team page is the company's own curated image of themselves. If it's homogeneous, take that seriously.</p>
+
+        <p>Check <strong>Glassdoor reviews</strong> for any mention of culture fit in the context of exclusion, cliques, or "not the right type." One mention means nothing; a pattern across multiple reviewers means something. Also look for reviews that describe who gets promoted vs. who stalls out &mdash; that tells you what the culture actually rewards.</p>
+
+        <p>Read the full job ad for <strong>loaded language</strong>. "Family atmosphere," "work hard, play hard," "we move fast &mdash; if you need a lot of structure, this isn't the right place," "looking for someone hungry and driven." Some of these are genuine working style signals. Others are proxies for overwork culture, or for a team that mistakes chaos for speed. Parse them carefully.</p>
+
+        <p>Look at <strong>LinkedIn profiles</strong> of people in similar roles at the company. How long do they stay? Short average tenures suggest a culture that burns through people. Check whether their career trajectory accelerated or stalled after their time there.</p>
+
+        <h2>When to apply anyway</h2>
+
+        <p>Even if the phrasing feels vague or slightly concerning, the role might still be worth pursuing. Vague job ads don't automatically mean toxic workplaces. Sometimes they just mean the HR team wrote a generic posting.</p>
+
+        <p>The right move is to apply and use the interview to gather real data. A first-round interview tells you a lot about how the company treats candidates &mdash; whether they're organized, whether the interviewer actually read your CV, whether they can articulate what they're looking for. The interview process is a preview of what it's like to work there.</p>
+
+        <p>Ask specific questions. "Can you describe the team's working rhythm &mdash; how decisions get made, how often the team syncs?" is more useful than "tell me about your culture." Ask about recent team changes. Ask what the onboarding process looks like. Ask what success looks like in the first 90 days. These questions surface real information, and the quality of the answers will tell you more than any job ad.</p>
+
+        <h2>What you can and can't control</h2>
+
+        <p>You can't optimize your personality for culture fit, and you shouldn't try. The version of yourself that passes a culture fit screen by performing enthusiasm or conformity is the version that will be miserable six months into the role. The goal isn't to get every job &mdash; it's to get the right ones.</p>
+
+        <p>What you <em>can</em> control is the quality of the information you gather before accepting. Use the interview process as a two-way evaluation. Pay attention to how you feel in the room. Notice whether the people interviewing you are the kind of people you'd want to work alongside. Culture is experienced in the specifics &mdash; in how a disagreement gets handled, in whether people seem energized or depleted, in whether your questions get real answers or polished ones.</p>
+
+        <p>If a company screens you out for culture fit without a substantive conversation, that's probably fine. The filter is working in your favor too.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>Your CV gets you to the interview. The culture fit conversation &mdash; the real one &mdash; happens face to face, not on paper. What your CV can do is accurately represent your experience, your working style signals, and the kind of problems you're good at solving. That's enough to get you into the room. The rest is on you.</p>
+
+        <p>A strong, tailored CV opens the door. The culture fit question is what you ask once you're through it.</p>
+
+    </article>
+</div>
+{% endblock %}

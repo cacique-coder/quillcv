@@ -1,0 +1,142 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>A dev CV packed with framework names and no measurable outcomes will get filtered out before a human ever reads it.</strong> Hiring managers want to know what you shipped, what changed because of it, and whether you can operate at the level the role demands &mdash; not which technologies you&rsquo;ve touched.</p>
+
+        <p>Software engineers are often worse at writing CVs than people in less technical fields. That&rsquo;s not an insult &mdash; it&rsquo;s a structural problem. Engineers spend their careers describing what systems do, not what they personally accomplished. When it comes time to write a CV, that habit shows up in the worst possible way.</p>
+
+        <p>Here&rsquo;s what separates the CVs that get interviews from the ones that don&rsquo;t.</p>
+
+        <h2>The mistake most dev CVs make</h2>
+
+        <p>The single most common error on engineer CVs is listing technology instead of impact. It looks like this:</p>
+
+        <ul>
+            <li>Used React to build frontend components</li>
+            <li>Worked with PostgreSQL and Redis</li>
+            <li>Implemented REST APIs using FastAPI</li>
+        </ul>
+
+        <p>Every candidate applying for that role has &ldquo;used React.&rdquo; That bullet tells a hiring manager nothing about you specifically. It doesn&rsquo;t differentiate you from the other 80 applicants who also listed React.</p>
+
+        <p>Compare it to this: <em>&ldquo;Rebuilt the customer dashboard in React, reducing average page load time from 4.8s to 1.9s and increasing daily active usage by 34%.&rdquo;</em></p>
+
+        <p>Same technology. Completely different signal. The second version tells the hiring manager that you shipped something, it worked, and you measured the outcome. That&rsquo;s what they&rsquo;re actually hiring for.</p>
+
+        <p>The formula is simple: <strong>what you did + what technology + what changed</strong>. Not every bullet will have a hard metric, but most can. Dig into your memory. What did the system do before? What did it do after? How many users? How much time saved? Even rough numbers are better than none.</p>
+
+        <h2>Skills section done right</h2>
+
+        <p>The skills section of a dev CV is both essential and frequently embarrassing. Two failure modes are common.</p>
+
+        <p><strong>The wall of logos:</strong> listing every language, framework, database, tool, and cloud provider you&rsquo;ve ever typed in. It reads as filler, and it raises immediate questions. Do you actually know all of these? At what depth?</p>
+
+        <p><strong>The lie:</strong> listing things you once used in a tutorial six years ago, or that you&rsquo;d fail a basic technical screen on. Don&rsquo;t do this. Interviewers will ask about your skills. If you can&rsquo;t talk to something intelligently, take it off.</p>
+
+        <p>The right approach is to group skills by category and be honest about proficiency where it matters:</p>
+
+        <ul>
+            <li><strong>Languages:</strong> Python (primary), Go (proficient), TypeScript (working knowledge)</li>
+            <li><strong>Frameworks:</strong> FastAPI, Django, React</li>
+            <li><strong>Databases:</strong> PostgreSQL, Redis, BigQuery</li>
+            <li><strong>Infrastructure:</strong> AWS (EC2, S3, RDS), Docker, Terraform</li>
+        </ul>
+
+        <p>Honest proficiency indicators are a feature, not a weakness. They show self-awareness, which is a trait every senior engineer needs.</p>
+
+        <h2>Describing your projects</h2>
+
+        <p>Side projects, open source contributions, and personal work can add real signal to a dev CV &mdash; but only if you describe them correctly.</p>
+
+        <p>For each project, answer three questions:</p>
+
+        <ul>
+            <li><strong>What does it do?</strong> One sentence. No jargon. If you can&rsquo;t explain it simply, you don&rsquo;t understand it well enough to present it.</li>
+            <li><strong>What did you specifically build?</strong> Not the project overall &mdash; your contribution. The auth system, the data pipeline, the deploy tooling.</li>
+            <li><strong>Does it handle anything at scale?</strong> If it processes real data, serves real users, or runs under load &mdash; say so. Numbers are compelling.</li>
+        </ul>
+
+        <p>One important note on GitHub links: only include them if the repository is maintained and readable. A link to a private repo, a repo with a single commit from 2019, or a repo with no README does not help your application. If the code isn&rsquo;t something you&rsquo;d be comfortable walking through in an interview, leave the link out.</p>
+
+        <h2>Impact over tech stack</h2>
+
+        <p>Hiring managers are trying to answer one question: what will this person contribute? They are not checking off framework names. They are asking whether you make things better.</p>
+
+        <p>&ldquo;Led migration from monolith to microservices&rdquo; is interesting. &ldquo;Led migration from monolith to microservices, reducing deployment time from 45 minutes to 8 minutes and enabling independent scaling of the payments service, which was under highest load&rdquo; is a hire.</p>
+
+        <p>For each role on your CV, ask yourself: what was different because I was there? If you can&rsquo;t answer that, you probably haven&rsquo;t dug deep enough. Talk to the outcomes, not the inputs.</p>
+
+        <p>Some examples of the shift:</p>
+
+        <ul>
+            <li><strong>From:</strong> &ldquo;Wrote unit tests for backend services&rdquo; &rarr; <strong>To:</strong> &ldquo;Increased test coverage from 34% to 81%, catching a class of regression bugs that had previously reached production quarterly&rdquo;</li>
+            <li><strong>From:</strong> &ldquo;Worked on CI/CD pipeline&rdquo; &rarr; <strong>To:</strong> &ldquo;Rebuilt CI/CD pipeline, cutting average build time by 60% and unblocking the team from a daily bottleneck&rdquo;</li>
+            <li><strong>From:</strong> &ldquo;Contributed to API design&rdquo; &rarr; <strong>To:</strong> &ldquo;Designed public API consumed by 12 enterprise clients; kept backward-compatible through three major product iterations&rdquo;</li>
+        </ul>
+
+        <h2>AU and US differences for tech roles</h2>
+
+        <p>If you&rsquo;re applying in both markets &mdash; or switching between them &mdash; there are a few differences worth knowing.</p>
+
+        <p><strong>Length:</strong> US tech roles typically expect a one-page CV for engineers with under ten years of experience. Australian employers are more flexible; two pages is standard and accepted even at the five-year mark. Don&rsquo;t try to compress a rich career history into one page for an Australian audience.</p>
+
+        <p><strong>GitHub and portfolio links:</strong> More expected in the US, especially for product and startup roles. Australian job ads are less likely to ask for them explicitly, but including a strong profile doesn&rsquo;t hurt. Make sure it&rsquo;s maintained if you include it.</p>
+
+        <p><strong>References:</strong> In Australia, &ldquo;References available upon request&rdquo; is still a common closing line. In the US, this line is considered outdated and is typically omitted &mdash; employers assume you can produce references and will ask when they want them.</p>
+
+        <p><strong>Personal details:</strong> Neither market expects photos, date of birth, or marital status. If you&rsquo;re adapting a CV from Germany, Japan, or the Middle East, strip those sections entirely.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV generates CVs that are tailored to a specific job description &mdash; which means the impact language, keywords, and structure are matched to what that particular employer is looking for. For engineers, this is especially useful because most dev CVs are written once and applied everywhere. The job description is where the signal lives. Using it to shape your CV is the whole point.</p>
+
+        <p>You can also select your target country, and QuillCV applies the right format automatically &mdash; so you&rsquo;re not sending a US-style one-pager to an Australian employer or a German Lebenslauf format to a startup in San Francisco.</p>
+
+        <p>The technology you know is table stakes. What you did with it is the story. Make sure your CV tells it.</p>
+    </article>
+</div>
+{% endblock %}

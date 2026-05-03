@@ -1,0 +1,134 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>A generic CV and an ATS-optimised one can describe the same person with the same experience &mdash; and produce completely different results.</strong> The difference isn't embellishment or exaggeration. It's structure, language, and specificity. This is what that looks like in practice.</p>
+
+        <p>Advice about CVs tends to stay abstract. "Use achievement-focused language." "Include keywords from the job description." "Avoid generic summaries." All correct. All easy to nod at and then ignore when you're staring at your own document.</p>
+
+        <p>This post walks through a real rewrite, decision by decision. Same candidate, same experience, different CV.</p>
+
+        <h2>Meet the original CV</h2>
+
+        <p>The candidate is Sarah &mdash; a marketing professional with six years of experience across content, email, and digital campaigns. She's applying for a Senior Marketing Manager role at a mid-size SaaS company. The job description emphasises marketing automation, performance metrics, team leadership, and cross-functional collaboration.</p>
+
+        <p>Her CV is a two-column PDF she built in Canva two years ago and has updated in place ever since. The file is named <strong>CV-FINAL.pdf</strong>. The left sidebar contains her contact details, a skills list with visual bar ratings, and her education. The right column has her experience. She's used the same professional summary since she first wrote it in 2019.</p>
+
+        <p>On screen, it looks clean. In an ATS, it's a parsing nightmare.</p>
+
+        <h2>What's wrong with it &mdash; and why</h2>
+
+        <p><strong>Problem 1: The summary is vague to the point of uselessness.</strong><br>
+        The current summary reads: <em>"Results-driven marketing professional with experience across multiple channels and a passion for creative storytelling. Looking for an opportunity to bring my skills to a dynamic organisation."</em><br>
+        This describes approximately 40% of all marketing CVs in circulation. It tells the reader nothing specific about Sarah's level, her focus, what she's actually achieved, or why she's right for this role. It doesn't contain a single keyword from the job description.</p>
+
+        <p><strong>Problem 2: Duties, not achievements.</strong><br>
+        Her experience bullets read like a job description, not a record of impact. Examples: "Responsible for managing email campaigns." "Oversaw social media content calendar." "Collaborated with sales team on lead generation initiatives." These say what she was responsible for, not what she accomplished. There are no numbers, no outcomes, no context for scale.</p>
+
+        <p><strong>Problem 3: Missing keywords.</strong><br>
+        The job description uses "marketing automation," "HubSpot," "funnel optimisation," "performance reporting," and "campaign ROI" prominently. None of these phrases appear in Sarah's CV, even though she has experience in all of them. The ATS screening for these terms will score her poorly &mdash; not because she lacks the skills, but because she used different language to describe them.</p>
+
+        <p><strong>Problem 4: Formatting risk.</strong><br>
+        The Canva-generated two-column PDF will parse badly. The visual skill bars in the sidebar will be invisible to the parser. The contact details in the left column may be extracted in the wrong order or skipped. The text the ATS extracts will be garbled.</p>
+
+        <p><strong>Problem 5: Weak job title match.</strong><br>
+        Her current title at her most recent role is "Marketing Specialist." The role she's applying for is "Senior Marketing Manager." There's a gap, and her CV does nothing to bridge it &mdash; no mention of the team she led informally, the budget she managed, or the leadership responsibilities she took on. The title mismatch is real, but the CV makes it look bigger than it is.</p>
+
+        <h2>The rewrite, step by step</h2>
+
+        <p><strong>New summary</strong></p>
+        <p><strong>Before:</strong> "Results-driven marketing professional with experience across multiple channels and a passion for creative storytelling. Looking for an opportunity to bring my skills to a dynamic organisation."</p>
+        <p><strong>After:</strong> "Senior marketing professional with six years of experience driving B2B demand generation and content strategy for technology companies. Proven track record in marketing automation (HubSpot, Marketo), multi-channel campaign management, and performance reporting. Led a two-person content team while managing an annual email and paid media budget of $180K. Looking to bring this experience to a Senior Marketing Manager role in SaaS."</p>
+
+        <p>The rewrite does four things: it names her level, specifies her industry focus, includes the keywords the job posting uses, and quantifies her scope. It also drops the word "passion" entirely. "Passion" is noise.</p>
+
+        <p><strong>Achievement bullet rewrites</strong></p>
+        <p><strong>Before:</strong> "Responsible for managing email campaigns across the customer lifecycle."<br>
+        <strong>After:</strong> "Managed a 12-segment email automation program in HubSpot, improving open rates from 18% to 27% and contributing to a 15% increase in trial-to-paid conversion over 18 months."</p>
+
+        <p><strong>Before:</strong> "Oversaw social media content calendar and coordinated with design team."<br>
+        <strong>After:</strong> "Owned the organic social strategy and content calendar across LinkedIn, Twitter, and Instagram. Grew LinkedIn following from 2,400 to 8,900 over two years, with average post engagement 3x the industry benchmark."</p>
+
+        <p><strong>Before:</strong> "Collaborated with sales team on lead generation initiatives."<br>
+        <strong>After:</strong> "Partnered with the sales team to design and launch a lead scoring program in HubSpot, reducing average sales cycle length by 11 days and improving MQL-to-SQL conversion by 22%."</p>
+
+        <p>Each rewrite follows the same principle: replace the duty with the outcome, and include the tools and scale that make it credible.</p>
+
+        <p><strong>Keyword additions</strong></p>
+        <p>The job description's core terms &mdash; marketing automation, funnel optimisation, campaign ROI, cross-functional collaboration, HubSpot, performance reporting &mdash; are now present in the summary and woven naturally into the experience bullets. They weren't invented. They were already in Sarah's history. The rewrite just uses the same language the employer is using to search for it.</p>
+
+        <p><strong>Formatting fix</strong></p>
+        <p>The Canva PDF is replaced with a single-column document built in Google Docs. Contact details move to the top of the main body. The visual skill bars are replaced with a plain-text skills section: "Marketing Automation: HubSpot (advanced), Marketo (intermediate) | Analytics: Google Analytics 4, Looker | CMS: WordPress, Contentful." Clean, parseable, specific.</p>
+
+        <h2>The final version &mdash; what changed and why it works better</h2>
+
+        <p>The final CV describes the same person doing the same job. Nothing has been invented. The roles are the same. The tenure is the same. The title is unchanged.</p>
+
+        <p>What changed: the summary names her level and specialisation. The bullets lead with outcomes and include numbers. The key terms from the job description appear naturally throughout the document. The formatting is single-column and ATS-safe. The most relevant leadership experience &mdash; the informal team management and budget ownership &mdash; is now visible, where before it was invisible because it was never stated.</p>
+
+        <p>The result is a CV that will pass ATS screening where the original would likely have been filtered out, and that gives a hiring manager reading it a clear, specific picture of Sarah's capabilities rather than a vague impression of a "results-driven" person who "collaborates well."</p>
+
+        <h2>Key takeaways</h2>
+
+        <ul>
+            <li><strong>Your CV is a translation document.</strong> You're translating your experience into the language the employer is using in their job description. The skills are the same. The vocabulary matters.</li>
+            <li><strong>Numbers unlock credibility.</strong> You don't need impressive numbers &mdash; you need honest, specific ones. "Grew from 2,400 to 8,900" is more convincing than "significantly grew our following."</li>
+            <li><strong>Formatting is infrastructure.</strong> A CV that doesn't parse is a CV that doesn't get read. Structure your document for the parser first, the human reader second &mdash; and it will work for both.</li>
+            <li><strong>Your best material is often invisible because you never stated it.</strong> Team leadership, budget ownership, cross-functional projects &mdash; these often happen without the title. If you did the work, put it on the page.</li>
+        </ul>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>What happened in this rewrite is exactly what QuillCV automates. You upload your existing CV &mdash; even an imperfect one like Sarah's Canva PDF &mdash; and paste in the job description. The AI analyses both, identifies the gaps between how your experience is currently described and the language the employer is using, and generates a version that bridges them.</p>
+
+        <p>Keywords get woven in. Achievements get surfaced. The formatting is single-column and ATS-safe by default. The summary is rewritten to match the level and focus of the specific role. The whole document is tailored to that one application &mdash; not polished generically, but aligned specifically.</p>
+
+        <p>The rewrite you just read took time and deliberate thought. QuillCV produces the same outcome in the time it takes to paste a job description.</p>
+
+        <p>Same experience. Better CV. That's the entire game.</p>
+    </article>
+</div>
+{% endblock %}

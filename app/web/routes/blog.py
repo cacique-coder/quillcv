@@ -1,5 +1,6 @@
 """Blog routes: index listing and individual post pages — multilingual (EN, ES, PT)."""
 
+from datetime import date
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
@@ -17,6 +18,366 @@ LANG_LABELS = {
 
 POSTS = {
     "en": [
+        {
+            "slug": "cv-audit-spring-2027",
+            "title": "Your Spring CV Audit: 15 Things to Refresh Before the Hiring Season Peaks",
+            "description": "Spring is peak hiring season. Here are 15 practical things to update on your CV before the window closes — from refreshing achievements to checking your links still work.",
+            "date": "2027-04-15",
+            "date_modified": "2027-04-15",
+            "publish_date": "2027-04-15",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-tips", "career-advice", "job-search", "cv-checklist", "diy"],
+            "faq": [
+                {"q": "When is the best time to update your CV?", "a": "Before you need it. The best time to refresh your CV is between job searches — when you're not stressed and can recall recent achievements clearly. Spring (March–May) and autumn (September–November) are peak hiring seasons, so updating before those windows is ideal."},
+                {"q": "What should I update on my CV annually?", "a": "At minimum: your most recent role's achievements, your skills section, any certifications or courses completed, contact details (especially LinkedIn URL), and the year on your professional summary if it mentions one."},
+                {"q": "How often should I refresh my CV?", "a": "After any significant project, promotion, or new skill — not just when you're job hunting. A CV updated regularly is far easier to maintain than one you try to reconstruct from memory two years later."},
+            ],
+        },
+        {
+            "slug": "2027-job-search-reality-check",
+            "title": "The 2027 Job Search Reality Check",
+            "description": "What's actually happening in the job market in 2027. Application volumes, AI's role in hiring, time-to-hire trends, and what's working for candidates right now.",
+            "date": "2027-04-01",
+            "date_modified": "2027-04-01",
+            "publish_date": "2027-04-01",
+            "author": "Daniel Zambrano",
+            "tags": ["job-search", "career-advice", "hiring-trends", "ats"],
+            "faq": [
+                {"q": "Is the job market improving in 2027?", "a": "It depends heavily on the sector and region. Tech hiring has stabilised after the 2023–2024 contraction. Healthcare, infrastructure, and AI-adjacent roles are strong. White-collar generalist roles remain competitive, with more candidates applying per opening than at any point in the last decade."},
+                {"q": "How long does a typical job search take in 2027?", "a": "For professional roles, expect 2–4 months from first application to offer. Executive and senior roles run 3–6 months. The time-to-hire varies enormously by company size: startups move faster, large enterprises slower."},
+                {"q": "Are AI-assisted CV tools effective for job applications in 2027?", "a": "Yes — when used correctly. AI tools that tailor CVs to specific job descriptions consistently outperform generic CVs in ATS scoring. The difference is intentionality: AI-tailored applications beat both generic AI-generated ones and untailored manual ones."},
+            ],
+        },
+        {
+            "slug": "employment-gap-on-cv",
+            "title": "The Employment Gap: Why It Matters Less Than You've Been Told",
+            "description": "Career gaps are common, and most employers have adapted. Here's how to address gaps honestly without over-explaining — and when a gap actually is a red flag.",
+            "date": "2027-03-15",
+            "date_modified": "2027-03-15",
+            "publish_date": "2027-03-15",
+            "author": "Daniel Zambrano",
+            "tags": ["career-advice", "cv-tips", "employment-gap", "job-search"],
+            "faq": [
+                {"q": "How do I explain a gap in employment on my CV?", "a": "Briefly and honestly. A one-line explanation in your work history or cover letter is enough: 'Career break for family care', 'Took time to travel and retrain in X', or simply 'Career break'. You don't owe a detailed explanation upfront — that's for the interview."},
+                {"q": "Should I try to hide a gap on my CV?", "a": "No. Omitting date ranges entirely or using vague language draws more attention to the gap than a straightforward explanation. Hiring managers notice when dates are missing or suspiciously rounded."},
+                {"q": "What counts as a significant employment gap?", "a": "Generally anything over six months raises questions. Under three months rarely needs explaining at all — short gaps are normal between roles. The key is that you can speak confidently about what you did during the gap, even if the answer is 'I took time to decompress after a difficult role.'"},
+            ],
+        },
+        {
+            "slug": "executive-cv-vs-standard-cv",
+            "title": "Executive CV vs Standard CV: When to Level Up Your Format",
+            "description": "What changes at Director, VP, and C-suite level — length, achievement framing, board experience, and why the rules you followed for your first CV no longer apply.",
+            "date": "2027-03-01",
+            "date_modified": "2027-03-01",
+            "publish_date": "2027-03-01",
+            "author": "Daniel Zambrano",
+            "tags": ["executive-cv", "career-advice", "cv-tips", "senior-roles"],
+            "faq": [
+                {"q": "How long should an executive CV be?", "a": "Two to three pages is standard at Director level and above. The one-page rule does not apply — senior candidates are expected to demonstrate breadth. That said, four pages or more suggests poor editing; every line should earn its place."},
+                {"q": "What sections should an executive CV include?", "a": "Executive summary (not 'objective'), career history with strategic achievements, board or advisory roles, education, and any significant publications or speaking engagements. A skills section is optional at senior level — your experience should speak for itself."},
+                {"q": "When do I need a professional CV writer?", "a": "If you're targeting C-suite roles, boards, or private equity-backed companies, a professional writer can be worth the investment — not because you can't write well, but because they know the specific conventions and language those audiences expect."},
+            ],
+        },
+        {
+            "slug": "how-to-write-cv-from-scratch",
+            "title": "How to Write a CV From Scratch: The Complete 2026 Guide",
+            "description": "Everything you need to build a strong CV from a blank page — every section, every decision, and the ATS rules that determine whether a human ever reads it.",
+            "date": "2027-02-15",
+            "date_modified": "2027-02-15",
+            "publish_date": "2027-02-15",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-tips", "ats", "job-search", "career-advice", "how-to", "diy"],
+            "faq": [
+                {"q": "What sections should a CV have?", "a": "At minimum: contact details, professional summary, work experience, education, and skills. Optional sections depending on your background: certifications, projects, languages, volunteering, publications. Don't include sections you can't fill meaningfully."},
+                {"q": "What order should CV sections be in?", "a": "Contact details first, always. Then professional summary. Then work experience (most recent first) for anyone with more than two years of experience. Education moves above work experience only for recent graduates. Skills can go after experience or at the end."},
+                {"q": "How long should a CV be?", "a": "One page for under five years of experience; two pages for most professionals. Three pages is acceptable for senior roles or academic CVs. The rule isn't 'shorter is better' — it's 'every line should earn its place.' A strong two-page CV beats a padded one-page every time."},
+            ],
+        },
+        {
+            "slug": "what-culture-fit-means",
+            "title": "What 'Strong Culture Fit' Really Means on a Job Ad",
+            "description": "The phrase nobody defines but everyone uses. What 'culture fit' actually signals in a job posting — and how to decide whether it's an invitation or a warning.",
+            "date": "2027-02-01",
+            "date_modified": "2027-02-01",
+            "publish_date": "2027-02-01",
+            "author": "Daniel Zambrano",
+            "tags": ["job-search", "career-advice", "hiring", "workplace"],
+            "faq": [
+                {"q": "What does 'culture fit' mean in a job description?", "a": "It means different things at different companies. At best, it refers to working style — whether you prefer autonomy or collaboration, structure or flexibility. At worst, it's code for demographic homogeneity. The phrase itself tells you nothing; the rest of the job ad, the company's glassdoor reviews, and the interview will."},
+                {"q": "How do you address culture fit in your CV?", "a": "You can't and shouldn't try to. Your CV demonstrates competence; culture fit is assessed in conversation. Focus on tailoring your experience to the role. Save the cultural alignment conversation for the interview, where you can also assess whether you'd want to work there."},
+                {"q": "Is 'culture fit' sometimes code for discrimination?", "a": "It can be, and this is well-documented. 'Culture fit' rejections disproportionately affect candidates from underrepresented groups. Structured hiring processes (defined criteria, blind review, rubric-based scoring) reduce this. As a candidate, you can't always know which kind of company you're dealing with — but patterns in their team page, leadership, and Glassdoor reviews can give you signals."},
+            ],
+        },
+        {
+            "slug": "before-after-cv-rewrite",
+            "title": "Before & After: Turning a Generic CV Into an ATS-Optimised One",
+            "description": "A real CV rewrite, decision by decision. Here's exactly what was wrong with the original — and why every change to the final version improves its chances.",
+            "date": "2027-01-15",
+            "date_modified": "2027-01-15",
+            "publish_date": "2027-01-15",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-tips", "ats", "job-search", "before-after", "diy"],
+            "faq": [
+                {"q": "How do I improve my CV for ATS?", "a": "Match the language of the job description, use standard section headings (Work Experience not Career Journey), remove tables and text boxes, save as a clean PDF or DOCX, and include the specific keywords — including acronyms — that the posting uses."},
+                {"q": "What makes a CV ATS-friendly?", "a": "Clean formatting (no columns, tables, or graphics), standard section headings, keyword-matched content, no header/footer text, and consistent date formatting. ATS systems are essentially text parsers — anything that confuses the parse costs you points."},
+                {"q": "Should I rewrite my CV for every job application?", "a": "Not completely — but you should tailor it. Your core content (work history, education) stays the same. What changes: the professional summary, the skills section emphasis, and specific achievement bullets adjusted to mirror the language of the target posting."},
+            ],
+        },
+        {
+            "slug": "first-job-cv-no-experience",
+            "title": "First Job CV: No Experience, No Problem",
+            "description": "What to include on a CV when your experience section is thin — and how to frame potential over history when you're applying for your first professional role.",
+            "date": "2027-01-01",
+            "date_modified": "2027-01-01",
+            "publish_date": "2027-01-01",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-tips", "career-advice", "graduate", "entry-level", "diy"],
+            "faq": [
+                {"q": "How do I write a CV with no work experience?", "a": "Lead with your education and put it above work experience. Fill experience with any role that demonstrates relevant skills: part-time work, volunteering, internships, academic projects, extracurriculars. Use the same achievement-oriented bullet format even for unpaid or casual roles."},
+                {"q": "Should I include my GPA on my CV?", "a": "In the US, yes if it's 3.5 or above and you're within a few years of graduating. In Australia and the UK, grades are less commonly listed but relevant distinctions or honours are worth including. Drop it once you have a few years of experience."},
+                {"q": "How long should a graduate CV be?", "a": "One page. You don't have enough history to fill two pages meaningfully, and padding it out with filler works against you. A tight, well-structured one-pager that clearly shows what you offer is far more effective than a padded two-pager."},
+            ],
+        },
+        {
+            "slug": "certification-trap",
+            "title": "The Certification Trap: When Upskilling Becomes Procrastination",
+            "description": "Certifications can help — but the advice to 'just get certified' ignores the real costs. Here's when a cert actually moves the needle and when it's just expensive avoidance.",
+            "date": "2026-12-15",
+            "date_modified": "2026-12-15",
+            "publish_date": "2026-12-15",
+            "author": "Daniel Zambrano",
+            "tags": ["career-advice", "certifications", "job-search", "upskilling"],
+            "faq": [
+                {"q": "Are certifications worth it for getting a job?", "a": "It depends entirely on the field and the cert. In cloud computing, cybersecurity, and project management, specific certifications (AWS, CISSP, PMP) are actively screened for. In most other fields, they're a minor positive signal at best and irrelevant at worst."},
+                {"q": "Which certifications are most valued by employers?", "a": "In tech: AWS/Azure/GCP certifications, Google Analytics, PMP, Scrum Master. In finance: CFA, CPA, CFP. In project management: PMP, PRINCE2. In healthcare: role-specific clinical certifications. Generic 'leadership' or 'communication' certifications from obscure platforms add almost no value."},
+                {"q": "Should I include certifications on my CV?", "a": "Yes, if they're relevant and current. List them in a dedicated 'Certifications' section with the issuing body and completion year. Don't list expired certifications unless you're in a field where the base credential matters (e.g. nursing) even if not current."},
+            ],
+        },
+        {
+            "slug": "cv-for-australia-uk-germany",
+            "title": "Applying to Jobs in Australia, UK, or Germany? Read This First",
+            "description": "Three markets, three different CV expectations. What Australian employers want, what UK hiring managers expect, and what a German Lebenslauf actually requires.",
+            "date": "2026-12-01",
+            "date_modified": "2026-12-01",
+            "publish_date": "2026-12-01",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-format", "international-jobs", "australia", "uk", "germany"],
+            "faq": [
+                {"q": "Do I need to localise my CV for Australia?", "a": "Yes. Australian CVs are typically two pages, written in a slightly less formal tone than UK CVs, include a referee section (or 'references available on request'), and omit the personal details expected in European CVs (no photo, no date of birth). The term 'resume' is used interchangeably with 'CV'."},
+                {"q": "What is a Lebenslauf and what does it include?", "a": "A Lebenslauf is the German CV format. It typically includes a professional photo, date and place of birth, nationality, marital status, work history (reverse chronological), education, language skills, and a handwritten or digital signature. These details would raise legal red flags in the US or UK."},
+                {"q": "Do UK employers expect a cover letter?", "a": "Generally yes, unless the posting explicitly says not to include one. UK cover letters tend to be more formal than their US counterparts and are typically addressed to a named person if possible. A well-written, specific cover letter still differentiates candidates in the UK market."},
+            ],
+        },
+        {
+            "slug": "ats-safe-formatting",
+            "title": "ATS-Safe Formatting: What to Avoid, What Passes Through",
+            "description": "Tables, columns, text boxes, headers and footers, graphics — here's exactly what breaks CV parsers and the safe alternatives that still look professional.",
+            "date": "2026-11-15",
+            "date_modified": "2026-11-15",
+            "publish_date": "2026-11-15",
+            "author": "Daniel Zambrano",
+            "tags": ["ats", "cv-tips", "formatting", "job-search", "diy"],
+            "faq": [
+                {"q": "Can ATS read tables in a CV?", "a": "Most modern ATS systems struggle with tables. Text inside table cells is often extracted out of order or dropped entirely. If your CV uses a table for your work history or skills section, there's a real risk the content is being parsed as garbled text or lost completely."},
+                {"q": "What font should I use for my CV?", "a": "Any standard system font: Calibri, Arial, Georgia, Garamond, or Times New Roman. Avoid decorative fonts, custom fonts loaded via external services, or icon fonts (Font Awesome, etc.) — these either don't embed correctly or render as blank squares in plain-text extraction."},
+                {"q": "Should I use a two-column CV layout?", "a": "Not if you're applying through an online portal or ATS system. Two-column layouts are often read left-to-right row by row, mixing content from both columns into nonsense. If you want a visually structured CV, use a single-column layout with clear section breaks — you get the same visual hierarchy without the parse risk."},
+            ],
+        },
+        {
+            "slug": "career-change-cv",
+            "title": "Career Change CV: How to Frame a Pivot Without Looking Like a Risk",
+            "description": "Changing careers doesn't mean starting from zero. Here's how to present transferable skills, choose the right CV structure, and address the pivot before a recruiter raises it.",
+            "date": "2026-11-01",
+            "date_modified": "2026-11-01",
+            "publish_date": "2026-11-01",
+            "author": "Daniel Zambrano",
+            "tags": ["career-change", "cv-tips", "career-advice", "transferable-skills"],
+            "faq": [
+                {"q": "Should I use a functional or chronological CV for a career change?", "a": "Chronological, with a strong professional summary that reframes your experience for the new direction. Functional CVs (skills-based, no dates) are widely known as a way to hide a weak history and often trigger recruiter scepticism. A chronological CV with a well-crafted summary is harder to dismiss."},
+                {"q": "How do I explain a career change on my CV?", "a": "In your professional summary, acknowledge the pivot directly and frame it as intentional: 'After ten years in financial services, I'm moving into UX design where I can apply my analytical background to user research.' Don't leave the recruiter to guess — your explanation should get there first."},
+                {"q": "What transferable skills should I highlight in a career change?", "a": "Look for the overlap between what you've done and what the new role requires. Communication, stakeholder management, project delivery, data analysis, and client-facing skills transfer broadly. The key is to show them through concrete examples, not just claim them."},
+            ],
+        },
+        {
+            "slug": "ghosted-after-interview",
+            "title": "Ghosted After an Interview? Here's What Probably Happened",
+            "description": "Post-interview silence is frustrating — but it's rarely personal. Here's what actually causes ghosting, what to do about it, and when to move on.",
+            "date": "2026-10-15",
+            "date_modified": "2026-10-15",
+            "publish_date": "2026-10-15",
+            "author": "Daniel Zambrano",
+            "tags": ["job-search", "career-advice", "hiring", "interview"],
+            "faq": [
+                {"q": "How long should I wait before following up after an interview?", "a": "Send a thank-you email within 24 hours. If they gave you a timeline and it passes, follow up once — politely, by email. If you hear nothing after a second follow-up, the role has either been filled or paused. At that point, redirect your energy."},
+                {"q": "Is ghosting normal in the hiring process?", "a": "Unfortunately yes. High application volumes, internal process delays, sudden budget holds, and internal candidates all contribute. Studies consistently show that a majority of candidates who reach the interview stage never receive a formal rejection. It's not good practice, but it's common."},
+                {"q": "Should I take ghosting personally?", "a": "No — and that's not just reassurance. The most common reasons for post-interview ghosting have nothing to do with your performance: the role was put on hold, an internal candidate was selected, the hiring manager left, or the company started a restructure. The silence is usually about their situation, not your interview."},
+            ],
+        },
+        {
+            "slug": "photo-on-cv-country-guide",
+            "title": "Should You Put a Photo on Your CV? The Country-by-Country Answer",
+            "description": "The right answer depends entirely on where you're applying. In some countries a photo is expected; in others it actively hurts your application. Here's the definitive breakdown.",
+            "date": "2026-10-01",
+            "date_modified": "2026-10-01",
+            "publish_date": "2026-10-01",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-format", "international-jobs", "region-specific", "cv-tips"],
+            "faq": [
+                {"q": "Should I put a photo on my resume for US jobs?", "a": "No. In the US, including a photo on a resume creates legal exposure for employers under equal opportunity laws, so many HR teams are trained to remove them or discard applications that include them. A photo on a US resume signals unfamiliarity with local conventions."},
+                {"q": "What kind of photo is appropriate for a CV?", "a": "A professional headshot: neutral or light background, business-appropriate dress, looking directly at the camera with a relaxed expression. Not a selfie, not a holiday photo cropped to head-and-shoulders, and not your LinkedIn profile picture from five years ago. The photo should convey professionalism without being stiff."},
+                {"q": "Do LGBTQ+ candidates face additional risks by including a photo?", "a": "In some markets, yes. In countries where anti-discrimination protections are weak or where bias is documented (parts of the Middle East, some Asian markets), a photo can expose candidates to discrimination based on appearance or perceived identity. The risk varies significantly by country and industry."},
+            ],
+        },
+        {
+            "slug": "how-to-write-a-cv-summary",
+            "title": "How to Write a CV Summary That Doesn't Sound Generic",
+            "description": "Most CV summaries are filler — 'results-driven professional with X years of experience' says nothing. Here's the formula for a summary that actually works, with five rewrites to show you how.",
+            "date": "2026-09-15",
+            "date_modified": "2026-09-15",
+            "publish_date": "2026-09-15",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-tips", "cv-writing", "job-search", "professional-summary", "diy"],
+            "faq": [
+                {"q": "Do I need a professional summary on my CV?", "a": "For most candidates with more than two years of experience, yes. A well-written summary does the job of the old objective statement but better — it signals who you are and what you offer before a recruiter reads a single bullet point. Graduate CVs can skip it."},
+                {"q": "How long should a CV summary be?", "a": "Three to four lines, maximum. The summary is a hook, not a biography. If you find yourself writing five or more lines, you're either repeating what's in your experience section or padding — neither is useful."},
+                {"q": "What's the difference between a CV summary and an objective statement?", "a": "An objective statement describes what you want ('seeking a role where I can...'); a summary describes what you offer. Objective statements are mostly obsolete — they centre your needs over the employer's. A summary leads with value and is almost always the better choice."},
+            ],
+        },
+        {
+            "slug": "ats-keywords-you-are-missing",
+            "title": "The Keywords You're Missing (And How to Find Them for Free)",
+            "description": "ATS keyword matching is simpler than it sounds — and the process for finding the right keywords costs nothing. Here's how to do it manually, and what QuillCV automates.",
+            "date": "2026-09-01",
+            "date_modified": "2026-09-01",
+            "publish_date": "2026-09-01",
+            "author": "Daniel Zambrano",
+            "tags": ["ats", "keywords", "cv-tips", "job-search", "diy"],
+            "faq": [
+                {"q": "What are ATS keywords?", "a": "The specific words and phrases that an Applicant Tracking System (or the recruiter reading the parsed output) looks for in your CV. They come directly from the job posting — skills, qualifications, job titles, software names, and industry terminology. The closer your CV language mirrors the posting, the higher your match score."},
+                {"q": "Should I keyword-stuff my CV?", "a": "No. Adding keywords that don't reflect your actual experience is dishonest and will be obvious in an interview. The goal is natural integration: use the same language the posting uses for skills you genuinely have. A 'product manager' who lists 'PM' but never 'product manager' may be underselling themselves to an ATS that screens for the full phrase."},
+                {"q": "How many keywords do I need to include?", "a": "There's no magic number. Focus on the most important ones — typically the skills and qualifications listed in the 'Requirements' section of the posting. Those appear multiple times in the posting for a reason. Secondary nice-to-haves are worth including but shouldn't crowd out primary terms."},
+            ],
+        },
+        {
+            "slug": "job-search-quality-over-quantity",
+            "title": "The Job Search Is a Numbers Game — But Not the Way You Think",
+            "description": "Everyone tells you to apply to more jobs. The math doesn't support it. Here's the arithmetic that actually determines your job search outcome — and why 20 tailored applications beat 200 generic ones.",
+            "date": "2026-08-15",
+            "date_modified": "2026-08-15",
+            "publish_date": "2026-08-15",
+            "author": "Daniel Zambrano",
+            "tags": ["job-search", "career-advice", "ats", "applications"],
+            "faq": [
+                {"q": "How many jobs should I apply to?", "a": "Less than you think. Ten to twenty well-targeted, tailored applications per month is a reasonable cadence for most professionals. Beyond that, quality degrades sharply — you can't research, tailor, and track forty applications properly while also following up, preparing for interviews, and working your network."},
+                {"q": "What is a realistic response rate for job applications?", "a": "For tailored applications to roles you're qualified for, 10–20% is achievable. For generic applications, 1–3% is typical. That's the core of the math: twenty tailored applications at 15% gets you three conversations; two hundred generic ones at 1.5% gets you three conversations at ten times the effort."},
+                {"q": "Is it really worth tailoring every single application?", "a": "For roles you actually want, yes. For stretch applications or exploratory ones, a lighter touch is fine — update the summary and the top few bullet points. The full tailoring investment is warranted for your target roles. The question to ask is: if they called tomorrow, how prepared would I be to say why I want this specific role?"},
+            ],
+        },
+        {
+            "slug": "cv-tips-for-software-engineers",
+            "title": "CV Tips for Software Engineers: What Hiring Managers Actually Look For",
+            "description": "A dev CV is not just a list of tech stacks. Here's what actually gets a software engineer's CV read — and the mistakes that get even strong candidates filtered out.",
+            "date": "2026-08-01",
+            "date_modified": "2026-08-01",
+            "publish_date": "2026-08-01",
+            "author": "Daniel Zambrano",
+            "tags": ["software-engineering", "cv-tips", "tech-jobs", "career-advice"],
+            "faq": [
+                {"q": "Should I list every programming language on my CV?", "a": "No. List the languages you can work in comfortably and are prepared to discuss in depth. A wall of language logos signals 'collected keywords' rather than real depth. Group them by proficiency if it helps: expert, comfortable, familiar. And never list something you learned once and wouldn't confidently use in a take-home test."},
+                {"q": "Do software engineers need a portfolio link on their CV?", "a": "A GitHub profile is worth including if it has meaningful, maintained projects. A portfolio site is useful for front-end and product-adjacent roles where design and presentation matter. Neither is mandatory — a strong work history and well-described projects in the CV itself carry more weight than a sparse or unmaintained portfolio."},
+                {"q": "How long should a software engineer's CV be?", "a": "One to two pages. Junior engineers: one page. Mid-level and senior: one to two. Staff+ and above: two is fine if the content justifies it. The tech industry skews slightly more tolerant of longer CVs than other fields, but padding with technology lists, skills matrices, and proficiency bars adds length without adding value."},
+            ],
+        },
+        {
+            "slug": "how-to-quantify-achievements",
+            "title": "How to Quantify Your Achievements (Even If Your Job Isn't Numbers-Driven)",
+            "description": "Most CVs list duties. The ones that get interviews list outcomes. Here's the formula for turning what you did into achievement bullets — with before-and-after examples for five different roles.",
+            "date": "2026-07-15",
+            "date_modified": "2026-07-15",
+            "publish_date": "2026-07-15",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-tips", "cv-writing", "achievements", "job-search", "diy"],
+            "faq": [
+                {"q": "What if I genuinely don't have metrics to show?", "a": "You have more than you think. Metrics aren't always percentages or revenue — they can be: how many people you managed, the size of projects you delivered, the frequency of something you improved, a timeline you met or shortened, or a problem you eliminated. If you still can't find a number, you can qualify: 'Streamlined the onboarding process, reducing new hire ramp-up time.'"},
+                {"q": "How do I write achievement bullets for entry-level roles?", "a": "Use the same formula, scale down the scope. 'Managed social media accounts, growing Instagram following from 200 to 1,400 over six months' is a real achievement that a student or early-career candidate can legitimately claim. The formula (action + context + result) works at every level."},
+                {"q": "Should every CV bullet point be an achievement?", "a": "Ideally yes, but pragmatically, not always possible. Aim for at least one achievement bullet per role. Some responsibilities are better described as duties (especially for complex technical or operational roles where the scope itself communicates seniority). The goal is for the reader to see impact, not just presence."},
+            ],
+        },
+        {
+            "slug": "au-vs-us-resume-differences",
+            "title": "AU vs US Resume: 9 Differences That Actually Matter",
+            "description": "Your Australian CV and your American resume are not the same document. Here are the nine differences that matter most — and what happens when you send the wrong version.",
+            "date": "2026-07-01",
+            "date_modified": "2026-07-01",
+            "publish_date": "2026-07-01",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-format", "australia", "usa", "international-jobs", "region-specific"],
+            "faq": [
+                {"q": "Can I use the same CV when applying to jobs in Australia and the US?", "a": "Not without adjustment. The differences aren't just cosmetic — date formats, reference expectations, photo rules, document length, and tone all vary. A US resume sent to an Australian employer looks too short and misses expected sections. An Australian CV sent to a US employer includes details that US hiring managers aren't used to seeing."},
+                {"q": "Do Australian employers expect references?", "a": "Yes. Including two or three professional referees (name, title, company, contact details) is standard practice in Australia. US resumes typically omit references entirely, with 'references available upon request' being the maximum. In Australia, omitting referees looks unusual."},
+                {"q": "What is the right length for an Australian CV?", "a": "Two to three pages for most professionals. One page is generally too short and reads as incomplete. Unlike the strict US one-page convention for early-career candidates, Australian hiring managers expect a more comprehensive document and will read further if the content is strong."},
+            ],
+        },
+        {
+            "slug": "why-just-network-more-is-bad-advice",
+            "title": "Why 'Just Network More' Is Terrible Advice (And What Actually Works)",
+            "description": "The standard career advice ignores introversion, access, and time. Here's why networking works for some people and fails for most — and what to do instead.",
+            "date": "2026-06-15",
+            "date_modified": "2026-06-15",
+            "publish_date": "2026-06-15",
+            "author": "Daniel Zambrano",
+            "tags": ["networking", "career-advice", "job-search", "career-development"],
+            "faq": [
+                {"q": "Does networking really matter for finding a job?", "a": "Yes — but not in the way the advice usually frames it. Roughly 70–80% of roles are filled without being publicly advertised, and many of those go to known candidates. But 'networking your way in' requires having the right network, and building that network requires time and access that not everyone has equally."},
+                {"q": "How do introverts network effectively?", "a": "One-to-one conversations, online and asynchronous formats, and professional communities built around shared work (open source, industry forums, alumni groups) tend to work better for introverts than large events. Quality over volume applies here too — one strong professional relationship is worth more than fifty LinkedIn connections you've never spoken to."},
+                {"q": "Is cold outreach on LinkedIn effective?", "a": "Sometimes. The success rate is low but non-zero, and it improves significantly with personalisation. Reaching out with a specific reason — you read their article, you have a question relevant to their work, you share a connection or background — performs far better than 'I'm looking for opportunities and admire your company.'"},
+            ],
+        },
+        {
+            "slug": "how-ats-scores-your-cv",
+            "title": "How ATS Scores Your CV (And the 5 Things That Tank It)",
+            "description": "Applicant Tracking Systems aren't mysterious black boxes — they do a specific job in a specific way. Here's how ATS scoring actually works, and the five formatting and content mistakes that cost you the most.",
+            "date": "2026-06-01",
+            "date_modified": "2026-06-01",
+            "publish_date": "2026-06-01",
+            "author": "Daniel Zambrano",
+            "tags": ["ats", "cv-tips", "job-search", "formatting"],
+            "faq": [
+                {"q": "Does ATS actually read my PDF?", "a": "Most modern ATS platforms can parse PDFs, but not all — and even those that can will sometimes extract text incorrectly from complex layouts. A standard, well-formatted PDF from a modern word processor is generally fine. PDFs generated from design tools (Canva, Adobe InDesign) with layered graphics or unusual fonts are not."},
+                {"q": "What keywords should I include in my CV?", "a": "The keywords from the specific job description you're applying to. There's no universal list — a DevOps engineer applying to AWS-heavy shops needs different keywords than one applying to on-premise enterprise environments. Mirror the language the posting uses: if they say 'Kubernetes', use 'Kubernetes', not just 'container orchestration'."},
+                {"q": "Do all companies use ATS?", "a": "Larger companies and those with high application volumes almost universally do. Small companies and startups often review CVs manually, especially at early hiring stages. If you're applying to a twenty-person startup through a direct email or referral, ATS optimisation is less critical — but clean formatting and relevant content still matter to the human reader."},
+            ],
+        },
+        {
+            "slug": "10-point-cv-checklist",
+            "title": "The 10-Point CV Checklist Before You Hit Send",
+            "description": "Most CV mistakes are fixed in under ten minutes. This is the checklist to run through before you submit any application — the ten things that are most often wrong and easiest to miss.",
+            "date": "2026-05-15",
+            "date_modified": "2026-05-15",
+            "publish_date": "2026-05-15",
+            "author": "Daniel Zambrano",
+            "tags": ["cv-tips", "cv-checklist", "job-search", "ats", "diy"],
+            "faq": [
+                {"q": "How long should I spend checking my CV before applying?", "a": "For your base CV, a thorough review once is enough. For each tailored application, ten to fifteen minutes to check keyword alignment, update the summary, and verify contact details is a reasonable investment for a role you actually want."},
+                {"q": "What format should I save my CV as?", "a": "PDF, unless the job posting specifically requests DOCX. PDF preserves your formatting across systems and looks the same everywhere. Name the file clearly: FirstName-LastName-CV.pdf, not 'CV-final-v3-USE-THIS-ONE.pdf'."},
+                {"q": "Do I really need a different CV for each job?", "a": "Not completely different — but tailored, yes. Your core sections (work history, education) stay the same. What you tailor: the professional summary, the skills section, and which achievements you lead with in each role. The tailoring takes 10–15 minutes per application and consistently improves response rates."},
+            ],
+        },
+        {
+            "slug": "your-ats-is-fine-the-system-isnt",
+            "title": "Your ATS Is Fine. The System Around It Isn't.",
+            "description": "Recruiters say ATS isn't the problem — candidates just need to network more, build projects, get certified. They're not entirely wrong. But they're missing the bigger issue.",
+            "date": "2026-05-01",
+            "date_modified": "2026-05-01",
+            "publish_date": "2026-05-01",
+            "author": "Daniel Zambrano",
+            "tags": ["ats", "job-search", "career-advice", "hiring"],
+            "faq": [
+                {"q": "Is ATS really the problem with modern hiring?", "a": "Partially. ATS systems do filter out qualified candidates when CVs aren't formatted or keyworded correctly. But they're also often blamed for outcomes that have more to do with the overall hiring volume, internal candidates, or basic supply-demand imbalance in a given field. The ATS is a tool — the system around it is the bigger story."},
+                {"q": "What do recruiters actually want to see in a CV?", "a": "Evidence that you understand the role and have done it before (or something close). That means specific achievements over generic duties, language that mirrors the job posting, and a format that makes the relevant experience easy to find quickly. Recruiters spend seconds on a first pass — the job of your CV is to survive that pass."},
+                {"q": "How much does networking actually help in a job search?", "a": "Significantly — but unevenly. Candidates with strong professional networks get referred to roles before they're posted, skip the ATS entirely, and have warmer introductions to hiring teams. Those without established networks face the full friction of the public application process. The advice to 'just network' ignores that networks take years to build and access to them is not equally distributed."},
+            ],
+        },
         {
             "slug": "cv-formats-around-the-world",
             "title": "CV Formats Around the World: Why One Resume Doesn't Work in 12 Countries",
@@ -495,7 +856,13 @@ async def blog_index(request: Request, lang: str):
 
     strings = INDEX_STRINGS[lang]
     alternate_urls = {lang: f"/blog/{lang}" for lang in SUPPORTED_LANGS}
-    lang_posts = POSTS[lang]
+    dev_mode = getattr(request.app.state, "dev_mode", False)
+    today = date.today().isoformat()
+    lang_posts = sorted(
+        [p for p in POSTS[lang] if dev_mode or p.get("publish_date", p["date"]) <= today],
+        key=lambda p: p.get("publish_date", p["date"]),
+        reverse=True,
+    )
     page_description = strings["page_description"]
     in_language_map = {"en": "en", "es": "es", "pt": "pt-BR"}
 
@@ -553,6 +920,15 @@ async def blog_post(request: Request, lang: str, slug: str):
 
     post = _POSTS_BY_LANG_SLUG.get(lang, {}).get(slug)
     if post is None:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": "Post not found."},
+            status_code=404,
+        )
+
+    dev_mode = getattr(request.app.state, "dev_mode", False)
+    today = date.today().isoformat()
+    if not dev_mode and post.get("publish_date", post["date"]) > today:
         return templates.TemplateResponse(
             "partials/error.html",
             {"request": request, "message": "Post not found."},

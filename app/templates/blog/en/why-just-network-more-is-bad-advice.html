@@ -1,0 +1,112 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>"Just network more" is the job search equivalent of "just be more confident."</strong> True, perhaps, but not actionable &mdash; and deeply frustrating when it's the only answer on offer.</p>
+
+        <p>It comes up in every conversation about job searching. Recruiters say it. Career coaches say it. LinkedIn influencers build entire personal brands around it. Networking is the key. It's not what you know, it's who you know. Most jobs are filled before they're posted. Connect, engage, put yourself out there.</p>
+
+        <p>And then they offer no further instructions.</p>
+
+        <h2>The advice everyone gives and nobody explains</h2>
+
+        <p>The frustrating thing about "network more" as advice is that it's simultaneously correct and useless. Yes, professional relationships lead to opportunities. Yes, a warm referral outperforms a cold application in almost every study ever done on hiring. Yes, people hire people they know or people who come recommended.</p>
+
+        <p>None of that tells you what to do on Tuesday afternoon when you're three weeks into a job search, you have twelve connections on LinkedIn, you don't know anyone at the companies you're targeting, and attending a networking event feels roughly as appealing as a trip to the dentist.</p>
+
+        <p>The advice describes a destination without giving you a map. And the people who give it tend to be people who already have networks &mdash; people for whom "networking" is just an ongoing feature of their professional lives, not something they have to build from scratch under pressure.</p>
+
+        <h2>Why it fails for most people</h2>
+
+        <p>For "network more" to be actionable advice, you need a few things: time, access, confidence, and existing social capital to leverage. Many people are short on at least one of these, and often all four.</p>
+
+        <p><strong>Time.</strong> If you're working a full-time job while searching for a better one &mdash; which is most people &mdash; the evenings you could spend at industry events are already spoken for by dinner, family, and recovery from the day. Job searching is exhausting. Meaningful networking is also exhausting. Doing both simultaneously is a lot to ask.</p>
+
+        <p><strong>Access.</strong> The quality of your potential network is shaped by where you grew up, where you went to school, where you've worked, and what industry you're in. If you went to a small regional university instead of a well-connected institution, if you're trying to break into an industry from outside it, if you live somewhere without a dense professional community in your field &mdash; your starting point is significantly worse than someone who came up through an elite pipeline.</p>
+
+        <p><strong>Introversion and social anxiety.</strong> These aren't excuses &mdash; they're real constraints. Walking up to strangers at a professional event and making small talk is a skill that not everyone has, and not everyone wants. The advice "just network" presupposes a level of social ease that roughly half the population simply doesn't have.</p>
+
+        <p><strong>Power dynamics.</strong> Early-career candidates are in a particularly awkward position. They're trying to build relationships with people who are more senior, more experienced, and more sought-after &mdash; and they have relatively little to offer in return. That imbalance makes outreach feel presumptuous and often go unanswered, which is discouraging in a way that's hard to push through repeatedly.</p>
+
+        <h2>What networking actually is</h2>
+
+        <p>Here's the part that gets lost: real professional networking isn't the thing people call networking. It's not events, business cards, or cold LinkedIn messages that say "I'd love to connect and pick your brain."</p>
+
+        <p>Genuine professional relationships are built over time through authentic engagement. You helped someone debug a problem in a forum. You left a thoughtful comment on someone's article that started a real conversation. You collaborated on something, even informally. You were a reliable, useful presence in a community, and people remember you because of it.</p>
+
+        <p>That kind of relationship produces referrals. Not because you asked, but because you've demonstrated competence and reliability in a context where it was visible. When a role comes up and someone thinks of you, it's because they've seen your work &mdash; not because you bought them a coffee at a conference once.</p>
+
+        <p>The bad news: this takes time to build. The good news: it doesn't require being extroverted or having access to exclusive rooms.</p>
+
+        <h2>Lower-barrier alternatives that actually work</h2>
+
+        <p>If traditional networking isn't accessible to you right now, there are approaches that build genuine professional visibility without requiring you to walk into a room full of strangers:</p>
+
+        <ul>
+            <li><strong>Find your industry's communities.</strong> Almost every field has Slack communities, Discord servers, subreddits, or forums where practitioners hang out. Lurk first, then ask good questions, then answer them. Consistent, helpful participation builds a reputation over time.</li>
+            <li><strong>Write publicly.</strong> A blog post explaining something you've learned. A LinkedIn article about a problem you solved. A thread on a technical decision you made. Writing that demonstrates expertise is a low-pressure way to make your thinking visible to people who might eventually hire you &mdash; or refer you to someone who will.</li>
+            <li><strong>Contribute to open source or shared projects.</strong> In technical fields especially, showing work in public is worth more than many conversations. A PR that gets merged is a reference you didn't have to ask for.</li>
+            <li><strong>Go narrow.</strong> You don't need to know everyone. Three or four people at companies you'd genuinely like to work for, who you've engaged with authentically over time, are worth more than hundreds of shallow connections. Target the relationships, not the volume.</li>
+        </ul>
+
+        <h2>Your CV is still the entry ticket</h2>
+
+        <p>Here's where the networking-maximalists sometimes oversell their case: even when you have a referral, the CV still matters. A referral gets your application noticed &mdash; it bumps you from the ATS pile to the "take a look at this one" stack. But once it's in front of a hiring manager, it has to hold up on its own.</p>
+
+        <p>The network gets you the conversation. The CV gets you the next one.</p>
+
+        <p>A referral from a trusted colleague carries you through the first round. After that, the interview, the CV, and the substance of your experience take over. No amount of relationship capital compensates for a CV that can't articulate what you've actually done and how well you did it.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>We can't build your network. Nobody can do that for you, and anyone who says otherwise is selling something. What we can do is make sure that when your network does open a door &mdash; or when you get through on a cold application &mdash; the CV you send through is the strongest version of your professional story.</p>
+
+        <p>Every role you apply to gets a tailored CV built from the keywords and requirements in that specific job description. Your experience is framed as outcomes, not duties. The format matches the conventions of your target market. By the time a hiring manager looks at it, there's nothing in the document that makes it easier to say no.</p>
+
+        <p>Work on the long game. Network in the ways that are sustainable for you. And in the meantime, make sure the document you're sending is doing its job.</p>
+    </article>
+</div>
+{% endblock %}

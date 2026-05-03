@@ -1,0 +1,108 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>An employment gap is a date range that needs context, not a confession that needs explaining.</strong> The fear candidates have about gaps is usually disproportionate to how hiring managers actually respond to them &mdash; and that fear leads to over-explanation, which is worse than the gap itself.</p>
+
+        <h2>The fear around gaps</h2>
+
+        <p>If you have a gap in your employment history, you've probably spent time worrying about it. Maybe rehearsing explanations. Maybe wondering whether to obscure it by listing only years instead of months. Maybe writing a cover letter paragraph that addresses it before anyone has even asked.</p>
+
+        <p>That anxiety is understandable. But it's also, in most cases, larger than the problem it's responding to. A gap is a date range. It exists. What matters is whether you can give it brief, honest context &mdash; not whether you can make it disappear.</p>
+
+        <p>The candidates who handle gaps badly aren't the ones who have them. They're the ones who treat having a gap as a character flaw rather than a life event. That energy comes through in the application, in the cover letter, and in the interview. Apologetic framing draws attention to itself. Confident framing moves past it.</p>
+
+        <h2>What employers actually think</h2>
+
+        <p>Employment gaps are common. They were common before 2020 and they became significantly more normalized after it. Layoffs, caregiving demands, health, burnout, pandemic disruption &mdash; a very large proportion of the professional workforce has a gap on their CV now. Hiring managers know this because many of them have one too.</p>
+
+        <p>Structured hiring processes assess what you bring to the role: your skills, your track record, your potential fit. A gap is one data point in a larger picture. For most roles, it's a minor one.</p>
+
+        <p>The exceptions are narrow. A recent gap of more than two years may warrant more context in security-sensitive roles, licensed professions where currency of practice matters, or very specialized technical fields where skills depreciate quickly. Outside those contexts, a single gap of reasonable length in a career of otherwise solid tenure is unremarkable.</p>
+
+        <p>Most hiring managers won't ask about a gap unless it's very long, very recent, or appears in a pattern alongside other short tenures. And when they do ask, they're generally looking for a confident, honest sentence &mdash; not a prepared speech.</p>
+
+        <h2>The over-explanation trap</h2>
+
+        <p>The instinct is to explain. To get ahead of it. To contextualize, justify, and reassure the reader that the gap wasn't a sign of anything. This instinct produces cover letter paragraphs that read like apologies, CV formatting tricks that obscure dates, and interview answers that go on three times longer than they need to.</p>
+
+        <p>Here's the problem: the more you explain, the more attention you draw. A recruiter scanning your CV who wouldn't have noticed or cared about a twelve-month gap will notice it if you reference it in your cover letter. A hiring manager who asks about it in a first-round interview as a routine question will feel slightly suspicious if your answer takes three minutes and covers your entire personal history.</p>
+
+        <p>One confident sentence beats three apologetic paragraphs. Acknowledge the gap, state what it was, and move on. Don't apologize for it. Don't volunteer emotional detail you haven't been asked for. Don't explain why it doesn't reflect on your work ethic. Just name it and return to what you bring to the role.</p>
+
+        <h2>How to frame common gaps</h2>
+
+        <p><strong>Parental leave or caregiving:</strong> "Career break for family care, 2023&ndash;2024." That's it. No elaboration required. Parental leave is the most socially understood reason for a career gap. Anyone who penalizes you for it is telling you something important about their culture.</p>
+
+        <p><strong>Health:</strong> "Career break for personal health &mdash; fully resolved." You're not required to disclose what the health issue was, and you shouldn't feel pressure to. "Fully resolved" or "now in full health" addresses the concern a hiring manager might have &mdash; whether you're in a position to do the job &mdash; without requiring medical detail.</p>
+
+        <p><strong>Burnout or voluntary exit:</strong> "Left role to reassess direction; spent the time on [specific thing you actually did &mdash; a course, freelance projects, a personal initiative]." The specificity matters. "Reassessing direction" without any concrete activity sounds like an uncomfortable admission. "Left to reassess direction; completed a data engineering bootcamp and built two freelance projects" tells a story of intentional use of time.</p>
+
+        <p><strong>Redundancy:</strong> "Role made redundant in company restructure." Full stop. No further explanation needed. Redundancy is a business decision, not a performance judgment. You don't need to defend it, explain it, or frame it as anything other than what it was. If a recruiter pursues it further, "the company restructured the function" is a complete answer.</p>
+
+        <p><strong>Travel:</strong> "Career break &mdash; travelling and [language learning / volunteering / freelance work]." The bracketed activity is important. A career break spent entirely traveling with no skill development is harder to frame than one that combined travel with something substantive. If yours was genuinely just travel, say so honestly &mdash; but if there's something you learned or did during that time, include it.</p>
+
+        <h2>When a gap is actually a red flag</h2>
+
+        <p>A single gap, regardless of length or reason, is almost never a red flag on its own. What raises genuine concern in structured hiring processes is different:</p>
+
+        <ul>
+            <li>A <strong>pattern</strong> of very short tenures &mdash; six months here, eight months there, across multiple roles &mdash; combined with gaps between them. This pattern suggests either difficulty retaining employment or difficulty committing. It warrants an honest conversation, not hiding.</li>
+            <li>A gap with <strong>no explanation and visible difficulty speaking to it</strong> in the interview. The inability to say what you were doing for 18 months, with visible discomfort, can be more concerning than the gap itself.</li>
+            <li>A very recent gap, very long, in a field with <strong>fast-changing technical requirements</strong> &mdash; where a hiring manager has reason to wonder whether your skills are current. The solution here is demonstrating currency: recent certifications, side projects, or open-source contributions that show you stayed active.</li>
+        </ul>
+
+        <p>None of these are automatically disqualifying. They're things that need to be addressed directly, not worked around.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>We help you present your experience as strongly as possible. A gap is one data point, not the story. Your CV should lead with what you bring &mdash; your skills, your achievements, your track record &mdash; and handle the gap with a brief, honest phrase in the employment dates where it belongs.</p>
+
+        <p>A gap handled with confidence is quickly forgotten. A gap handled with anxiety tends to linger in the reader's mind. Get the framing right, and move on.</p>
+
+    </article>
+</div>
+{% endblock %}

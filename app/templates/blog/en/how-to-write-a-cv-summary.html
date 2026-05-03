@@ -1,0 +1,118 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>&ldquo;Results-driven professional with 10+ years of experience in fast-paced environments&rdquo; is in roughly one in three CVs.</strong> It says nothing, differentiates nobody, and wastes the most valuable real estate on your CV. A good summary signals fit in three or four lines before the recruiter reads anything else &mdash; here&rsquo;s the formula to write one.</p>
+
+        <p>The summary at the top of your CV is read first and dismissed fastest. Most candidates use it to write a flattering but vague self-description that could apply to half the working population. Recruiters skim past these automatically. They&rsquo;ve read a thousand of them.</p>
+
+        <p>A summary that actually works does something different: it tells the recruiter, within seconds, exactly who you are professionally and whether you fit what they&rsquo;re looking for.</p>
+
+        <h2>Why most summaries fail</h2>
+
+        <p>The failure mode is almost always the same: vague language that describes a category of person rather than a specific individual.</p>
+
+        <p>Phrases like &ldquo;dynamic team player,&rdquo; &ldquo;proven track record of success,&rdquo; &ldquo;passionate about driving results,&rdquo; and &ldquo;strong communicator&rdquo; are not differentiators. Every candidate writing a summary believes these things about themselves. These phrases have been used so often that they&rsquo;ve become invisible &mdash; they convey no information.</p>
+
+        <p>The second failure mode is missing the differentiator entirely. A summary that accurately describes what you do &mdash; &ldquo;Marketing manager with seven years of experience in B2B SaaS&rdquo; &mdash; is better than a vague one, but it still doesn&rsquo;t tell the recruiter why you&rsquo;re the person they want to talk to instead of the other 79 applicants who also have seven years of B2B SaaS marketing experience.</p>
+
+        <p>The summary should answer: <em>What specifically makes this person a strong fit for roles like the one I&rsquo;m hiring for?</em></p>
+
+        <h2>What a good summary actually does</h2>
+
+        <p>A strong summary gives the recruiter a frame before they read the rest of the CV. It sets expectations, highlights your strongest differentiator, and signals that you understand what the role requires.</p>
+
+        <p>It&rsquo;s not a biography. It&rsquo;s not a list of adjectives. It&rsquo;s a positioning statement &mdash; three or four sentences that make the recruiter want to keep reading.</p>
+
+        <p>The best summaries are specific enough that they could only have been written by one person. They name a specialization, reference a type of problem or environment, and hint at the impact you deliver. They don&rsquo;t try to appeal to everyone. Trying to appeal to everyone means appealing to no one.</p>
+
+        <h2>The formula</h2>
+
+        <p>A reliable structure for a CV summary has four components:</p>
+
+        <ul>
+            <li><strong>Role:</strong> Your current or most recent professional identity. Not a job title necessarily &mdash; a role descriptor that reflects what you actually do. &ldquo;Product manager&rdquo; or &ldquo;Software engineer specialising in backend infrastructure&rdquo; or &ldquo;UX researcher focused on enterprise SaaS.&rdquo;</li>
+            <li><strong>Years of experience:</strong> A range or specific number, relevant to this type of role. Not your total years employed &mdash; years of relevant experience.</li>
+            <li><strong>Your #1 strength or specialization:</strong> The one thing you do better than most people at your level, or the domain where you have the deepest expertise. Be specific. &ldquo;Building high-conversion product onboarding flows&rdquo; is better than &ldquo;improving user experience.&rdquo;</li>
+            <li><strong>The value you bring to this type of employer:</strong> What changes for an organization because of your work? This can reference the type of environment you thrive in (early-stage, enterprise, regulated industries) or the specific outcome you drive (revenue growth, technical debt reduction, team capability lift).</li>
+        </ul>
+
+        <p>You don&rsquo;t have to use these components in this order, and you don&rsquo;t need a sentence for each one. The goal is to include all four ideas in three to five sentences.</p>
+
+        <h2>Five rewrites &mdash; before and after</h2>
+
+        <p>The formula is easier to understand in practice. Here are five career stages, each with a before and after.</p>
+
+        <p><strong>Junior marketing coordinator (2 years experience)</strong><br>
+        <strong>Before:</strong> &ldquo;Enthusiastic marketing professional eager to contribute to a dynamic team. Strong communication skills and a passion for creative work.&rdquo;<br>
+        <strong>After:</strong> &ldquo;Marketing coordinator with two years of experience in content and social media for B2C e-commerce brands. Strongest in short-form content that drives engagement &mdash; built an Instagram presence from 4k to 31k followers in 14 months for a D2C skincare brand. Looking for a team where I can own a channel and build on that result.&rdquo;</p>
+
+        <p><strong>Mid-level project manager (7 years experience)</strong><br>
+        <strong>Before:</strong> &ldquo;Results-driven project manager with a proven track record of delivering projects on time and within budget in fast-paced environments.&rdquo;<br>
+        <strong>After:</strong> &ldquo;Project manager with seven years delivering technology and infrastructure projects in the financial services sector. Specialise in stakeholder management across technical and non-technical teams &mdash; have led cross-functional programs with up to 14 workstreams and budgets exceeding $4M. PMP-certified. Comfortable operating in highly regulated environments where documentation and risk management aren&rsquo;t optional.&rdquo;</p>
+
+        <p><strong>Senior software engineer (12 years experience)</strong><br>
+        <strong>Before:</strong> &ldquo;Experienced software engineer with expertise in multiple programming languages and frameworks. Passionate about building scalable solutions.&rdquo;<br>
+        <strong>After:</strong> &ldquo;Senior backend engineer with 12 years of experience, the last six focused on distributed systems and platform reliability at scale. Built and led teams responsible for infrastructure handling 200M+ daily events. Strongest in the design phase &mdash; I&rsquo;m the person teams bring in when the architecture decision will have long-term consequences. Particularly experienced in Go, Python, and AWS.&rdquo;</p>
+
+        <p><strong>Career changer (teacher &rarr; instructional designer)</strong><br>
+        <strong>Before:</strong> &ldquo;Former teacher transitioning to instructional design. Excellent communication skills and a lifelong love of learning.&rdquo;<br>
+        <strong>After:</strong> &ldquo;Secondary school teacher with eight years of classroom experience, now transitioning into instructional design. Built and delivered curriculum for 300+ students annually across mixed-ability cohorts &mdash; the work of translating complex content into structured, accessible learning sequences is directly what instructional designers do. Completed the Articulate Rise certification and have redesigned three existing training modules for corporate clients on a freelance basis.&rdquo;</p>
+
+        <p><strong>Returning to workforce after gap</strong><br>
+        <strong>Before:</strong> &ldquo;Motivated professional returning to the workforce after a career break. Ready to bring my skills and experience to a new challenge.&rdquo;<br>
+        <strong>After:</strong> &ldquo;Operations manager with 11 years of experience in supply chain and logistics, returning to full-time work after a two-year caregiving break. During that period, completed a Six Sigma Green Belt certification and consulted part-time for a small distribution business on inventory management. My core background is in building systems that reduce operational friction &mdash; I&rsquo;ve managed teams of up to 40 people and overseen budgets of up to $8M.&rdquo;</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>One reason summaries end up generic is that they&rsquo;re usually written once and reused for every application. But a good summary should be adjusted for each role &mdash; the emphasis, the specific strength you lead with, even the industry language should reflect what this particular employer is looking for.</p>
+
+        <p>When you generate a CV with QuillCV, the summary is tailored to the job description you paste in. The formula above is the underlying logic &mdash; your experience, positioned for the specific role, in language that resonates with that employer. You get the differentiation without writing a new summary from scratch every time.</p>
+
+        <p>Three sentences. One shot to make the right impression. Write them like they matter &mdash; because they do.</p>
+    </article>
+</div>
+{% endblock %}

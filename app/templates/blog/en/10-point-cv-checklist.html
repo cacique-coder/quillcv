@@ -1,0 +1,115 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>Most CV mistakes take under 10 minutes to fix.</strong> Run through this checklist before every application &mdash; not just the first one, but every single one &mdash; and you'll eliminate the errors that cost people interviews they deserved.</p>
+
+        <p>You've spent hours on your CV. You've tweaked the wording, moved sections around, agonized over the summary. And then you hit send with a filename called "CV-FINAL-v3-USE THIS ONE.pdf" and an email address from 2009 that you've mostly forgotten.</p>
+
+        <p>This checklist isn't about the hard stuff. It's about the obvious stuff &mdash; the things that are completely fixable and surprisingly common.</p>
+
+        <ol>
+            <li>
+                <strong>Contact details are current and correct.</strong>
+                <p>Check your email address character by character. One transposed letter and recruiters can't reach you. Check your phone number, especially if you've changed countries or carriers recently. Your LinkedIn URL should be a clean custom slug (linkedin.com/in/yourname), not the default alphanumeric mess. If you list a city, make sure it's where you're actually based or where you're willing to be &mdash; don't leave a city you moved from two years ago.</p>
+            </li>
+
+            <li>
+                <strong>The file is named clearly.</strong>
+                <p>Your file should be named <strong>FirstName-LastName-CV.pdf</strong> or <strong>FirstName-LastName-Resume.pdf</strong>. Nothing else. Not "CV.pdf." Not "Resume-final-FINAL(2).pdf." Not "Updated CV March fixed.docx." When a recruiter downloads thirty applications, yours should be identifiable in a folder view without opening it. It takes ten seconds to rename a file. Do it.</p>
+            </li>
+
+            <li>
+                <strong>It's saved as a PDF (unless DOCX was specified).</strong>
+                <p>PDF is the default unless the job posting explicitly asks for a Word document. A PDF preserves your formatting across every device and operating system. A DOCX can render differently on a different version of Word &mdash; your carefully aligned columns might turn into something unreadable. The only time to send DOCX is when the application instructions say so, because some ATS systems or recruiters genuinely need an editable version.</p>
+            </li>
+
+            <li>
+                <strong>Your professional summary is updated for this specific role.</strong>
+                <p>A professional summary that says "experienced marketing professional seeking new opportunities" could belong to anyone. For every application, spend five minutes rewriting your summary to reflect the specific role and company. Use their language. Mirror back what they said they need. This is the first thing most humans read after the ATS passes it through &mdash; make it feel like you wrote it for them, because you should have.</p>
+            </li>
+
+            <li>
+                <strong>Keywords from the job description appear in your CV.</strong>
+                <p>Read the job posting and highlight the skills, tools, and qualifications they list &mdash; especially ones that appear more than once. Now open your CV and check: are those words actually in there? Not synonyms. Not adjacent concepts. The actual words. "Project management" and "project coordination" score differently in an ATS. "Python" and "scripting" are not equivalent. If you have the experience, use their phrasing.</p>
+            </li>
+
+            <li>
+                <strong>Every bullet point describes an outcome, not just a task.</strong>
+                <p>"Responsible for managing social media accounts" is a duty. "Grew Instagram engagement by 34% over six months through a content calendar and weekly community engagement" is an achievement. Go through every bullet on your CV and ask: does this say what I did, or what happened as a result? Even in roles without obvious metrics, you can frame outcomes: faster, cleaner, more consistent, implemented from scratch, reduced errors, trained three new team members.</p>
+            </li>
+
+            <li>
+                <strong>Date gaps are noted or explained.</strong>
+                <p>You don't have to justify everything &mdash; but unexplained gaps attract questions that are better handled on your terms. A simple entry like "Career break &mdash; family caregiving" or "Freelance consulting while exploring next direction" is enough. Recruiters see gaps regularly. They're not disqualifying in most cases. An unexplained gap that shows up in an interview for the first time is a distraction. A brief note keeps the narrative yours.</p>
+            </li>
+
+            <li>
+                <strong>Your education section is accurate and current.</strong>
+                <p>Check graduation years. Check that your degree title matches what's on your certificate. If you've completed certifications since your last CV update &mdash; AWS, Google Analytics, PMP, whatever &mdash; add them. If a certification has lapsed, either remove it or note the date. Credentials that can be verified should be accurate. Hiring teams do check, especially for professional or technical roles.</p>
+            </li>
+
+            <li>
+                <strong>Every link you've included actually works.</strong>
+                <p>Open your LinkedIn profile URL in a fresh browser window. Open your portfolio site. Open your GitHub. Do this the day you send the application, not the day you first added the links. A dead link signals carelessness more than an absent link does. If your portfolio is under construction, remove the URL entirely &mdash; don't link to a page that isn't ready.</p>
+            </li>
+
+            <li>
+                <strong>The formatting is clean in PDF preview.</strong>
+                <p>Open the PDF. Scroll through it. Does it look the way you intended? Tables break in unexpected ways. Custom fonts substitute. Margins shift. If you built the CV in a word processor or Canva, open the actual PDF and check it renders cleanly. Print preview is an even better test &mdash; it forces you to look at the whole document as a recruiter with a stack of papers would. If something looks off on screen, it looks worse in print.</p>
+            </li>
+        </ol>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>QuillCV automates checks 4, 5, and 6 &mdash; the three most commonly wrong. Every CV we generate is tailored to the specific job description you provide, includes the right keywords in the right context, and frames your experience as outcomes rather than duties. The professional summary is written for that role, not copied from a template.</p>
+
+        <p>The other seven checks are yours to own. We can't rename your file, verify your links, or confirm your graduation year. Those are on you &mdash; but they take less than ten minutes combined, and they're worth every one of them.</p>
+
+        <p>Send the right document. The opportunities you're going for are too important to lose on a typo in your email address.</p>
+    </article>
+</div>
+{% endblock %}

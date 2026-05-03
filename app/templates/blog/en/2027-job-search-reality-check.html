@@ -1,0 +1,112 @@
+{% extends "blog_base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.description }}{% endblock %}
+
+{% block head_extra %}
+{% for l, url in alternate_urls.items() %}
+<link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
+{% endfor %}
+<link rel="alternate" hreflang="x-default" href="https://quillcv.com{{ alternate_urls.get('en', '') }}">
+<meta property="article:published_time" content="{{ post.date }}">
+<meta property="article:modified_time" content="{{ post.date_modified }}">
+<meta property="og:type" content="article">
+{% endblock %}
+
+{% block structured_data %}
+{% for schema in structured_data %}
+<script type="application/ld+json">
+{{ schema | tojson(indent=2) }}
+</script>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="blog-post-wrap">
+    <a href="/blog/en" class="blog-back">&larr; Back to blog</a>
+
+    <div class="blog-lang-switch">
+        {% for l in supported_langs %}
+        <a href="{{ alternate_urls.get(l, '/blog/' + l) }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
+        {% endfor %}
+    </div>
+
+    <article class="blog-post">
+        <header class="blog-post-header">
+            <div class="blog-meta">
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
+                <span class="blog-meta-sep">&middot;</span>
+                <span>{{ post.author }}</span>
+            </div>
+            <h1>{{ post.title }}</h1>
+        </header>
+
+        <p class="blog-answer-capsule"><strong>The job market in 2027 rewards precision over volume.</strong> Application volumes are up, AI screening is standard, and the candidates getting responses are the ones who treat each application as a targeted campaign &mdash; not a numbers game.</p>
+
+        <h2>What's changed in the last two years</h2>
+
+        <p>Two years ago, AI-assisted hiring was an emerging trend. Today it's infrastructure. Most mid-to-large companies now use some form of AI in their screening and ranking process &mdash; whether that's ATS scoring, AI-assisted shortlisting, or tools that pre-screen for specific skills and flag mismatches before a recruiter reviews anything.</p>
+
+        <p>Application volumes haven't returned to pre-pandemic levels. They've exceeded them. The combination of remote work opening geographic access to more roles, AI tools making it easier to apply at scale, and ongoing uncertainty driving more active job-seeking has pushed the number of applications per role significantly higher than it was in 2020 or 2021.</p>
+
+        <p>Remote work has also partially contracted. The universal remote shift of 2020&ndash;2022 has settled into a more mixed landscape: some fully remote roles, many hybrid, and a meaningful push toward in-office attendance from larger employers. This matters for job seekers because geographic flexibility &mdash; the ability to apply broadly across markets &mdash; is more variable than it was at the peak of remote availability.</p>
+
+        <p>The talent market is segmented in a way it wasn't a few years ago. Senior technical roles, specialized engineering positions, and high-skill functions in regulated industries remain candidate-short in many markets. Entry and mid-level roles in knowledge work have become significantly more competitive. These are different job searches, and they require different strategies.</p>
+
+        <h2>The numbers that matter</h2>
+
+        <p>Specific statistics date quickly, but the directional picture is consistent enough to be useful.</p>
+
+        <p>For roles at major companies with public job postings, application-to-first-response rates in competitive functions &mdash; product management, software engineering at non-specialist companies, marketing, operations &mdash; often run in the range of 5&ndash;15% for candidates who meet the stated requirements. In very high-volume functions and entry-level roles, they can be significantly lower.</p>
+
+        <p>Average time-to-hire has lengthened in most sectors compared to the 2021&ndash;2022 peak, when companies were filling roles in weeks. For mid-to-senior roles, four to eight weeks from application to offer is typical. Executive search can run three to six months. Adjust your pipeline planning accordingly.</p>
+
+        <p>A substantial proportion of roles &mdash; estimates range widely, but figures of 40&ndash;70% are regularly cited across different studies and surveys &mdash; are filled through internal promotion or referral before or without a public posting. Many public postings go live after a preferred internal candidate has already been identified. This doesn't mean public applications are pointless. It means that network strength directly affects your addressable market.</p>
+
+        <p>These numbers are averages across a very varied landscape. Your specific market, function, experience level, and geography will shift them significantly. The direction they point is clear enough: selective applications and strong referral networks outperform volume campaigns.</p>
+
+        <h2>AI's role in hiring in 2027</h2>
+
+        <p>AI screening tools have become part of the standard hiring stack, not a novelty. What this means practically for candidates is a double effect.</p>
+
+        <p>On one hand, AI-assisted screening means more consistent application of stated requirements. A human recruiter reading 200 applications at speed may miss a qualified candidate or apply inconsistent criteria. An AI screening tool applies the same scoring logic across all applications. If your CV clearly matches the stated requirements, you're less likely to be arbitrarily filtered out by reviewer fatigue.</p>
+
+        <p>On the other hand, AI screening means that a generic CV without clear alignment to the specific role's language and requirements scores lower &mdash; and lower-scoring applications may not reach a human reviewer at all. The stakes of tailoring have increased. A strong generic CV used to rely on a human to see past its generality. That safety net is thinner now.</p>
+
+        <p>There's also an adversarial dynamic emerging. As AI tools become more widespread for generating applications, hiring AI tools are also developing capabilities to identify AI-generated content and heavily templated submissions. The quality bar for standing out has shifted from "well-formatted and complete" to "demonstrably specific to this role and company."</p>
+
+        <h2>What's working for candidates right now</h2>
+
+        <p><strong>Tailored applications.</strong> Not tailored in the sense of changing a few keywords, but genuinely researched applications that reference the company's specific context, use the language of the job description throughout, and make a clear argument for fit. These take more time per application. They generate substantially better response rates.</p>
+
+        <p><strong>Strong LinkedIn presence.</strong> Recruiters are actively sourcing on LinkedIn in volume. A profile that's complete, current, and contains the keywords relevant to your target roles dramatically increases inbound interest. For many professionals, a well-maintained LinkedIn generates more opportunities than outbound applications.</p>
+
+        <p><strong>Referrals.</strong> The most consistent driver of successful hires across every market and period. A warm referral from a credible insider moves your application to a different pile. Investing time in professional relationships &mdash; genuinely, not transactionally &mdash; pays compound returns in job searches.</p>
+
+        <p><strong>Building in public.</strong> Writing, speaking, contributing to professional communities. In technical and creative fields particularly, demonstrated work builds a reputation that precedes a CV. The people most sought-after in hiring markets are usually known before they're applying.</p>
+
+        <h2>What's not working</h2>
+
+        <p><strong>Mass applications.</strong> The easy-apply button exists. Everyone is using it. Volume alone does not generate responses &mdash; it generates noise in an already crowded queue. Ten carefully targeted applications will outperform a hundred easy-applies every time.</p>
+
+        <p><strong>Generic CVs.</strong> A CV that could have been written for any company in your field is a CV that reads as low-effort to anyone seeing multiple applications. Recruiters can tell the difference between a document someone thought about and one someone sent to 80 companies.</p>
+
+        <p><strong>Apply-and-disappear.</strong> Submitting an application and then doing nothing is a passive strategy in a high-volume market. A brief, professional follow-up to a recruiter or hiring manager after a reasonable interval &mdash; one that adds value rather than just asking for an update &mdash; can distinguish your application from the pile.</p>
+
+        <p><strong>Ignoring country-specific conventions.</strong> If you're applying internationally, using your home market's CV format in a different country is a signal that you didn't do basic research. A US resume sent to a German company, or an Australian CV sent to a Japanese employer without format adjustment, shows a lack of preparation that works against you before the content is even considered.</p>
+
+        <h2>Where QuillCV fits in</h2>
+
+        <p>The central challenge of the current market is precision at volume: each application needs to be genuinely tailored, but applying to enough roles to build a real pipeline is time-consuming if you're tailoring from scratch each time.</p>
+
+        <p>QuillCV tailors your CV to each job description in minutes &mdash; mirroring the role's language, applying the right country format, and producing an ATS-optimized document ready to submit. The research and positioning work that would take you an hour per application takes you minutes. The quality of each output is consistent whether you're applying to one role or twenty.</p>
+
+        <p>The job market rewards precision. Precision at scale is the advantage.</p>
+
+    </article>
+</div>
+{% endblock %}
