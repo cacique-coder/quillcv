@@ -1,0 +1,6 @@
+{# Sticky note — Caveat handwriting on a tinted square with tape.
+   Required: text. Optional: color (yellow|lavender|sage|clay|slate, default yellow), rotation degrees. #}
+<span class="sticky-note {% if color %}sticky-note--{{ color }}{% endif %}"
+      {% if rotation %}style="transform: rotate({{ rotation }}deg);"{% endif %}>
+  {{ text }}
+</span>

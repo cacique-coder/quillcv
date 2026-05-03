@@ -1,0 +1,14 @@
+{# Proof strip — testimonial on the left, numeric stat on the right.
+   Required: quote, byline, stat_num, stat_label. #}
+<section class="proof-strip">
+  <div>
+    <div class="proof-quote">
+      <span class="mark">“</span>{{ quote }}<span class="mark">”</span>
+      {% if byline %}<div class="proof-byline">— {{ byline }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="proof-stat">
+    <div class="num">{{ stat_num }}</div>
+    <div class="label">{{ stat_label|safe }}</div>
+  </div>
+</section>

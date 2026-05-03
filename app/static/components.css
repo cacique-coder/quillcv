@@ -1,91 +1,541 @@
-/* QuillCV components — unified .btn system. See docs/DESIGN_SYSTEM.md */
+/* QuillCV components — shared visual primitives.
+ *
+ * Layered after base.css. Defines the patterns that appear on multiple
+ * pages: paper plan cards, the receipt centerpiece, stamp badges,
+ * sticky notes, CV sheet mocks, dot-leader rows, status pills, hand-
+ * drawn doodles, and the legacy .btn--* BEM aliases (Phase C migrates
+ * templates to the single-dash bundle naming).
+ */
 
-.btn {
-    display: inline-block;
-    padding: 0.9rem 2.2rem;
-    border-radius: 6px 10px 8px 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    position: relative;
-}
-
+/* ─── Legacy BEM button compat (removed in Phase G) ──────────────────
+ * Templates currently spell `.btn--primary`, `.btn--secondary`, etc.
+ * Bundle convention is `.btn-primary`, etc. (defined in base.css).
+ * These rules keep BEM-spelled buttons rendering correctly until
+ * Phase C renames every template usage. They override base.css's
+ * .btn defaults for elements that use the BEM modifiers.
+ */
 .btn--primary {
-    background: linear-gradient(135deg, var(--accent) 0%, #7c6ef5 100%);
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  border-radius: var(--r-pill);
+  padding: 10px 16px;
+  font-weight: 500;
 }
-.btn--primary:hover {
-    background: linear-gradient(135deg, #5a52d5 0%, #6c63ff 100%);
-    box-shadow: 0 6px 25px rgba(108, 99, 255, 0.45);
-    transform: translateY(-2px) rotate(-0.5deg);
-}
-.btn--primary:active { transform: translateY(0) rotate(0deg); }
+.btn--primary:hover { background: var(--ink-2); }
 
 .btn--secondary {
-    background: transparent;
-    border: 2px solid var(--accent);
-    color: var(--accent);
-    box-shadow: none;
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  padding: 10px 16px;
+  font-weight: 500;
 }
-.btn--secondary:hover {
-    background: rgba(108, 99, 255, 0.08);
-    box-shadow: none;
-    transform: translateY(-1px) rotate(0deg);
-}
+.btn--secondary:hover { background: var(--paper-sunk); }
 
 .btn--ghost {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    box-shadow: none;
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-2);
 }
-.btn--ghost:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    box-shadow: none;
-    transform: none;
+.btn--ghost:hover { background: var(--paper-sunk); color: var(--ink); }
+
+.btn--sm { padding: 6px 12px; font-size: 13px; }
+.btn--full { width: 100%; justify-content: center; }
+.btn--disabled, .btn[disabled] { opacity: .5; cursor: not-allowed; pointer-events: none; }
+
+/* ─── Plan card (paper, used by pricing) ─────────────────────────── */
+.plan-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+  padding: 30px 28px 28px;
+  box-shadow: var(--sh-paper);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transform: rotate(-0.6deg);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.plan-card.plan-card--right { transform: rotate(0.6deg); }
+.plan-card:hover { transform: rotate(0deg) translateY(-3px); box-shadow: var(--sh-3); }
+
+.plan-card .plan-stamp {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 18px;
+}
+.plan-card .plan-name {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 380;
+  line-height: 1;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.plan-card .plan-desc {
+  color: var(--ink-3);
+  font-size: 13px;
+  min-height: 36px;
+  margin-bottom: 18px;
+  font-family: var(--serif);
+}
+.plan-card .plan-price {
+  font-family: var(--display);
+  font-size: 56px;
+  font-weight: 320;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.plan-card .plan-price .cents {
+  font-size: 32px; vertical-align: super; font-weight: 360; margin-left: 1px;
+}
+.plan-card .plan-price-sub {
+  color: var(--ink-3); font-size: 12px; font-family: var(--mono);
+  letter-spacing: .04em; margin-top: 6px;
+}
+.plan-card .plan-divider {
+  border: none; border-top: 1px dashed var(--rule); margin: 22px 0 18px;
+}
+.plan-card ul { list-style: none; padding: 0; margin: 0 0 24px; flex: 1; }
+.plan-card ul li {
+  padding: 8px 0; font-size: 14px;
+  display: flex; gap: 10px; align-items: flex-start;
+  color: var(--ink-2);
+}
+.plan-card ul li .ok { color: var(--accent); flex-shrink: 0; margin-top: 1px; font-weight: 600; }
+.plan-card ul li .no { color: var(--ink-4); flex-shrink: 0; margin-top: 1px; }
+.plan-card ul li.dim { color: var(--ink-4); }
+.plan-card .btn { width: 100%; justify-content: center; }
+
+/* ─── Receipt centerpiece ─────────────────────────────────────────── */
+.receipt-wrap { position: relative; }
+.receipt {
+  --receipt-bg: var(--paper-raised);
+  background: var(--receipt-bg);
+  position: relative;
+  padding: 0;
+  transform: rotate(-1.2deg);
+  transition: transform .3s ease;
+  -webkit-mask: var(--torn-mask);
+          mask: var(--torn-mask);
+  filter: drop-shadow(0 1px 0 rgba(28,26,23,.06)) drop-shadow(0 18px 28px rgba(28,26,23,.10));
+  --torn-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 600' preserveAspectRatio='none'><path fill='white' d='M0 14 L18 6 L36 12 L54 4 L72 10 L90 5 L108 12 L126 6 L144 11 L162 5 L180 10 L198 6 L216 11 L234 5 L252 12 L270 6 L288 10 L306 5 L324 11 L342 6 L360 10 L378 5 L400 12 L400 588 L382 594 L364 588 L346 594 L328 588 L310 593 L292 587 L274 593 L256 588 L238 594 L220 588 L202 593 L184 587 L166 594 L148 588 L130 593 L112 587 L94 594 L76 588 L58 593 L40 587 L22 594 L0 588 Z'/></svg>");
+}
+[data-theme="dark"] .receipt {
+  filter: drop-shadow(0 2px 0 rgba(0,0,0,.5)) drop-shadow(0 24px 32px rgba(0,0,0,.45));
+}
+.receipt:hover { transform: rotate(0deg) translateY(-4px); }
+
+.receipt-inner {
+  padding: 40px 32px 44px;
+  display: flex; flex-direction: column;
+  background: var(--receipt-bg);
+  background-image: repeating-linear-gradient(0deg, transparent 0 38px, rgba(28,26,23,0.018) 38px 39px);
+}
+[data-theme="dark"] .receipt-inner {
+  background-image: repeating-linear-gradient(0deg, transparent 0 38px, rgba(255,255,255,0.025) 38px 39px);
 }
 
-.btn--sm { padding: 0.5rem 1.2rem; font-size: 0.85rem; box-shadow: none; }
-.btn--full { width: 100%; text-align: center; }
-.btn--disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-
-/* Global focus ring — :focus-visible so keyboard users see where they are, mouse users don't get a ring on click */
-:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-    border-radius: var(--radius-sm);
+.receipt-shop {
+  text-align: center; font-family: var(--display);
+  font-size: 22px; font-weight: 460; line-height: 1;
+  margin-top: 6px; color: var(--ink);
+}
+.receipt-meta {
+  text-align: center; font-family: var(--mono);
+  font-size: 10px; color: var(--ink-3);
+  letter-spacing: .14em; text-transform: uppercase;
+  margin-top: 8px; margin-bottom: 22px;
+}
+.receipt-section-label {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-3); text-align: center; padding: 12px 0;
+}
+.receipt-total {
+  padding: 18px 0 6px; display: flex;
+  justify-content: space-between; align-items: baseline;
+}
+.receipt-total .t-label {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3);
+}
+.receipt-total .t-val {
+  font-family: var(--display); font-size: 56px; font-weight: 340;
+  line-height: 1; letter-spacing: -0.02em; color: var(--ink);
+}
+.receipt-total .t-val .cents {
+  font-size: 30px; vertical-align: super; font-weight: 380;
+}
+.receipt-strike {
+  text-align: right; font-family: var(--mono);
+  font-size: 11px; color: var(--ink-4); margin-top: 2px;
+}
+.receipt-strike s { text-decoration-thickness: 1.5px; }
+.receipt-cta {
+  margin-top: 22px; display: flex; text-align: center;
+  width: 100%; justify-content: center; align-items: center;
+  padding: 14px 18px; font-size: 15px;
+}
+.receipt-foot-note {
+  text-align: center; margin-top: 14px;
+  font-family: "Caveat", cursive;
+  color: var(--accent); font-size: 18px; font-weight: 600;
+}
+.receipt-barcode {
+  margin: 18px auto 4px; height: 28px; width: 60%;
+  background: repeating-linear-gradient(90deg,
+    var(--ink) 0 2px, transparent 2px 4px,
+    var(--ink) 4px 5px, transparent 5px 8px,
+    var(--ink) 8px 11px, transparent 11px 13px,
+    var(--ink) 13px 14px, transparent 14px 17px);
+  opacity: .7;
+}
+.receipt-serial {
+  text-align: center; font-family: var(--mono);
+  font-size: 10px; letter-spacing: .18em; color: var(--ink-3);
 }
 
-/* Respect reduced-motion preference — disable the sketchy hover rotations and translations */
+/* ─── Dot-leader line items (used in receipt and spec sheets) ───── */
+.line-item {
+  display: flex; align-items: baseline; gap: 4px;
+  padding: 9px 0; font-size: 14px; color: var(--ink-2);
+}
+.line-item .li-name { white-space: nowrap; font-family: var(--serif); }
+.line-item .li-dots {
+  flex: 1; overflow: hidden;
+  color: var(--ink-4); letter-spacing: 2px;
+  font-family: var(--mono);
+  transform: translateY(-2px);
+  user-select: none; white-space: nowrap;
+}
+.line-item .li-val {
+  white-space: nowrap; font-family: var(--mono);
+  font-weight: 600; color: var(--ink); font-size: 13px;
+}
+.line-item.muted .li-name,
+.line-item.muted .li-val { color: var(--ink-3); }
+.line-item.muted .li-val { font-weight: 500; }
+.line-item.note {
+  padding: 4px 0 6px; font-size: 12px; color: var(--ink-3);
+  font-style: italic; font-family: var(--serif);
+  text-align: center; display: block;
+}
+
+/* ─── Stamp badge (rotated bordered label, used by pricing/dashboard/onboarding) ─ */
+.stamp-badge {
+  align-self: center;
+  padding: 8px 16px;
+  border: 2px solid var(--accent);
+  border-radius: 4px 7px 5px 8px;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  font-weight: 700;
+  transform: rotate(-3deg);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+}
+.stamp-badge::before, .stamp-badge::after {
+  content: "★"; margin: 0 6px; font-size: 11px; color: var(--accent);
+}
+.stamp-badge--ok    { color: var(--ok);    border-color: var(--ok); }
+.stamp-badge--ok::before, .stamp-badge--ok::after    { color: var(--ok); }
+.stamp-badge--warn  { color: var(--warn);  border-color: var(--warn); }
+.stamp-badge--warn::before, .stamp-badge--warn::after  { color: var(--warn); }
+.stamp-badge--ink   { color: var(--ink);   border-color: var(--ink); }
+.stamp-badge--ink::before, .stamp-badge--ink::after   { color: var(--ink); }
+
+/* ─── Hand-drawn pen circle around inline text/price ─────────────── */
+.price-circle { position: relative; display: inline-block; }
+.price-circle::after {
+  content: ""; position: absolute;
+  inset: -10px -14px -8px -14px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 90' preserveAspectRatio='none'><path d='M28 18 Q 8 42 22 70 Q 70 88 130 80 Q 188 70 188 38 Q 184 12 130 8 Q 76 4 28 18' fill='none' stroke='%235b3dbd' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' opacity='0.8'/></svg>");
+  background-repeat: no-repeat; background-size: 100% 100%;
+  pointer-events: none;
+}
+[data-theme="dark"] .price-circle::after {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 90' preserveAspectRatio='none'><path d='M28 18 Q 8 42 22 70 Q 70 88 130 80 Q 188 70 188 38 Q 184 12 130 8 Q 76 4 28 18' fill='none' stroke='%239a81ff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' opacity='0.85'/></svg>");
+}
+
+/* ─── Dashed horizontal rule (receipt + faq) ─────────────────────── */
+.dash-rule {
+  border: none; border-top: 1.5px dashed var(--rule); margin: 0;
+}
+
+/* ─── Drifting accent doodle (pricing, landing) ──────────────────── */
+.doodle {
+  position: absolute; pointer-events: none;
+  color: var(--accent); opacity: .5;
+  animation: doodle-drift 8s ease-in-out infinite;
+}
+@keyframes doodle-drift {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50%      { transform: translateY(-6px) rotate(6deg); }
+}
+
+/* ─── Status pill (dashboard / jobs / wizard) ────────────────────── */
+.status-pill {
+  display: inline-flex; align-items: center;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .08em; text-transform: uppercase;
+  background: var(--paper-sunk); color: var(--ink-2);
+  border: 1px solid var(--rule);
+}
+.status-pill--saved      { background: var(--paper-sunk);   color: var(--ink-3); }
+.status-pill--applying   { background: var(--accent-wash);  color: var(--accent-ink); border-color: transparent; }
+.status-pill--applied    { background: var(--mustard-wash); color: var(--mustard);    border-color: transparent; }
+.status-pill--interview  { background: var(--ok-wash);      color: var(--ok);         border-color: transparent; }
+.status-pill--rejected   { background: var(--danger-wash);  color: var(--danger);     border-color: transparent; }
+
+/* ─── Icon box (40-56px accent-wash square with asymmetric radius) ─ */
+.icon-box {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px;
+  border-radius: var(--r-2);
+  background: var(--accent-wash); color: var(--accent);
+}
+.icon-box--sm { width: 36px; height: 36px; }
+.icon-box--lg { width: 64px; height: 64px; border-radius: var(--r-3); }
+.icon-box--ok      { background: var(--ok-wash);      color: var(--ok); }
+.icon-box--warn    { background: var(--warn-wash);    color: var(--warn); }
+.icon-box--mustard { background: var(--mustard-wash); color: var(--mustard); }
+.icon-box--sage    { background: var(--sage-wash);    color: var(--sage); }
+.icon-box--clay    { background: var(--clay-wash);    color: var(--clay); }
+.icon-box--slate   { background: var(--slate-wash);   color: var(--slate); }
+
+/* ─── Sticky note (rotated Caveat note, used in landing hero) ───── */
+.sticky-note {
+  position: relative;
+  display: inline-block;
+  padding: 18px 22px;
+  font-family: "Caveat", cursive;
+  font-size: 22px;
+  line-height: 1.25;
+  color: var(--ink);
+  background: var(--mustard-wash);
+  box-shadow: var(--sh-2);
+  transform: rotate(-3deg);
+  transition: transform .25s ease;
+}
+.sticky-note:hover { transform: rotate(0) translateY(-2px); }
+.sticky-note::after {
+  /* tape */
+  content: ""; position: absolute;
+  top: -10px; left: 50%; transform: translateX(-50%) rotate(-2deg);
+  width: 56px; height: 16px;
+  background: rgba(255,255,255,0.45);
+  border: 1px solid rgba(28,26,23,.05);
+}
+.sticky-note--yellow   { background: var(--mustard-wash); }
+.sticky-note--lavender { background: var(--accent-wash);  color: var(--accent-ink); }
+.sticky-note--sage     { background: var(--sage-wash); }
+.sticky-note--clay     { background: var(--clay-wash); }
+.sticky-note--slate    { background: var(--slate-wash); }
+
+/* ─── CV sheet mock (A5 paper used in landing/demo/dashboard) ───── */
+.cv-sheet {
+  aspect-ratio: 210 / 297;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  box-shadow: var(--sh-paper);
+  padding: 18px 20px;
+  font-family: var(--serif);
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  overflow: hidden;
+}
+.cv-sheet h4 {
+  font-family: var(--display); font-size: 16px;
+  margin: 0 0 4px; line-height: 1; color: var(--ink);
+}
+.cv-sheet .meta {
+  font-family: var(--mono); font-size: 8px;
+  color: var(--ink-3); letter-spacing: .08em;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.cv-sheet .line {
+  height: 5px; background: var(--rule-soft);
+  border-radius: 2px; margin-bottom: 5px;
+}
+.cv-sheet .line.short { width: 60%; }
+.cv-sheet .line.mid   { width: 80%; }
+
+.cv-stack { position: relative; }
+.cv-stack .cv-sheet { position: absolute; inset: 0; }
+.cv-stack .cv-sheet:nth-child(1) { transform: rotate(-5deg); }
+.cv-stack .cv-sheet:nth-child(2) { transform: rotate( 4deg); }
+.cv-stack .cv-sheet:nth-child(3) { transform: rotate(-1deg); position: relative; }
+
+/* ─── Section head (italic accent number + title + kicker) ───────── */
+.sec-head {
+  display: flex; align-items: baseline; gap: 14px;
+  margin-bottom: 6px;
+}
+.sec-head .num {
+  font-family: var(--display); font-style: italic;
+  font-size: 22px; color: var(--accent); line-height: 1;
+}
+.sec-head h2 { line-height: 1; }
+.sec-kicker {
+  font-family: var(--serif); font-style: italic;
+  color: var(--ink-3); font-size: 18px; line-height: 1.4;
+  margin-bottom: 32px;
+}
+
+/* ─── FAQ accordion ─────────────────────────────────────────────── */
+.faq-list details {
+  border-bottom: 1px dashed var(--rule); padding: 18px 0;
+}
+.faq-list details:first-of-type { border-top: 1px dashed var(--rule); }
+.faq-list summary {
+  font-family: var(--display); font-size: 19px; font-weight: 440;
+  cursor: pointer; padding: 4px 0 4px 36px;
+  list-style: none; position: relative;
+  color: var(--ink); transition: color .15s ease;
+}
+.faq-list summary:hover { color: var(--accent); }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::before {
+  content: ""; position: absolute; left: 0; top: 6px;
+  width: 22px; height: 22px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3 Q 4 4 3 12 Q 4 20 12 21 Q 20 20 21 12 Q 20 4 12 3' fill='none' stroke='%236b6356' stroke-width='1.6' stroke-linecap='round'/><path d='M8 12 L16 12 M12 8 L12 16' stroke='%236b6356' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  background-size: contain; background-repeat: no-repeat;
+  transition: transform .25s ease;
+}
+[data-theme="dark"] .faq-list summary::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3 Q 4 4 3 12 Q 4 20 12 21 Q 20 20 21 12 Q 20 4 12 3' fill='none' stroke='%239a9285' stroke-width='1.6' stroke-linecap='round'/><path d='M8 12 L16 12 M12 8 L12 16' stroke='%239a9285' stroke-width='1.6' stroke-linecap='round'/></svg>");
+}
+.faq-list details[open] summary::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3 Q 4 4 3 12 Q 4 20 12 21 Q 20 20 21 12 Q 20 4 12 3' fill='none' stroke='%235b3dbd' stroke-width='1.8' stroke-linecap='round'/><path d='M8 12 L16 12' stroke='%235b3dbd' stroke-width='1.8' stroke-linecap='round'/></svg>");
+  transform: rotate(180deg);
+}
+[data-theme="dark"] .faq-list details[open] summary::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3 Q 4 4 3 12 Q 4 20 12 21 Q 20 20 21 12 Q 20 4 12 3' fill='none' stroke='%239a81ff' stroke-width='1.8' stroke-linecap='round'/><path d='M8 12 L16 12' stroke='%239a81ff' stroke-width='1.8' stroke-linecap='round'/></svg>");
+}
+.faq-list details p {
+  color: var(--ink-2); font-family: var(--serif);
+  font-size: 16px; line-height: 1.65;
+  margin: 12px 0 4px 36px; max-width: 640px;
+}
+.faq-list details p a { color: var(--accent); }
+
+/* ─── Proof strip (testimonial + numeric stat) ──────────────────── */
+.proof-strip {
+  max-width: 980px; margin: 80px auto 0;
+  padding: 28px 40px;
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 32px; align-items: center;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.proof-quote {
+  font-family: var(--serif); font-style: italic;
+  font-size: 18px; line-height: 1.5; color: var(--ink);
+}
+.proof-quote .mark {
+  font-family: var(--display); color: var(--accent);
+  font-size: 36px; line-height: 0; vertical-align: -0.2em; margin-right: 4px;
+}
+.proof-byline {
+  margin-top: 10px; font-family: var(--mono);
+  font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.proof-stat {
+  text-align: right; border-left: 1px solid var(--rule); padding-left: 32px;
+}
+.proof-stat .num {
+  font-family: var(--display); font-size: 48px;
+  font-weight: 340; line-height: 1; color: var(--ink);
+}
+.proof-stat .label {
+  margin-top: 6px; font-family: var(--mono);
+  font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+@media (max-width: 720px) {
+  .proof-strip { grid-template-columns: 1fr; padding: 24px; }
+  .proof-stat { text-align: left; border-left: none; border-top: 1px solid var(--rule); padding: 18px 0 0; }
+}
+
+/* ─── Hero (overline + headline + lede + arrow) ─────────────────── */
+.hero {
+  padding: 72px 24px 16px;
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.hero .overline { display: inline-block; margin-bottom: 22px; }
+.hero h1 { margin: 0 0 22px; }
+.hero .lede {
+  color: var(--ink-2); font-size: 18px;
+  font-family: var(--serif); line-height: 1.5;
+  margin: 0 auto; max-width: 620px;
+}
+.hero .caveat {
+  font-family: "Caveat", cursive; color: var(--accent);
+  font-size: 1.18em; font-weight: 600;
+}
+.hero .hero-arrow {
+  display: block; margin: 26px auto 0;
+  opacity: .6; color: var(--ink-3);
+}
+[data-theme="dark"] .hero .hero-arrow { opacity: .8; }
+
+/* ─── Closing CTA / margin note ─────────────────────────────────── */
+.closing {
+  max-width: 720px; margin: 60px auto 100px;
+  padding: 0 40px; text-align: center;
+}
+.closing .marg-note {
+  font-family: "Caveat", cursive; color: var(--accent);
+  font-size: 22px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 14px; transform: rotate(-2deg);
+}
+.closing .marg-note svg { transform: translateY(2px); }
+.closing h3 {
+  font-family: var(--display); font-size: 32px; font-weight: 360;
+  line-height: 1.1; margin-bottom: 16px; color: var(--ink);
+}
+.closing p {
+  color: var(--ink-3); font-size: 13px; font-family: var(--serif);
+  font-style: italic; max-width: 540px; margin: 18px auto 0;
+}
+.closing p a { color: var(--accent); }
+
+/* ─── Plan rail (3-card grid used by pricing) ───────────────────── */
+.plan-rail {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr 1fr;
+  gap: 28px;
+  max-width: 1120px;
+  margin: 24px auto 0;
+  padding: 0 32px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .plan-rail { grid-template-columns: 1fr; max-width: 480px; gap: 32px; }
+  .plan-rail .plan-card,
+  .plan-rail .plan-card.plan-card--right,
+  .plan-rail .receipt { transform: rotate(0); }
+}
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-    .btn--primary:hover,
-    .btn--secondary:hover { transform: none !important; }
-}
-
-/* Skip-to-content link — visually hidden until focused */
-.skip-link {
-    position: absolute;
-    top: -40px;
-    left: 0;
-    background: var(--accent);
-    color: #fff;
-    padding: 0.5rem 1rem;
-    z-index: var(--z-modal);
-    text-decoration: none;
-    border-radius: 0 0 var(--radius) 0;
-}
-.skip-link:focus {
-    top: 0;
+  .plan-card, .plan-card.plan-card--right, .receipt { transform: none !important; }
+  .doodle { animation: none !important; }
 }

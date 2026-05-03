@@ -1,0 +1,51 @@
+{# Receipt centerpiece — torn-edge ticket with stamp, dot-leaders, total, CTA.
+   Required: stamp_label, shop, meta, items (list of {name, value} or {note: str}),
+             total_label, total_value, cta_html.
+   Optional: total_cents (str), strike_was (str), foot_note, serial, doodles=True. #}
+<div class="receipt-wrap">
+  {% if doodles %}
+    <span class="doodle d1" aria-hidden="true" style="top:-20px;right:-28px;font-size:28px;transform:rotate(15deg);animation-delay:.3s;">✦</span>
+    <span class="doodle d2" aria-hidden="true" style="bottom:-18px;left:-22px;font-size:22px;animation-delay:1.4s;">→</span>
+  {% endif %}
+  <article class="receipt" aria-label="{{ aria_label or 'Receipt' }}">
+    <div class="receipt-inner">
+      {% if stamp_label %}<div class="stamp-badge" style="margin-top:-6px;margin-bottom:16px;">{{ stamp_label }}</div>{% endif %}
+      <div class="receipt-shop">{{ shop }}</div>
+      <div class="receipt-meta">{{ meta }}</div>
+
+      <hr class="dash-rule"/>
+      <div class="receipt-section-label">— {{ section_label or 'Your order' }} —</div>
+      <hr class="dash-rule"/>
+
+      {% for item in items %}
+        {% if item.note %}
+          <div class="line-item note">{{ item.note }}</div>
+        {% else %}
+          <div class="line-item {% if item.muted %}muted{% endif %}">
+            <span class="li-name">{{ item.name }}</span>
+            <span class="li-dots">··········································</span>
+            <span class="li-val">{{ item.value }}</span>
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <hr class="dash-rule"/>
+
+      <div class="receipt-total">
+        <span class="t-label">{{ total_label }}</span>
+        <span class="price-circle">
+          <span class="t-val">{{ total_value }}{% if total_cents %}<span class="cents">{{ total_cents }}</span>{% endif %}</span>
+        </span>
+      </div>
+      {% if strike_was %}<div class="receipt-strike">{{ strike_was|safe }}</div>{% endif %}
+
+      {{ cta_html|safe }}
+
+      {% if foot_note %}<div class="receipt-foot-note">{{ foot_note }}</div>{% endif %}
+
+      <hr class="dash-rule" style="margin-top: 20px;"/>
+      <div class="receipt-barcode" aria-hidden="true"></div>
+      {% if serial %}<div class="receipt-serial">{{ serial }}</div>{% endif %}
+    </div>
+  </article>
+</div>

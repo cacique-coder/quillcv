@@ -1,0 +1,14 @@
+{# Hero — overline + headline + lede + optional arrow.
+   Required: headline_html (markup-safe), lede.
+   Optional: overline, arrow=True. #}
+<section class="hero">
+  {% if overline %}<div class="overline">{{ overline }}</div>{% endif %}
+  <h1>{{ headline_html|safe }}</h1>
+  {% if lede %}<p class="lede">{{ lede }}</p>{% endif %}
+  {% if arrow %}
+  <svg class="hero-arrow" width="58" height="44" viewBox="0 0 58 44" fill="none" aria-hidden="true">
+    <path d="M4 6 Q 18 18 28 30 Q 38 40 50 36" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    <path d="M44 30 L 50 36 L 44 40" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>
+  {% endif %}
+</section>

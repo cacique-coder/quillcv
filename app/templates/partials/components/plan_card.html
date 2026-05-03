@@ -1,0 +1,21 @@
+{# Plan card (paper, used in pricing rail).
+   Required: stamp, name, desc, price (string e.g. "$0"), features (list of dicts).
+   Each feature: {label: str, status: 'ok' | 'no'}, optional dim=True for muted line.
+   Optional: cents (str), price_sub, side='left' (rotation), cta_html (markup-safe). #}
+<div class="plan-card {% if side == 'right' %}plan-card--right{% endif %}">
+  {% if stamp %}<div class="plan-stamp">{{ stamp }}</div>{% endif %}
+  <div class="plan-name">{{ name }}</div>
+  {% if desc %}<div class="plan-desc">{{ desc }}</div>{% endif %}
+  <div class="plan-price">{{ price }}{% if cents %}<span class="cents">{{ cents }}</span>{% endif %}</div>
+  {% if price_sub %}<div class="plan-price-sub">{{ price_sub }}</div>{% endif %}
+  <hr class="plan-divider"/>
+  <ul>
+    {% for feat in features %}
+      <li {% if feat.dim %}class="dim"{% endif %}>
+        <span class="{{ feat.status or 'ok' }}">{% if feat.status == 'no' %}—{% else %}✓{% endif %}</span>
+        {{ feat.label }}
+      </li>
+    {% endfor %}
+  </ul>
+  {{ cta_html|safe }}
+</div>

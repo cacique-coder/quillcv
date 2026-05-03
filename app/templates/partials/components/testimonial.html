@@ -1,0 +1,5 @@
+{# Testimonial — quote + byline. Used inside proof_strip and as standalone block. #}
+<div class="proof-quote">
+  <span class="mark">“</span>{{ quote }}<span class="mark">”</span>
+  {% if byline %}<div class="proof-byline">— {{ byline }}</div>{% endif %}
+</div>

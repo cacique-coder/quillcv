@@ -243,3 +243,100 @@ Load order in `base.html`:
 - New color? Add it to `tokens.css` as a semantic token, not a literal hex in a component.
 - New component? Document it here before building.
 - Breaking change to a token? Bump `?v=` on the CSS link in `base.html` and update CV templates that depend on it.
+
+---
+
+## 2026-05 — Claude Design bundle adoption (Phases A–G)
+
+The bundle delivered at `/tmp/design/quillcv/` was extracted into a unified design system. This section documents what landed.
+
+### Source of truth
+
+`app/static/design/` holds the bundle's upstream files (byte-identical):
+
+- `tokens.css` — paper/cream palette, dark-mode opt-in, asymmetric radii, paper shadows, `.paper-grain` SVG-noise utility
+- `base.css` — element resets, button system, `.scribble`, `.overline`, `.chip`, `.card`, `.input`, focus ring
+- `landing.css` — `landing-nav`, hero asymmetric grid, `cv-stack`, sticky-notes, `sec-head`, features grid, FAQ
+- `shell.css` — `.app` grid (sidebar + topbar + content), `nav`, `crumbs`, `page-head`
+- `icons.js` — inline SVG factory (`window.icons("quill", 16)`)
+
+Treat them as upstream — sync from the bundle when new revisions land, don't hand-edit.
+
+### Canonical CSS layer (consumed by every page)
+
+| File | Role |
+|---|---|
+| `app/static/tokens.css` | Bundle tokens + legacy `--bg/--text/--border/--green/...` aliases (removed when consumers migrate) |
+| `app/static/base.css` | Bundle base + `.skip-link` + preserved legacy `.site-header / .nav-link / main` chrome (Phase D removes the chrome when landing/pricing adopt `.landing-nav`) |
+| `app/static/components.css` | Shared paper-aesthetic primitives: `.plan-card`, `.receipt`, `.stamp-badge`, `.sticky-note`, `.cv-sheet`, `.line-item`, `.status-pill`, `.icon-box`, `.doodle`, `.price-circle`, `.dash-rule`, `.faq-list`, `.proof-strip`, `.hero`, `.closing`, `.plan-rail`. Also retains `.btn--*` BEM aliases (deleted when no template consumes them). |
+| `app/static/shell.css` | App layout chrome — only loaded when `body_layout == 'app'` |
+| `app/static/marketing.css` | Slimming candidate (Phase G) — currently still owns the legacy `pricing-*` and `lp-*` rules |
+| `app/static/landing.css` | Page-scoped, opted in by `landing.html`. Legacy lp-* tokens. |
+| `app/static/wizard.css`, `app/static/app-ui.css`, `app/static/style.css` | Page/feature-specific, all consume tokens via the alias layer. |
+
+Load order in `base.html`: `tokens` → `base` → `components` → `app-ui` → `wizard` → `marketing` → `style` → (opt-in) `shell`.
+
+### Naming conventions
+
+- **Buttons**: single-dash `.btn-primary / .btn-accent / .btn-ghost / .btn-secondary / .btn-sm / .btn-lg / .btn-full / .btn-disabled`. No more `.btn--*` BEM in templates (Phase C migrated all 49 occurrences).
+- **Components**: prefix shared classes with the component name (`.plan-card`, `.receipt-inner`, `.line-item`). Variants use single-dash modifiers (`.plan-card--right`, `.icon-box--ok`).
+- **Pages**: page-scoped utilities are fine, but reach for the shared classes first. New utilities that prove themselves on >2 pages get promoted to `components.css`.
+
+### Layouts
+
+`app/templates/base.html` exposes a `body_layout` block:
+
+- `marketing` (default) — `site-header` + `main` + `site-footer`. Pages do nothing.
+- `app` — `<div class="app"><sidebar/><div class="main"><topbar/><main class="content">…</main></div></div>`. Pages opt in with `{% block body_layout %}app{% endblock %}` and inherit sidebar + topbar automatically.
+
+App pages currently using `body_layout=app`: `builder.html, jobs.html, my_cvs.html, account.html, profile.html, job_detail.html, new_job.html, admin*.html` (11 pages).
+
+### Macros & partials
+
+`app/templates/macros/components.html` — small composables: `button`, `chip`, `stamp_badge`, `icon_box`, `overline`, `caveat`, `hero_arrow`, `dot_leader_line`, `status_pill`, `dash_rule`.
+
+`app/templates/partials/components/` — full-section partials:
+
+- `hero.html` — overline + headline + lede + optional arrow
+- `section_head.html` — italic accent number + title + kicker
+- `plan_card.html` — paper plan card (used in pricing rail)
+- `receipt.html` — torn-edge centerpiece
+- `faq.html` — `<details>` accordion with hand-drawn markers
+- `testimonial.html` — quote + byline
+- `proof_strip.html` — testimonial + numeric stat band
+- `cv_sheet.html` — A5 paper mock
+- `sticky_note.html` — Caveat note, rotated, color variants
+- `app_sidebar.html` — sidebar for `body_layout=app`
+- `app_topbar.html` — topbar with breadcrumbs (defines `topbar_actions` block for page-specific buttons)
+
+### What pricing.html showcases
+
+`app/templates/pricing.html` (~250 lines, down from ~700) is the reference consumer — uses `paper-grain` body, `hero` block, `plan-rail` with two `plan-card` flanking a `receipt` centerpiece using `line-item` rows + `price-circle` + `stamp-badge`, `proof-strip` band, `faq-list` accordion, `closing` CTA. Zero page-scoped CSS.
+
+### Legacy aliases (slated for removal)
+
+Tokens in `tokens.css` defined as aliases:
+
+```
+--bg → --paper        --green → --ok          --font-sans → --sans
+--surface → --paper-raised   --yellow → --mustard    --font-hand → "Caveat"
+--border → --rule     --red → --danger        --radius* → bundle scale
+--text → --ink        --warning → --warn      --shadow* → --sh-*
+--text-muted → --ink-3  --accent-hover → --accent-2
+```
+
+These keep `style.css`, `wizard.css`, `app-ui.css`, `marketing.css` rendering correctly without an immediate rewrite. When each file gets a token-pass refactor, drop its references; once nothing in the codebase reads an alias, delete the alias block from `tokens.css`.
+
+`.btn--primary` etc. in `components.css` follow the same pattern — kept until the BEM names disappear from CSS files (templates already migrated).
+
+### What's NOT in the system
+
+These stay isolated:
+
+- `app/templates/cv_templates/**` — printable CV output for the Puppeteer pipeline. Inline styles, intentional.
+- `app/templates/cover_letter_templates/**` — same.
+- `app/templates/emails/**` — email-client-safe inline CSS.
+
+### Where the chats are
+
+Chat transcripts that anchored this aesthetic live at `/tmp/design/quillcv/chats/` (delivered with the bundle). Read those first when extending — the design intent is described there better than any spec.

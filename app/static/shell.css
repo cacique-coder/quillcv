@@ -1,0 +1,181 @@
+/* App shell — shared across all authed screens */
+
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.sidebar {
+  background: var(--paper-sunk);
+  border-right: 1px solid var(--rule);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0;
+  height: 100vh;
+  padding: 20px 14px 16px;
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 10px 24px;
+  color: var(--ink);
+}
+.brand-mark {
+  width: 30px; height: 30px; display: grid; place-items: center;
+  background: var(--ink); color: var(--paper);
+  border-radius: 8px 10px 8px 10px;
+  transform: rotate(-3deg);
+}
+.brand-mark svg { transform: rotate(3deg); }
+.brand-word {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 450;
+  letter-spacing: -0.02em;
+}
+
+.nav-section {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  padding: 14px 12px 6px;
+}
+
+.nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r-2);
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  position: relative;
+}
+.nav a:hover { background: var(--paper); color: var(--ink); }
+.nav a.active {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule);
+  box-shadow: var(--sh-1);
+}
+.nav a .badge {
+  margin-left: auto;
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-family: var(--mono);
+}
+[data-theme="dark"] .nav a .badge { color: var(--accent-2); }
+
+.sidebar-foot {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px dashed var(--rule);
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.credits {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  font-size: 13px;
+}
+.credits-num {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1;
+}
+.credits-lbl { color: var(--ink-3); font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.user-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-2);
+  cursor: pointer;
+}
+.user-card:hover { background: var(--paper); }
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  display: grid; place-items: center;
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 500;
+}
+[data-theme="dark"] .avatar { color: var(--accent-2); }
+
+/* Main area */
+.main {
+  min-width: 0;
+  display: flex; flex-direction: column;
+}
+
+.topbar {
+  height: 56px;
+  padding: 0 32px;
+  display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+  position: sticky; top: 0;
+  z-index: 5;
+}
+.topbar .crumbs {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.topbar .crumbs .sep { color: var(--ink-4); }
+.topbar .crumbs .cur { color: var(--ink); font-weight: 500; }
+.topbar-spacer { flex: 1; }
+
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--r-2);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+.icon-btn:hover { background: var(--paper-sunk); color: var(--ink); }
+
+.content {
+  padding: 40px 48px 64px;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.content.wide { max-width: 100%; padding: 0; }
+
+/* Page headers */
+.page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--rule);
+}
+.page-head h1 {
+  font-size: 44px;
+  font-weight: 360;
+}
+.page-head .kicker {
+  color: var(--ink-3);
+  margin-top: 4px;
+  font-size: 14px;
+}
+.page-head-actions { display: flex; gap: 8px; }

@@ -82,3 +82,22 @@ R2_BUCKET=...
 - Strong Ruby on Rails background
 - Open to Python, Go, or C# — leveraging AI to learn new language idioms
 - Targeting roles in AU and US markets
+
+## Design System (post-Phase-G)
+
+Canonical CSS load order in `app/templates/base.html`:
+
+```
+tokens.css → base.css → components.css → app-ui.css → wizard.css → marketing.css → style.css
+                                                                                  → shell.css (only when body_layout='app')
+landing.css                                                                       (only when included via head_extra)
+```
+
+- **`app/static/design/`** holds upstream-bundle files verbatim (`tokens.css`, `base.css`, `landing.css`, `shell.css`, `icons.js`). Treat as read-only reference; don't hand-edit.
+- **`app/static/tokens.css`** is the canonical token file (warm cream palette, dark via `[data-theme="dark"]`). Legacy aliases at the bottom (`--bg → --paper`, etc.) — do not introduce new uses; they get deleted once consumers migrate.
+- **Buttons**: single-dash naming. Use `.btn-primary / .btn-accent / .btn-ghost / .btn-secondary / .btn-sm / .btn-lg / .btn-full / .btn-disabled`. Never `.btn--*` BEM in templates.
+- **Layouts**: `{% block body_layout %}app{% endblock %}` opts an authenticated page into the sidebar+topbar shell. Default is `marketing` (header + footer).
+- **Component library**: `app/templates/macros/components.html` (small composables) + `app/templates/partials/components/*.html` (full sections). See `docs/DESIGN_SYSTEM.md` for the catalog.
+- **Out of scope**: `app/templates/cv_templates/**`, `app/templates/cover_letter_templates/**`, `app/templates/emails/**` — these stay on inline styles for the print/email pipeline.
+
+When extending the look: shared classes first (`components.css`); only fall back to a page-scoped `<style>` block if a pattern is genuinely one-off.

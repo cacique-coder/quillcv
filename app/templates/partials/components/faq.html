@@ -1,0 +1,14 @@
+{# FAQ section — title + sub + list of {q, a}.
+   Required: items (list of {q, a}). Optional: title, sub. The first item opens by default. #}
+<section class="faq-section">
+  {% if title %}<h2 style="text-align:center;margin:0 0 8px;">{{ title }}</h2>{% endif %}
+  {% if sub %}<div style="text-align:center;font-family:'Caveat',cursive;color:var(--accent);font-size:22px;margin-bottom:36px;font-weight:600;">{{ sub }}</div>{% endif %}
+  <div class="faq-list">
+    {% for item in items %}
+      <details {% if loop.first %}open{% endif %}>
+        <summary>{{ item.q }}</summary>
+        <p>{{ item.a|safe }}</p>
+      </details>
+    {% endfor %}
+  </div>
+</section>

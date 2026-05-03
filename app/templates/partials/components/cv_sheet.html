@@ -1,0 +1,9 @@
+{# CV sheet mock (A5 paper with placeholder lines). Used in landing hero, demo, dashboard recent CV.
+   Optional: name, role, lines (int, default 6). #}
+<div class="cv-sheet">
+  {% if name %}<h4>{{ name }}</h4>{% endif %}
+  {% if role %}<div class="meta">{{ role }}</div>{% endif %}
+  {% for i in range(lines or 6) %}
+    <div class="line {% if loop.last %}short{% elif loop.index == 2 %}mid{% endif %}"></div>
+  {% endfor %}
+</div>

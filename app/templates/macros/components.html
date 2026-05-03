@@ -1,0 +1,82 @@
+{# QuillCV component macros — small, composable bits of markup.
+   Larger compositions live in app/templates/partials/components/.
+   Conventions: keep markup minimal, accept variant params, never set inline styles. #}
+
+{# ── Button ───────────────────────────────────────────────────────────────
+   Renders an <a> by default, or a <button> when type='button'/'submit'.
+   variant: primary | accent | ghost | secondary (legacy)
+   size: sm | md | lg
+   full: True for full-width  #}
+{% macro button(label, href=None, variant='primary', size='md', type='link', name=None, value=None, full=False, disabled=False, attrs='') %}
+  {%- set classes = ['btn'] -%}
+  {%- if variant in ['primary','accent','ghost','secondary'] -%}
+    {%- set _ = classes.append('btn-' ~ variant) -%}
+  {%- endif -%}
+  {%- if size in ['sm','lg'] -%}{%- set _ = classes.append('btn-' ~ size) -%}{%- endif -%}
+  {%- if full -%}{%- set _ = classes.append('btn-full') -%}{%- endif -%}
+  {%- if disabled -%}{%- set _ = classes.append('btn-disabled') -%}{%- endif -%}
+  {%- if type == 'link' -%}
+    <a href="{{ href or '#' }}" class="{{ classes|join(' ') }}" {{ attrs|safe }}>{{ label }}</a>
+  {%- else -%}
+    <button type="{{ type }}" class="{{ classes|join(' ') }}"
+            {% if name %}name="{{ name }}"{% endif %}
+            {% if value is not none %}value="{{ value }}"{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {{ attrs|safe }}>{{ label }}</button>
+  {%- endif -%}
+{% endmacro %}
+
+{# ── Chip / pill (mono small caps badge) ─────────────────────────── #}
+{% macro chip(label, tone='default') %}
+  <span class="chip {% if tone != 'default' %}chip--{{ tone }}{% endif %}">{{ label }}</span>
+{% endmacro %}
+
+{# ── Stamp badge (rotated bordered label with stars) ──────────────── #}
+{% macro stamp_badge(label, tone='accent') %}
+  <span class="stamp-badge {% if tone != 'accent' %}stamp-badge--{{ tone }}{% endif %}">{{ label }}</span>
+{% endmacro %}
+
+{# ── Icon box (accent-wash square with icon name) ────────────────── #}
+{% macro icon_box(icon_name, size='md', tone='accent') %}
+  <span class="icon-box {% if size != 'md' %}icon-box--{{ size }}{% endif %} {% if tone != 'accent' %}icon-box--{{ tone }}{% endif %}"
+        data-icon="{{ icon_name }}">
+    <script>(function(el){if(window.icons){el.previousElementSibling||el}.dataset;})()</script>
+  </span>
+{% endmacro %}
+
+{# ── Overline (small caps mono label) ─────────────────────────────── #}
+{% macro overline(text) %}
+  <span class="overline">{{ text }}</span>
+{% endmacro %}
+
+{# ── Caveat span (handwritten accent) ─────────────────────────────── #}
+{% macro caveat(text) %}<span class="caveat">{{ text }}</span>{% endmacro %}
+
+{# ── Hand-drawn arrow SVG (used by hero) ──────────────────────────── #}
+{% macro hero_arrow() %}
+<svg class="hero-arrow" width="58" height="44" viewBox="0 0 58 44" fill="none" aria-hidden="true">
+  <path d="M4 6 Q 18 18 28 30 Q 38 40 50 36" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M44 30 L 50 36 L 44 40" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
+{% endmacro %}
+
+{# ── Dot-leader line item: name ··· value (used in receipts/spec lists) ── #}
+{% macro dot_leader_line(name, value, muted=False, note=False) %}
+  {%- if note -%}
+    <div class="line-item note">{{ name }}</div>
+  {%- else -%}
+    <div class="line-item {% if muted %}muted{% endif %}">
+      <span class="li-name">{{ name }}</span>
+      <span class="li-dots">··········································</span>
+      <span class="li-val">{{ value }}</span>
+    </div>
+  {%- endif -%}
+{% endmacro %}
+
+{# ── Status pill (saved / applying / applied / interview / rejected) ── #}
+{% macro status_pill(label, status) %}
+  <span class="status-pill {% if status %}status-pill--{{ status }}{% endif %}">{{ label }}</span>
+{% endmacro %}
+
+{# ── Dashed rule (receipt section divider) ──────────────────────── #}
+{% macro dash_rule() %}<hr class="dash-rule"/>{% endmacro %}

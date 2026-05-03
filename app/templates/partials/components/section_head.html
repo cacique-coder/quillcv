@@ -1,0 +1,7 @@
+{# Section head — italic accent number + title + kicker.
+   Required: title.  Optional: num, kicker. #}
+<div class="sec-head">
+  {% if num %}<span class="num">{{ num }}</span>{% endif %}
+  <h2>{{ title }}</h2>
+</div>
+{% if kicker %}<div class="sec-kicker">{{ kicker }}</div>{% endif %}

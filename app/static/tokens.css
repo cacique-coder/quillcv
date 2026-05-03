@@ -1,144 +1,210 @@
-/* QuillCV design tokens. See docs/DESIGN_SYSTEM.md */
-
-/* ─── Color tokens ─────────────────────────────────────────────────────────── */
+/* QuillCV design tokens — handcrafted, editorial, warm.
+ * Canonical paper/cream palette (light by default, dark on data-theme="dark").
+ * Mirrors app/static/design/tokens.css verbatim, plus legacy compat aliases at
+ * the bottom so existing CSS that still references --bg / --surface / --text /
+ * etc. resolves without changes during the design-system rollout.
+ * Aliases are removed in Phase G once every consumer has migrated.
+ */
 
 :root {
-    --bg: #0f1117;
-    --surface: #1c1f2b;
-    --border: #2e3142;
-    --text: #e1e4ed;
-    --text-muted: #8b8fa3;
-    --accent: #6c63ff;
-    --accent-hover: #5a52d5;
-    --green: #34d399;
-    --yellow: #fbbf24;
-    --red: #f87171;
-    --warning: #f59e0b;
-    --radius: 8px;
+  /* Paper base — warm cream, not pure white */
+  --paper: #f6f1e8;
+  --paper-raised: #fbf7ee;
+  --paper-sunk: #ede5d3;
+  --ink: #1c1a17;
+  --ink-2: #3b362e;
+  --ink-3: #6b6356;
+  --ink-4: #9a9181;
+  --rule: #d9cfb9;
+  --rule-soft: #e6dcc4;
+
+  /* Accent — QuillCV purple */
+  --accent: #5b3dbd;
+  --accent-2: #7758d9;
+  --accent-wash: #eae3ff;
+  --accent-ink: #2b1a6a;
+
+  /* Semantic */
+  --ok: #3a7a3e;
+  --ok-wash: #d8ebd3;
+  --warn: #8a5a10;
+  --warn-wash: #f3e5c5;
+  --danger: #a4341f;
+  --danger-wash: #f3d9d1;
+
+  /* Category swatches (hand-mixed) */
+  --sage: #7a8f6e;
+  --sage-wash: #dfe5cf;
+  --clay: #b66a4a;
+  --clay-wash: #f1d6c4;
+  --slate: #4f6a7a;
+  --slate-wash: #d3dde3;
+  --mustard: #b68a2a;
+  --mustard-wash: #f1e1b3;
+
+  /* Type — bundle's editorial stack */
+  --serif: "EB Garamond", "Iowan Old Style", Georgia, serif;
+  --sans: "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --display: "Fraunces", "EB Garamond", Georgia, serif;
+
+  /* Radius — asymmetric signature */
+  --r-1: 3px;
+  --r-2: 6px 10px 6px 10px;
+  --r-3: 14px 18px 14px 18px;
+  --r-soft: 12px;
+  --r-pill: 999px;
+
+  /* Shadow — paper shadow, not drop shadow */
+  --sh-1: 0 1px 0 rgba(28,26,23,0.06), 0 1px 2px rgba(28,26,23,0.04);
+  --sh-2: 0 1px 0 rgba(28,26,23,0.06), 0 6px 12px rgba(28,26,23,0.06);
+  --sh-3: 0 2px 0 rgba(28,26,23,0.06), 0 18px 28px rgba(28,26,23,0.08);
+  --sh-paper: 0 1px 0 #fff inset, 0 1px 0 rgba(28,26,23,0.08), 0 18px 32px rgba(28,26,23,0.07);
+
+  /* Space — bundle 8-pt scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 72px;
+  --s-9: 112px;
 }
 
+/* Dark theme — ink on deep paper */
 [data-theme="dark"] {
-    --bg: #0f1117;
-    --surface: #1c1f2b;
-    --border: #2e3142;
-    --text: #e1e4ed;
-    --text-muted: #8b8fa3;
-    --accent: #6c63ff;
-    --accent-hover: #5a52d5;
-    --green: #34d399;
-    --yellow: #fbbf24;
-    --red: #f87171;
-    --warning: #f59e0b;
+  --paper: #17161a;
+  --paper-raised: #1f1d22;
+  --paper-sunk: #111014;
+  --ink: #f2ecdf;
+  --ink-2: #d5cebf;
+  --ink-3: #9a9285;
+  --ink-4: #6b6357;
+  --rule: #2e2b32;
+  --rule-soft: #252229;
+
+  --accent: #9a81ff;
+  --accent-2: #b6a2ff;
+  --accent-wash: #2b234a;
+  --accent-ink: #cfc3ff;
+
+  --ok: #8ac291;
+  --ok-wash: #1f2a21;
+  --warn: #d9b15a;
+  --warn-wash: #2c2515;
+  --danger: #e68a76;
+  --danger-wash: #2a1815;
+
+  --sage: #a8b89c;
+  --sage-wash: #242a21;
+  --clay: #d39075;
+  --clay-wash: #2a1e18;
+  --slate: #8aa4b5;
+  --slate-wash: #1c2228;
+  --mustard: #dcb56a;
+  --mustard-wash: #2a2315;
+
+  --sh-paper: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 0 rgba(0,0,0,0.5), 0 18px 32px rgba(0,0,0,0.35);
+  --sh-1: 0 1px 0 rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --sh-2: 0 1px 0 rgba(0,0,0,0.4), 0 6px 12px rgba(0,0,0,0.3);
+  --sh-3: 0 2px 0 rgba(0,0,0,0.4), 0 18px 28px rgba(0,0,0,0.35);
 }
 
-@media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-        --bg: #f0eeea;
-        --surface: #f7f6f3;
-        --border: #dbd8d2;
-        --text: #2c2c3a;
-        --text-muted: #71717f;
-        --accent: #5b52e0;
-        --accent-hover: #4a42c0;
-        --green: #059669;
-        --yellow: #d97706;
-        --red: #dc2626;
-        --warning: #d97706;
-    }
+/* Paper grain — subtle noise overlay (opt-in via .paper-grain class) */
+.paper-grain { position: relative; }
+.paper-grain::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10 0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply;
+  opacity: .35;
+  border-radius: inherit;
+}
+[data-theme="dark"] .paper-grain::before {
+  mix-blend-mode: screen;
+  opacity: .08;
 }
 
-[data-theme="light"] {
-    --bg: #f0eeea;
-    --surface: #f7f6f3;
-    --border: #dbd8d2;
-    --text: #2c2c3a;
-    --text-muted: #71717f;
-    --accent: #5b52e0;
-    --accent-hover: #4a42c0;
-    --green: #059669;
-    --yellow: #d97706;
-    --red: #dc2626;
-    --warning: #d97706;
-}
-
-/* ─── Typography ────────────────────────────────────────────────────────────── */
-
+/* ─── Legacy compat aliases (removed in Phase G) ─────────────────────────── */
+/* Old code references --bg / --surface / --text / etc. — alias them to the
+ * canonical names so we can flip the palette without rewriting every file
+ * at once. Do not introduce new uses of these aliases. */
 :root {
-    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
-    --font-serif: Georgia, "Times New Roman", serif;
-    --font-mono: "SF Mono", Menlo, Consolas, monospace;
-    --font-hand: "Caveat", cursive;
+  /* Color aliases */
+  --bg: var(--paper);
+  --surface: var(--paper-raised);
+  --border: var(--rule);
+  --text: var(--ink);
+  --text-muted: var(--ink-3);
+  --accent-hover: var(--accent-2);
+  --green: var(--ok);
+  --yellow: var(--mustard);
+  --red: var(--danger);
+  --warning: var(--warn);
 
-    --text-xs: 0.75rem;
-    --text-sm: 0.85rem;
-    --text-base: 1rem;
-    --text-lg: 1.125rem;
-    --text-xl: 1.25rem;
-    --text-2xl: 1.5rem;
-    --text-3xl: 1.875rem;
-    --text-4xl: 2.25rem;
+  /* Legacy font stacks */
+  --font-sans: var(--sans);
+  --font-serif: var(--serif);
+  --font-mono: var(--mono);
+  --font-hand: "Caveat", cursive;
 
-    --leading-tight: 1.2;
-    --leading-normal: 1.6;
+  /* Legacy text scale (rem-based) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.85rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --leading-tight: 1.2;
+  --leading-normal: 1.6;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
 
-    --weight-regular: 400;
-    --weight-medium: 500;
-    --weight-semibold: 600;
-    --weight-bold: 700;
-}
+  /* Legacy spacing scale (rem-based, parallel to --s-* px scale) */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
 
-/* ─── Spacing (4px base) ────────────────────────────────────────────────────── */
+  /* Legacy radius scale */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
 
-:root {
-    --space-0: 0;
-    --space-1: 0.25rem;
-    --space-2: 0.5rem;
-    --space-3: 0.75rem;
-    --space-4: 1rem;
-    --space-5: 1.25rem;
-    --space-6: 1.5rem;
-    --space-8: 2rem;
-    --space-10: 2.5rem;
-    --space-12: 3rem;
-    --space-16: 4rem;
-}
+  /* Legacy shadow scale */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.08);
+  --shadow: 0 2px 8px rgba(0,0,0,0.12);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.15);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.2);
 
-/* ─── Radius ────────────────────────────────────────────────────────────────── */
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration: 200ms;
+  --duration-slow: 400ms;
 
-:root {
-    --radius-sm: 4px;
-    /* --radius: 8px — already declared in the color block above */
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-pill: 999px;
-}
-
-/* ─── Shadow ────────────────────────────────────────────────────────────────── */
-
-:root {
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.08);
-    --shadow: 0 2px 8px rgba(0,0,0,0.12);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.15);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.2);
-}
-
-/* ─── Motion ────────────────────────────────────────────────────────────────── */
-
-:root {
-    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-    --duration-fast: 120ms;
-    --duration: 200ms;
-    --duration-slow: 400ms;
-}
-
-/* ─── Z-index scale ─────────────────────────────────────────────────────────── */
-
-:root {
-    --z-base: 0;
-    --z-sticky: 10;
-    --z-header: 100;
-    --z-dropdown: 200;
-    --z-modal: 1000;
-    --z-toast: 1100;
+  /* Z-index scale */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-header: 100;
+  --z-dropdown: 200;
+  --z-modal: 1000;
+  --z-toast: 1100;
 }

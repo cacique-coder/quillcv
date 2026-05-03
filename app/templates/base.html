@@ -44,18 +44,28 @@
       if (document.cookie.indexOf('cookie_consent=accepted') !== -1) { loadGA(); }
     </script>
     {% endif %}
-    <link rel="stylesheet" href="/static/tokens.css?v=1">
-    <link rel="stylesheet" href="/static/base.css?v=2">
-    <link rel="stylesheet" href="/static/app-ui.css?v=1">
+    {# Load order: tokens → base → components → app-ui → wizard → marketing → style.
+       tokens + base now consume the bundle's warm-paper palette. Other files still
+       carry legacy rules during the design-system rollout (Phases A–G); legacy
+       --bg/--text aliases live in tokens.css for backwards compatibility.
+       Page-area styles (landing.css for marketing, shell.css for app) opt in via
+       the per-page head_extra block. #}
+    <link rel="stylesheet" href="/static/tokens.css?v=3">
+    <link rel="stylesheet" href="/static/base.css?v=3">
     <link rel="stylesheet" href="/static/components.css?v=2">
-    <link rel="stylesheet" href="/static/wizard.css?v=1">
+    <link rel="stylesheet" href="/static/app-ui.css?v=1">
+    <link rel="stylesheet" href="/static/wizard.css?v=2">
     <link rel="stylesheet" href="/static/marketing.css?v=1">
-    <link rel="stylesheet" href="/static/style.css?v=5">
+    <link rel="stylesheet" href="/static/style.css?v=6">
+    {% if self.body_layout()|trim == 'app' %}
+    <link rel="stylesheet" href="/static/shell.css?v=1">
+    {% endif %}
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="/static/vendor/htmx-2.0.2.min.js" defer></script>
+    <script src="/static/icons.js?v=1"></script>
     {# Send the CSRF token as a header on every HTMX request. #}
     <meta name="csrf-token" content="{{ request.state.csrf_token | default('') }}">
     <script>
@@ -79,8 +89,21 @@
     </script>
     {% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}" data-layout="{% block body_layout %}marketing{% endblock %}">
     <a href="#main" class="skip-link">Skip to content</a>
+    {% if self.body_layout()|trim == 'app' %}
+    {# ── Authenticated app shell: sidebar + topbar + content ── #}
+    <div class="app">
+      {% include "partials/components/app_sidebar.html" %}
+      <div class="main">
+        {% include "partials/components/app_topbar.html" %}
+        <main id="main" class="content">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+    {% else %}
+    {# ── Marketing layout (default): site-header + main + site-footer ── #}
     <header class="site-header">
         <nav class="site-nav">
             <a href="/" class="site-logo">
@@ -125,7 +148,7 @@
                     <a href="/account" class="nav-link">My Account</a>
                     <a href="/logout" class="nav-link nav-link--muted">Sign Out</a>
                 {% else %}
-                    <a href="/login" class="btn btn--primary btn--sm" rel="nofollow">Sign In</a>
+                    <a href="/login" class="btn btn-primary btn-sm" rel="nofollow">Sign In</a>
                 {% endif %}
                 {% endblock %}
             </div>
@@ -142,7 +165,7 @@
         {% endif %}
     {% endblock %}
     <main id="main">
-        {% block content %}{% endblock %}
+        {{ self.content() }}
     </main>
     <footer class="site-footer">
         <nav class="footer-nav">
@@ -163,6 +186,7 @@
         </nav>
         <p class="footer-copy">&copy; 2026 QuillCV. All rights reserved.</p>
     </footer>
+    {% endif %}{# /body_layout == 'app' branching #}
     <!-- Cookie consent banner -->
     <div id="cookie-banner" class="cookie-banner" style="display:none" role="dialog" aria-label="Cookie consent">
         <div class="cookie-banner-content">
