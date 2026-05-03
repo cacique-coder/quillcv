@@ -426,16 +426,31 @@ async def step3_save(
     request: Request,
     job_description: str = Form(""),
     cv_file: UploadFile = File(None),
+    cv_text: str = Form(""),
     extra_docs: list[UploadFile] = File(None),
 ):
     """Save step 3 (documents + job description) and move to step 4."""
     attempt = _get_or_create_attempt(request)
 
-    # Save CV file if provided (or keep existing)
+    # Save CV file if provided, or fall back to pasted text
+    cv_file_saved = False
     if cv_file and cv_file.filename:
         file_bytes = await cv_file.read()
         if file_bytes:
             save_document(attempt["id"], "cv_file", cv_file.filename, file_bytes)
+            cv_file_saved = True
+
+    if not cv_file_saved and cv_text.strip():
+        save_document(attempt["id"], "cv_file", "experience.txt", cv_text.strip().encode("utf-8"))
+        cv_file_saved = True
+
+    if not cv_file_saved and not get_document_filename(attempt["id"], "cv_file"):
+        return templates.TemplateResponse("partials/wizard/step3_documents.html", {
+            "request": request,
+            "attempt": attempt,
+            "cv_filename": None,
+            "error": "Please upload a CV file or describe your experience before continuing.",
+        })
 
     # Save extra documents
     if extra_docs:
@@ -445,14 +460,23 @@ async def step3_save(
                 if doc_bytes:
                     save_document(attempt["id"], f"extra_doc_{i}", doc.filename, doc_bytes)
 
-    update_attempt(attempt["id"], job_description=job_description, step=4)
+    # Auto-select template: use cached AI recommendation or region default.
+    job_description = job_description or attempt.get("job_description", "")
+    region = attempt.get("region", "AU")
+    cached_rec = attempt.get("template_recommendation")
+    if cached_rec and cached_rec.get("job_hash") == _hash(job_description) and cached_rec.get("templates"):
+        template_id = cached_rec["templates"][0]
+    else:
+        region_templates = list_templates(region=region)
+        template_id = region_templates[0].id if region_templates else "modern"
 
-    # Now go to step 4 (template recommendation via AI)
+    update_attempt(attempt["id"], job_description=job_description, template_id=template_id, step=4)
+
     return await step4(request)
 
 
 # ------------------------------------------------------------------
-# Step 4: Template (AI-powered recommendation)
+# Step 4: Review & Generate  (was step 5 — template step removed)
 # ------------------------------------------------------------------
 
 @router.get("/step/4")
@@ -461,78 +485,6 @@ async def step4_get(request: Request):
 
 
 async def step4(request: Request):
-    attempt = _get_or_create_attempt(request)
-    region = attempt.get("region", "AU")
-    region_config = REGIONS.get(region, REGIONS["AU"])
-    job_description = attempt.get("job_description", "")
-
-    # Filter templates by region
-    available_templates = list_templates(region=region)
-
-    # Check if we already have a cached AI recommendation for this job description
-    cached_rec = attempt.get("template_recommendation")
-    if cached_rec and cached_rec.get("job_hash") == _hash(job_description):
-        recommended = cached_rec["templates"]
-        recommendation_reason = cached_rec["reason"]
-    else:
-        # Call AI for recommendation (fast model — lightweight task)
-        from app.infrastructure.llm.client import set_llm_context
-        user = request.state.user
-        set_llm_context(
-            service="template_recommender",
-            attempt_id=attempt.get("id"),
-            user_id=user.id if user else None,
-        )
-        llm = request.app.state.llm_fast
-        recommended, recommendation_reason = await _recommend_templates(
-            llm, region, region_config.name, job_description
-        )
-        # Cache the result
-        update_attempt(attempt["id"], template_recommendation={
-            "templates": recommended,
-            "reason": recommendation_reason,
-            "job_hash": _hash(job_description),
-        })
-
-    # Group templates by category for UI
-    categories = ["universal", "industry", "region", "specialty"]
-    grouped = {}
-    available_ids = {t.id for t in available_templates}
-    for cat in categories:
-        cat_templates = [t for t in list_templates_by_category(cat) if t.id in available_ids]
-        if cat_templates:
-            grouped[cat] = cat_templates
-
-    return templates.TemplateResponse("partials/wizard/step4_template.html", {
-        "request": request,
-        "attempt": attempt,
-        "region": region,
-        "region_config": region_config,
-        "templates": available_templates,
-        "grouped_templates": grouped,
-        "recommended": recommended,
-        "recommendation_reason": recommendation_reason,
-    })
-
-
-@router.post("/step/4/save")
-async def step4_save(request: Request, template_id: str = Form("modern")):
-    """Save template selection and move to step 5."""
-    attempt = _get_or_create_attempt(request)
-    update_attempt(attempt["id"], template_id=template_id, step=5)
-    return await step5(request)
-
-
-# ------------------------------------------------------------------
-# Step 5: Review & Generate
-# ------------------------------------------------------------------
-
-@router.get("/step/5")
-async def step5_get(request: Request):
-    return await step5(request)
-
-
-async def step5(request: Request):
     attempt = _get_or_create_attempt(request)
     region = attempt.get("region", "AU")
     region_config = REGIONS.get(region, REGIONS["AU"])

@@ -221,9 +221,8 @@ async def jobs_new_step1_save(
 async def jobs_new_step2_save(
     request: Request,
     region: str = Form("AU"),
-    template_id: str = Form("modern"),
 ):
-    """Persist region and template choice, advance to review step."""
+    """Persist region, auto-select template, advance to review step."""
     user = await _require_user(request)
     if not user:
         return RedirectResponse("/login", status_code=302)
@@ -236,6 +235,15 @@ async def jobs_new_step2_save(
         job = await get_job(db, job_id, user_id=user.id)
         if not job:
             return RedirectResponse("/jobs", status_code=302)
+
+        # Auto-select the best template for this region.
+        # Keep any existing choice (e.g. from a retry); fall back to first
+        # available template for the region, then "modern".
+        template_id = job.template_id or ""
+        if not template_id:
+            region_templates = list_templates(region=region)
+            template_id = region_templates[0].id if region_templates else "modern"
+
         job = await update_job(db, job_id, region=region, template_id=template_id)
 
     return await _render_step3(request, user, job)
@@ -287,6 +295,59 @@ async def _render_step3(request: Request, user, job):
         "pii_complete": pii_complete,
         "pii_missing": pii_missing,
     })
+
+
+# ---------------------------------------------------------------------------
+# POST /jobs/new/step/3/save-pii — inline PII save (first-time users)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/new/step/3/save-pii")
+async def jobs_new_step3_save_pii(
+    request: Request,
+    full_name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+):
+    """Save minimal PII (name/email/phone) inline and re-render step 3."""
+    from app.infrastructure.phone_utils import normalize_phone
+    from app.pii.adapters.vault import upsert_vault
+
+    user = await _require_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    full_name = full_name.strip()
+    if not full_name:
+        job_id = request.state.session.get("current_job_id")
+        if not job_id:
+            return RedirectResponse("/jobs/new", status_code=302)
+        async with async_session() as db:
+            job = await get_job(db, job_id, user_id=user.id)
+        return await _render_step3(request, user, job)
+
+    pii = request.state.session.get("pii") or {}
+    pii["full_name"] = full_name
+    if email.strip():
+        pii["email"] = email.strip()
+    if phone.strip():
+        pii["phone"] = normalize_phone(phone)
+
+    password = request.state.session.get("_pii_password")
+    async with async_session() as db:
+        await upsert_vault(db, user_id=user.id, pii=pii, password=password or None)
+
+    request.state.session["pii"] = pii
+    request.state.session["pii_onboarded"] = True
+
+    job_id = request.state.session.get("current_job_id")
+    if not job_id:
+        return RedirectResponse("/jobs/new", status_code=302)
+
+    async with async_session() as db:
+        job = await get_job(db, job_id, user_id=user.id)
+
+    return await _render_step3(request, user, job)
 
 
 # ---------------------------------------------------------------------------
@@ -466,6 +527,53 @@ async def job_generate(request: Request, job_id: str):
         )
 
     # Redirect to the job detail page which shows the results.
+    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# GET /jobs/{job_id}/change-template — template picker for completed jobs
+# POST /jobs/{job_id}/change-template — apply new template (resets to draft)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{job_id}/change-template")
+async def job_change_template_get(request: Request, job_id: str):
+    """Render an inline template picker so user can pick a different template."""
+    user = await _require_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    async with async_session() as db:
+        job = await get_job(db, job_id, user_id=user.id)
+    if not job:
+        return Response("Job not found", status_code=404)
+
+    available = list_templates(region=job.region or "AU")
+    return templates.TemplateResponse("partials/job_wizard/change_template_picker.html", {
+        "request": request,
+        "job": job,
+        "templates": available,
+        "selected_template": job.template_id or "modern",
+    })
+
+
+@router.post("/{job_id}/change-template")
+async def job_change_template_post(
+    request: Request,
+    job_id: str,
+    template_id: str = Form("modern"),
+):
+    """Update the template and reset job to draft for regeneration."""
+    user = await _require_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    async with async_session() as db:
+        job = await get_job(db, job_id, user_id=user.id)
+        if not job:
+            return Response("Job not found", status_code=404)
+        await update_job(db, job_id, template_id=template_id, status="draft")
+
     return RedirectResponse(f"/jobs/{job_id}", status_code=303)
 
 
