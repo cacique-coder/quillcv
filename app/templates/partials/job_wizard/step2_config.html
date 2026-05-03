@@ -1,4 +1,3 @@
-{% from "macros/ui.html" import section_divider %}
 {% set job_wizard_step = 2 %}
 
 <form class="wizard-panel active"
@@ -15,8 +14,8 @@
     {% endif %}
 
     <div class="panel-header">
-        <h2>Region &amp; Template</h2>
-        <p class="hint">Confirm the target country and choose a CV template. We'll auto-detect the region from the job description where possible.</p>
+        <h2>Confirm Region</h2>
+        <p class="hint">We'll auto-detect the target country from the job description. Confirm or change it — this determines CV conventions, required fields, and formatting.</p>
     </div>
 
     {# ── Target Region ── #}
@@ -101,46 +100,6 @@
         {% endif %}
     </div>
 
-    {# ── CV Template ── #}
-    {{ section_divider("CV Template") }}
-
-    <p class="hint" style="margin-bottom: 0.6rem;">All templates are ATS-optimized. <a href="/demo" target="_blank" rel="noopener">Browse full demos</a></p>
-
-    {% if recommendations %}
-    <div class="ai-recommendation">
-        <span class="ai-rec-label">AI Recommendation</span>
-        <p>Based on the job description, these templates are most likely to perform well with this employer's ATS.</p>
-    </div>
-    {% endif %}
-
-    {% set selected_tpl = selected_template or (recommendations[0] if recommendations else 'modern') %}
-
-    {% if recommendations %}
-    <div class="template-group" data-group="recommended">
-        <h3 class="template-group-heading">Recommended for This Job</h3>
-        <div class="template-grid">
-            {% for tpl in templates if tpl.id in recommendations %}
-            {% include "partials/wizard/_template_card.html" %}
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="template-group" data-group="all">
-        <h3 class="template-group-heading {% if recommendations %}template-group-collapsible{% endif %}"
-            {% if recommendations %}onclick="toggleGroup(this)"{% endif %}>
-            All Templates
-            <span class="template-group-count">({{ templates | length }})</span>
-            {% if recommendations %}<span class="template-group-arrow">&#x25BE;</span>{% endif %}
-        </h3>
-        <div class="template-grid {% if recommendations %}template-grid-collapsible{% endif %}"
-             {% if recommendations %}style="display: none;"{% endif %}>
-            {% for tpl in templates if not recommendations or tpl.id not in recommendations %}
-            {% include "partials/wizard/_template_card.html" %}
-            {% endfor %}
-        </div>
-    </div>
-
     <div class="panel-actions">
         <button type="button" class="btn-back"
                 hx-get="/jobs/new"
@@ -159,18 +118,6 @@
 </form>
 
 <script>
-function toggleGroup(heading) {
-    var grid = heading.nextElementSibling;
-    var arrow = heading.querySelector('.template-group-arrow');
-    if (grid.style.display === 'none') {
-        grid.style.display = '';
-        if (arrow) arrow.textContent = '\u25BE';
-    } else {
-        grid.style.display = 'none';
-        if (arrow) arrow.textContent = '\u25B8';
-    }
-}
-
 // Sync hidden default region value when radio changes (for auto-detected case)
 document.addEventListener('change', function(e) {
     if (e.target && e.target.name === 'region' && e.target.type === 'radio') {

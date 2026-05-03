@@ -2,7 +2,8 @@
 {% set step = 3 %}
 {% include "partials/wizard/progress.html" %}
 
-<form class="wizard-panel active" hx-post="/wizard/step/3/save" hx-target="#wizard-container" hx-swap="innerHTML" hx-indicator="#step3-loader" enctype="multipart/form-data">
+<div class="wiz-body">
+<form class="wizard-panel active wiz-main" hx-post="/wizard/step/3/save" hx-target="#wizard-container" hx-swap="innerHTML" hx-indicator="#step3-loader" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
     <div class="panel-header">
@@ -10,8 +11,24 @@
         <p class="hint">Upload your existing CV and optionally additional documents. The AI will extract your experience, skills, and achievements from these to build your new CV.</p>
     </div>
 
+    {% if error %}
+    <div class="error-banner" role="alert">{{ error }}</div>
+    {% endif %}
+
     {% call form_group("Your CV / Resume", hint="PDF, DOCX, or TXT — this is your primary document", required=true) %}
-        {{ file_input("cv_file", accept=".pdf,.docx,.doc,.txt,.md", required=not cv_filename, stored_name=cv_filename) }}
+        <div id="cv-file-section">
+            {{ file_input("cv_file", accept=".pdf,.docx,.doc,.txt,.md", required=not cv_filename, stored_name=cv_filename) }}
+            <p style="margin: 0.5rem 0 0; font-size: 0.85rem;">
+                <a href="#" id="toggle-cv-text" onclick="toggleCvTextMode(event)">I don't have a CV file — describe my experience instead</a>
+            </p>
+        </div>
+        <div id="cv-text-section" style="display: none;">
+            <textarea name="cv_text" id="cv-text-input" rows="10" class="input-field"
+                      placeholder="Describe your work history, skills, and achievements…&#10;&#10;Example:&#10;Software Engineer at Acme (2020–2024) — built payment APIs in Python, led a team of 3.&#10;Bachelor of Computer Science, University of Sydney, 2019."></textarea>
+            <p style="margin: 0.5rem 0 0; font-size: 0.85rem;">
+                <a href="#" onclick="toggleCvTextMode(event, true)">Back to file upload</a>
+            </p>
+        </div>
     {% endcall %}
 
     {% call form_group("Additional documents", hint="Cover letters, old CVs, LinkedIn profile export — more context helps the AI understand your full background.", optional=true, optional_text="optional, up to 2") %}
@@ -51,3 +68,41 @@
 
     {{ wizard_nav(back_step=2, next_label="Continue", loading_text="Analyzing with AI...", hx_indicator="step3-loader") }}
 </form>
+
+<aside class="wiz-aside">
+    {% if attempt.get('job_url') or attempt.get('job_description') %}
+    <h4>Job target</h4>
+    <div class="job-mini">
+        {% if attempt.get('job_url') %}
+        <div class="co">{{ attempt.get('job_url') | truncate(40, killwords=true, end='…') }}</div>
+        {% else %}
+        <div class="co">Pasted description</div>
+        {% endif %}
+        <div class="title">{{ region_config.flag }} {{ region_config.name }}</div>
+    </div>
+    {% else %}
+    <h4>Tips for best results</h4>
+    <p class="aside-tip">Paste or fetch the full job description. The more context you provide, the better the keyword matching and tone calibration.</p>
+    {% endif %}
+    <h4>What we extract</h4>
+    <p class="aside-tip">We parse required skills, seniority signals, culture keywords, and phrasing patterns from the posting — then match them against your CV.</p>
+</aside>
+</div>
+
+<script>
+function toggleCvTextMode(event, back) {
+    event.preventDefault();
+    var fileSection = document.getElementById('cv-file-section');
+    var textSection = document.getElementById('cv-text-section');
+    var fileInput = fileSection.querySelector('input[type="file"]');
+    if (back) {
+        fileSection.style.display = '';
+        textSection.style.display = 'none';
+        if (fileInput) fileInput.setAttribute('required', '');
+    } else {
+        fileSection.style.display = 'none';
+        textSection.style.display = '';
+        if (fileInput) fileInput.removeAttribute('required');
+    }
+}
+</script>

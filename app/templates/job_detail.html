@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block body_layout %}app{% endblock %}
 
 {% block title %}{{ job.company_name or "Job Application" }}{% if job.job_title %} — {{ job.job_title }}{% endif %} — QuillCV{% endblock %}
 {% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
@@ -124,6 +125,9 @@
                 <span class="download-icon">&#8681;</span> Cover Letter PDF
             </a>
             {% endif %}
+            <a href="/jobs/{{ job.id }}/change-template" class="btn-back">
+                &#8635; Try a different template
+            </a>
         </div>
     </div>
 

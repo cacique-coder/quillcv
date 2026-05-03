@@ -1,7 +1,8 @@
-{% set step = 5 %}
+{% set step = 4 %}
 {% include "partials/wizard/progress.html" %}
 
-<div id="generate-area" class="wizard-panel active">
+<div class="wiz-body">
+<div id="generate-area" class="wizard-panel active wiz-main">
     <div id="step5-review">
         <div class="panel-header">
             <h2>Review & Generate</h2>
@@ -78,13 +79,37 @@
 
         <div class="panel-actions panel-actions-center">
             <button type="button" class="btn-back"
-                    hx-get="/wizard/step/4" hx-target="#wizard-container" hx-swap="innerHTML">Back</button>
+                    hx-get="/wizard/step/3" hx-target="#wizard-container" hx-swap="innerHTML">Back</button>
             <button type="button" class="btn-generate" id="btn-generate"
                     onclick="startGenerate()" {% if pii_incomplete %}disabled title="Complete your profile first"{% endif %}>
                 Generate CV
             </button>
         </div>
     </div>
+</div>
+
+<aside class="wiz-aside">
+    {% if attempt.get('job_url') or attempt.get('job_description') %}
+    <h4>Job target</h4>
+    <div class="job-mini">
+        {% if attempt.get('job_url') %}
+        <div class="co">{{ attempt.get('job_url') | truncate(40, killwords=true, end='…') }}</div>
+        {% else %}
+        <div class="co">Pasted description</div>
+        {% endif %}
+        <div class="title">{{ region_config.flag }} {{ region_config.name }}</div>
+        {% if attempt.get('job_description') %}
+        <div class="meta">{{ attempt.get('job_description')[:80] | truncate(80, killwords=true, end='…') }}</div>
+        {% endif %}
+    </div>
+    {% endif %}
+    <h4>What happens next</h4>
+    <p class="aside-tip">We'll parse your CV, match keywords from the job posting, and generate an ATS-optimized version. You'll see a live progress stream as each section is crafted.</p>
+    {% if cv_filename %}
+    <h4>Source CV</h4>
+    <p class="aside-tip">{{ cv_filename }}</p>
+    {% endif %}
+</aside>
 </div>
 
 <script>

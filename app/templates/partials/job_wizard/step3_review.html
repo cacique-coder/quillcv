@@ -72,7 +72,49 @@
                 <p class="hint">All required fields are filled in for {{ region_config.name if region_config else job.region or 'your region' }}.</p>
             </div>
         </div>
+
+        {% elif not pii.get('full_name') %}
+        {# ── First-time user: no name yet — collect inline ── #}
+        <div class="pii-inline-form">
+            <strong>Almost there — just need your name to personalise the CV</strong>
+            <p class="hint" style="margin: 0.4rem 0 1rem;">Email and phone are optional but improve the result.</p>
+            <form hx-post="/jobs/new/step/3/save-pii"
+                  hx-target="#job-wizard-container"
+                  hx-swap="innerHTML"
+                  hx-indicator="#pii-save-spinner">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+                <div class="pii-inline-row">
+                    <label class="pii-inline-label" for="pii-full-name">Full Name <span aria-hidden="true">*</span></label>
+                    <input id="pii-full-name" type="text" name="full_name" class="input-field"
+                           placeholder="Jane Smith" required autocomplete="name">
+                </div>
+                <div class="pii-inline-row">
+                    <label class="pii-inline-label" for="pii-email">Contact Email</label>
+                    <input id="pii-email" type="email" name="email" class="input-field"
+                           value="{{ pii.get('email', '') }}"
+                           placeholder="jane@example.com" autocomplete="email">
+                </div>
+                <div class="pii-inline-row">
+                    <label class="pii-inline-label" for="pii-phone">Phone Number</label>
+                    <input id="pii-phone" type="tel" name="phone" class="input-field"
+                           value="{{ pii.get('phone', '') }}"
+                           placeholder="+61 400 123 456" autocomplete="tel">
+                </div>
+                <div class="pii-inline-actions">
+                    <button type="submit" class="btn-next"
+                            hx-disabled-elt="this"
+                            hx-on::before-request="this.innerHTML='Saving…';">
+                        Save &amp; Continue &#8594;
+                    </button>
+                    <div id="pii-save-spinner" class="htmx-indicator" style="display:inline-block; margin-left:0.75rem;">
+                        <div class="spinner" style="width:18px;height:18px;border-width:2px;vertical-align:middle;"></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
         {% else %}
+        {# ── Has a name but region requires more fields ── #}
         <div class="pii-incomplete-banner" role="alert">
             <div class="pii-incomplete-icon">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
@@ -117,9 +159,7 @@
                         hx-indicator="#generate-spinner"
                         hx-disabled-elt="this"
                         hx-on::before-request="this.innerHTML='Generating…'; this.classList.add('btn-generating');"
-                        {% if not pii_complete %}
-                        title="Complete your profile first"
-                        {% endif %}>
+                        {% if not pii_complete %}disabled title="Fill in your name above first"{% endif %}>
                     Generate CV + Cover Letter
                 </button>
             </div>

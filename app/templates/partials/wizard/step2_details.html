@@ -2,7 +2,8 @@
 {% set step = 2 %}
 {% include "partials/wizard/progress.html" %}
 
-<form class="wizard-panel active" hx-post="/wizard/step/2/save" hx-target="#wizard-container" hx-swap="innerHTML">
+<div class="wiz-body">
+<form class="wizard-panel active wiz-main" hx-post="/wizard/step/2/save" hx-target="#wizard-container" hx-swap="innerHTML">
     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
     <div class="panel-header">
@@ -355,3 +356,15 @@
     </script>
     {% endif %}
 </form>
+
+<aside class="wiz-aside">
+    <h4>{{ region_config.flag }} {{ region_config.name }}</h4>
+    <p class="aside-tip">Fields on this page match <strong>{{ region_config.name }}</strong> CV conventions. We only ask for details that are standard or expected in your target market.</p>
+    {% if fields.photo %}
+    <h4>Photo guidance</h4>
+    <p class="aside-tip">A professional headshot is {{ fields.photo_level }} in {{ region_config.name }}. Use a plain background with good lighting.</p>
+    {% endif %}
+    <h4>Your privacy</h4>
+    <p class="aside-tip">Personal details are stored encrypted and only used to generate your CV. Delete any time from the Vault.</p>
+</aside>
+</div>

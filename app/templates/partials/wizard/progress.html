@@ -1,43 +1,15 @@
 {% set steps = [
-    (1, "Country"),
-    (2, "Details"),
-    (3, "Documents"),
-    (4, "Template"),
-    (5, "Generate"),
+    (1, "i", "Country"),
+    (2, "ii", "Details"),
+    (3, "iii", "Documents"),
+    (4, "iv", "Generate"),
 ] %}
-<div class="wiz-progress">
-    {% for num, label in steps %}
-    {% set state = "completed" if step > num else ("active" if step == num else "upcoming") %}
-    <div class="wiz-step wiz-step--{{ state }}">
-        <svg class="wiz-node" viewBox="0 0 36 36" width="36" height="36">
-            <!-- Hand-drawn circle -->
-            <circle cx="18" cy="18" r="14" fill="none" stroke-width="2"
-                    stroke="{% if state == 'completed' %}var(--green){% elif state == 'active' %}var(--accent){% else %}var(--border){% endif %}"
-                    stroke-dasharray="{% if state == 'active' %}88{% else %}0{% endif %}"
-                    stroke-dashoffset="{% if state == 'active' %}88{% else %}0{% endif %}"
-                    stroke-linecap="round"
-                    class="wiz-circle{% if state == 'active' %} wiz-circle--draw{% endif %}"/>
-            {% if state == 'completed' %}
-            <!-- Hand-drawn checkmark -->
-            <path d="M12 18.5l4 4 8-8" fill="none" stroke="var(--green)"
-                  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                  class="wiz-check"/>
-            {% else %}
-            <text x="18" y="22" text-anchor="middle" font-size="13" font-weight="700"
-                  fill="{% if state == 'active' %}var(--accent){% else %}var(--text-muted){% endif %}">{{ num }}</text>
-            {% endif %}
-        </svg>
-        <span class="wiz-label">{{ label }}</span>
+<div class="wiz-tabs">
+    {% for num, roman, label in steps %}
+    {% set state = "done" if step > num else ("on" if step == num else "") %}
+    <div class="wiz-tab {{ state }}">
+        <div class="n">{{ roman }}.</div>
+        <div class="t">{{ label }}</div>
     </div>
-    {% if not loop.last %}
-    <div class="wiz-connector wiz-connector--{{ 'done' if step > num else 'pending' }}">
-        <svg viewBox="0 0 60 8" preserveAspectRatio="none" class="wiz-line-svg">
-            <path d="M2 4 Q15 1, 30 4 T58 4" fill="none"
-                  stroke="{% if step > num %}var(--green){% else %}var(--border){% endif %}"
-                  stroke-width="2" stroke-linecap="round"
-                  stroke-dasharray="{% if step <= num %}4 4{% else %}0{% endif %}"/>
-        </svg>
-    </div>
-    {% endif %}
     {% endfor %}
 </div>
