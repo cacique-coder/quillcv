@@ -12,6 +12,531 @@
 <link rel="alternate" hreflang="{{ 'pt-BR' if l == 'pt' else l }}" href="https://quillcv.com{{ url }}">
 {% endfor %}
 <link rel="alternate" hreflang="x-default" href="https://quillcv.com/blog/en">
+
+{# All blog-page CSS is scoped here, matching the bundle's "no new CSS files" decision. #}
+<style>
+  body { background: var(--paper); }
+
+  /* ─── Hero ─── */
+  .j-hero {
+    padding: 80px 32px 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--rule);
+  }
+  .j-hero .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 18px;
+  }
+  .j-hero .masthead h1 {
+    font-family: var(--display);
+    font-size: clamp(64px, 9vw, 120px);
+    font-weight: 320;
+    line-height: 0.9;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .j-hero .masthead h1 em { font-style: italic; color: var(--accent); }
+  .j-hero .masthead .vol {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: right;
+    line-height: 1.6;
+    flex-shrink: 0;
+  }
+  .j-hero .lede {
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 640px;
+  }
+  .j-hero .lede em { font-style: italic; }
+  .j-hero .filter-row {
+    margin-top: 28px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* Filter pills */
+  .j-filter-pill {
+    padding: 6px 14px;
+    border: 1px solid var(--rule);
+    background: var(--paper-raised);
+    color: var(--ink-2);
+    border-radius: var(--r-pill);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .04em;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .j-filter-pill:hover { background: var(--paper-sunk); }
+  .j-filter-pill.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .j-filter-pill.diy { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); font-weight: 600; }
+  .j-filter-pill.diy.on { background: var(--accent); color: white; }
+  [data-theme="dark"] .j-filter-pill.diy.on { color: #1a1230; }
+
+  /* ─── Body ─── */
+  .j-body { max-width: 1100px; margin: 0 auto; padding: 48px 32px 80px; }
+
+  /* Featured */
+  .j-featured {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 40px;
+    padding-bottom: 48px;
+    border-bottom: 1px dashed var(--rule);
+    margin-bottom: 48px;
+    align-items: center;
+  }
+  .j-featured .ftag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .j-featured h2 {
+    font-family: var(--display);
+    font-size: clamp(36px, 4.4vw, 56px);
+    font-weight: 360;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    color: var(--ink);
+  }
+  .j-featured h2 em { font-style: italic; }
+  .j-featured .dek {
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin-bottom: 22px;
+  }
+  .j-featured a.featured-link { text-decoration: none; color: inherit; display: block; }
+  .j-featured a.featured-link:hover h2 { color: var(--accent); }
+
+  .j-byline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+  }
+  .j-byline .author {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent-wash);
+    color: var(--accent-ink);
+    display: grid;
+    place-items: center;
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .j-byline .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-4); }
+
+  /* Featured illustration */
+  .feat-art {
+    aspect-ratio: 4/3.4;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-3);
+    box-shadow: var(--sh-paper);
+    position: relative;
+    overflow: hidden;
+    padding: 22px;
+    display: block;
+    text-decoration: none;
+  }
+  .feat-art .sheet {
+    position: absolute;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    box-shadow: var(--sh-2);
+    padding: 14px;
+  }
+  .feat-art .sheet.s1 { inset: 14% 32% 22% 14%; transform: rotate(-4deg); }
+  .feat-art .sheet.s2 { inset: 24% 14% 12% 30%; transform: rotate(3deg); background: var(--paper-sunk); }
+  .feat-art .stamp {
+    position: absolute;
+    top: 18%; right: 10%;
+    width: 80px; height: 80px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    line-height: 1.2;
+    transform: rotate(-12deg);
+    background: rgba(246, 241, 232, 0.92);
+  }
+  [data-theme="dark"] .feat-art .stamp { background: rgba(31, 29, 34, 0.9); }
+  .feat-art .ln { height: 6px; background: var(--ink); opacity: .8; margin-bottom: 6px; border-radius: 1px; }
+  .feat-art .ln.short { width: 60%; }
+  .feat-art .ln.med   { width: 80%; }
+  .feat-art .ln.dim   { background: var(--ink-3); height: 4px; }
+  .feat-art .scribble-mark {
+    position: absolute; bottom: 10%; left: 12%;
+    font-family: "Caveat", cursive;
+    color: var(--accent);
+    font-size: 28px;
+    transform: rotate(-6deg);
+    font-weight: 600;
+  }
+
+  /* Grid header + post grid */
+  .j-grid-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .j-grid-head h3 { font-family: var(--display); font-size: 26px; font-weight: 400; margin: 0; color: var(--ink); }
+  .j-grid-head .count { font-family: var(--mono); font-size: 12px; color: var(--ink-3); letter-spacing: .08em; }
+
+  .j-post-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px 28px;
+  }
+
+  .j-post {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+  }
+  .j-post .thumb {
+    aspect-ratio: 4/3;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-3);
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 16px;
+    transition: transform .25s ease, box-shadow .25s ease;
+    box-shadow: var(--sh-1);
+  }
+  .j-post:hover .thumb { transform: translateY(-3px); box-shadow: var(--sh-3); }
+
+  .j-post .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .j-post .tag {
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+    background: var(--paper-sunk);
+    border: 1px solid var(--rule);
+    color: var(--ink-2);
+    font-weight: 600;
+  }
+  .j-post .tag.diy     { background: var(--accent-wash);  color: var(--accent-ink); border-color: var(--accent); border-width: 1px; }
+  .j-post .tag.country { background: var(--sage-wash);    color: var(--sage);       border-color: transparent; }
+  .j-post .tag.ats     { background: var(--mustard-wash); color: var(--warn);       border-color: transparent; }
+  .j-post .tag.craft   { background: var(--clay-wash);    color: var(--clay);       border-color: transparent; }
+  .j-post .tag.career  { background: var(--slate-wash);   color: var(--slate);      border-color: transparent; }
+
+  .j-post h4 {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 420;
+    line-height: 1.15;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .j-post h4 em { font-style: italic; }
+  .j-post .summ {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin-bottom: 12px;
+  }
+  .j-post .foot {
+    margin-top: auto;
+    padding-top: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: .06em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .diy-corner {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--paper);
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    border-radius: 4px 7px 5px 8px;
+    padding: 5px 9px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .2em;
+    font-weight: 700;
+    text-transform: uppercase;
+    transform: rotate(-4deg);
+    box-shadow: var(--sh-1);
+    z-index: 2;
+  }
+
+  /* Editorial illustration variants */
+  .art-pages {
+    background:
+      radial-gradient(circle at 30% 35%, var(--paper) 0 28%, transparent 28.2%),
+      radial-gradient(circle at 70% 65%, var(--accent-wash) 0 22%, transparent 22.2%),
+      repeating-linear-gradient(0deg, transparent 0 10px, var(--rule) 10px 11px),
+      var(--paper-raised);
+  }
+  .art-flag { display: grid; place-items: center; }
+  .art-flag .badge {
+    width: 64%; aspect-ratio: 1;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--display);
+    font-size: 38px;
+    font-weight: 500;
+    background: var(--paper);
+    transform: rotate(-3deg);
+    position: relative;
+    color: var(--ink);
+  }
+  .art-flag .badge::before, .art-flag .badge::after {
+    content: ""; position: absolute; left: -12px; right: -12px;
+    height: 1px; background: var(--ink);
+  }
+  .art-flag .badge::before { top: 12px; }
+  .art-flag .badge::after  { bottom: 12px; }
+  .art-flag .crn {
+    position: absolute; bottom: 10px; left: 14px; right: 14px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: .18em;
+    color: var(--ink-3); text-transform: uppercase;
+    display: flex; justify-content: space-between;
+  }
+
+  .art-bars {
+    display: flex; align-items: flex-end; justify-content: center; gap: 10px;
+    padding: 24px 28px;
+  }
+  .art-bars .b { flex: 1; background: var(--ink); border-radius: 3px 3px 0 0; opacity: .82; position: relative; }
+  .art-bars .b.lo { background: var(--ink-4); }
+  .art-bars .b.hi { background: var(--accent); }
+  .art-bars .b::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -6px;
+    height: 1px; background: var(--ink);
+  }
+
+  .art-quill { display: grid; place-items: center; position: relative; background: var(--paper-sunk); }
+  .art-quill svg { width: 56%; height: auto; }
+  .art-quill .ink-blot {
+    position: absolute; bottom: 18%; left: 22%;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); opacity: .55;
+    box-shadow: 8px 6px 0 -3px var(--accent), -10px 4px 0 -6px var(--accent);
+  }
+
+  .art-letter { padding: 18px; }
+  .art-letter .env {
+    width: 100%; height: 100%;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    position: relative;
+    box-shadow: var(--sh-2);
+    overflow: hidden;
+  }
+  .art-letter .env::before {
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0; height: 60%;
+    background: linear-gradient(135deg, transparent 49.5%, var(--rule) 49.5% 50.5%, transparent 50.5%),
+                linear-gradient(-135deg, transparent 49.5%, var(--rule) 49.5% 50.5%, transparent 50.5%);
+  }
+  .art-letter .seal {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--accent); opacity: .9;
+    color: white; display: grid; place-items: center;
+    font-family: var(--display); font-size: 16px; font-weight: 600;
+    z-index: 2;
+  }
+  [data-theme="dark"] .art-letter .seal { color: #1a1230; }
+
+  .art-clock { display: grid; place-items: center; background: var(--paper-raised); }
+  .art-clock .face {
+    width: 60%; aspect-ratio: 1;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    position: relative;
+    background: var(--paper);
+  }
+  .art-clock .hh, .art-clock .mh {
+    position: absolute; left: 50%; top: 50%;
+    background: var(--ink);
+    transform-origin: 0 0;
+    border-radius: 2px;
+  }
+  .art-clock .hh { width: 22%; height: 3px; transform: rotate(-50deg); }
+  .art-clock .mh { width: 32%; height: 2px; transform: rotate(40deg); }
+  .art-clock .center { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); transform: translate(-50%,-50%); }
+
+  .art-ats {
+    background: repeating-linear-gradient(0deg, transparent 0 22px, var(--rule-soft) 22px 23px), var(--paper-raised);
+    padding: 22px 24px;
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .art-ats .checkmarks { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+  .art-ats .ck {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-2);
+  }
+  .art-ats .ck .box {
+    width: 14px; height: 14px; border: 1.5px solid var(--ink); border-radius: 2px;
+    display: grid; place-items: center;
+    font-size: 11px; color: var(--accent); font-weight: 700;
+    flex-shrink: 0;
+  }
+  .art-ats .ck.no .box { color: var(--danger); }
+  .art-ats .ck .row { height: 5px; background: var(--ink-4); border-radius: 2px; flex: 1; opacity: .35; }
+
+  .art-type {
+    background: var(--paper-raised); display: grid; place-items: center; padding: 24px;
+    position: relative;
+  }
+  .art-type .glyph {
+    font-family: var(--display); font-size: 64px; font-weight: 340;
+    color: var(--accent); line-height: 1; transform: rotate(-3deg);
+  }
+  .art-type .baseline {
+    position: absolute; bottom: 18px; left: 24px; right: 24px; height: 1px; background: var(--rule);
+  }
+  .art-type .typemeta {
+    position: absolute; bottom: 8px; left: 24px; right: 24px;
+    font-family: var(--mono); font-size: 10px; color: var(--ink-3);
+    letter-spacing: .12em; text-transform: uppercase;
+    display: flex; justify-content: space-between;
+  }
+
+  /* Newsletter */
+  .j-newsletter {
+    margin: 64px auto 0;
+    max-width: 720px;
+    padding: 36px 40px;
+    background: var(--paper-sunk);
+    border: 1px dashed var(--rule);
+    border-radius: var(--r-3);
+    text-align: center;
+    position: relative;
+  }
+  .j-newsletter .stub {
+    font-family: "Caveat", cursive;
+    color: var(--accent);
+    font-size: 22px;
+    transform: rotate(-3deg);
+    display: inline-block;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .j-newsletter h3 {
+    font-family: var(--display);
+    font-size: 32px;
+    font-weight: 360;
+    line-height: 1.1;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+  .j-newsletter h3 em { font-style: italic; }
+  .j-newsletter p {
+    color: var(--ink-2); font-family: var(--serif);
+    font-size: 16px; max-width: 480px; margin: 0 auto 22px;
+  }
+  .j-newsletter form { display: flex; gap: 8px; max-width: 440px; margin: 0 auto; }
+  .j-newsletter input.input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-2);
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+  }
+  .j-newsletter input.input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-wash);
+  }
+  .j-newsletter .smallprint {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: .04em;
+  }
+
+  /* Lang switcher */
+  .j-lang-switch {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .j-lang-switch a { color: var(--ink-3); text-decoration: none; }
+  .j-lang-switch a.active { color: var(--accent); font-weight: 600; }
+
+  @media (max-width: 900px) {
+    .j-featured { grid-template-columns: 1fr; }
+    .j-post-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 620px) {
+    .j-post-grid { grid-template-columns: 1fr; }
+    .j-newsletter form { flex-direction: column; }
+  }
+</style>
 {% endblock %}
 
 {% block structured_data %}
@@ -21,36 +546,249 @@
 {% endblock %}
 
 {% block content %}
-<div class="blog-index">
-    <div class="blog-index-hero">
-        <h1 class="section-title">
-            {{ strings.title }}
-            <svg class="title-scribble" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
-                <path d="M0 4 C20 1, 45 7, 70 3 S110 7, 140 3 S175 6, 200 3" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
-            </svg>
-        </h1>
-        <p class="handwritten blog-index-tagline">{{ strings.tagline }}</p>
+{# ── View prep: bucket posts by category (Jinja has no 'contains' test) ── #}
+{% set ns = namespace(diy=[], ats=[], country=[], cover=[], craft=[], career=[]) %}
+{% for p in posts %}
+  {% if 'diy' in p.tags %}{% set ns.diy = ns.diy + [p] %}{% endif %}
+  {% if 'ats' in p.tags %}{% set ns.ats = ns.ats + [p] %}{% endif %}
+  {% if 'international-jobs' in p.tags or 'region-specific' in p.tags or 'cv-format' in p.tags %}{% set ns.country = ns.country + [p] %}{% endif %}
+  {% if 'cover-letters' in p.tags %}{% set ns.cover = ns.cover + [p] %}{% endif %}
+  {% if 'before-after' in p.tags %}{% set ns.career = ns.career + [p] %}{% endif %}
+{% endfor %}
+{% set diy_posts = ns.diy %}
+{% set ats_posts = ns.ats %}
+{% set country_posts = ns.country %}
 
-        <div class="blog-lang-switch">
-            {% for l in supported_langs %}
-            <a href="/blog/{{ l }}"{% if l == lang %} class="active"{% endif %}>{{ l | upper }}</a>{% if not loop.last %} <span class="blog-lang-sep">|</span> {% endif %}
-            {% endfor %}
+{% set featured = diy_posts[0] if diy_posts else (posts[0] if posts else None) %}
+{% set grid_posts = [] %}
+{% if featured %}
+  {% set _ns = namespace(rest=[]) %}
+  {% for p in posts %}{% if p.slug != featured.slug %}{% set _ns.rest = _ns.rest + [p] %}{% endif %}{% endfor %}
+  {% set grid_posts = _ns.rest %}
+{% else %}
+  {% set grid_posts = posts %}
+{% endif %}
+
+{% set country_codes = {'australia':'AU','uk':'UK','germany':'DE','usa':'US','japan':'JP','spain':'ES','brazil':'BR'} %}
+{% set city_for_code = {'AU':'SYDNEY','UK':'LONDON','DE':'BERLIN','US':'NEW YORK','JP':'TOKYO','ES':'MADRID','BR':'SÃO PAULO'} %}
+{% set months = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} %}
+
+{% macro country_for(post) -%}
+  {%- for tag in post.tags -%}{%- if tag in country_codes -%}{{ country_codes[tag] }}{%- endif -%}{%- endfor -%}
+{%- endmacro %}
+
+{% macro art_class(post) -%}
+  {%- set country = country_for(post)|trim -%}
+  {%- if country -%}art-flag
+  {%- elif 'ats' in post.tags and 'diy' in post.tags -%}art-ats
+  {%- elif 'cover-letters' in post.tags -%}art-letter
+  {%- elif 'ats' in post.tags -%}art-clock
+  {%- elif 'before-after' in post.tags -%}art-bars
+  {%- elif 'diy' in post.tags -%}art-pages
+  {%- elif 'cv-tips' in post.tags or 'cv-writing' in post.tags or 'professional-summary' in post.tags -%}art-type
+  {%- else -%}art-quill{%- endif -%}
+{%- endmacro %}
+
+{% macro author_initials(name) -%}
+  {%- set parts = name.split() -%}
+  {%- if parts|length >= 2 -%}{{ (parts[0][0] ~ parts[1][0])|upper }}{%- else -%}{{ name[0:2]|upper }}{%- endif -%}
+{%- endmacro %}
+
+{% macro short_date(iso) -%}
+  {%- set parts = iso.split('-') -%}
+  {%- if parts|length == 3 -%}{{ months[parts[1]] }} {{ parts[2]|int }}{%- else -%}{{ iso }}{%- endif -%}
+{%- endmacro %}
+
+{% macro read_time(post) -%}
+  {%- set words = (post.description or '')|wordcount + (post.title or '')|wordcount + 1500 -%}
+  {{ ((words / 220) | round(0, 'ceil')) | int }} min
+{%- endmacro %}
+
+{# ─── Page ─── #}
+
+<section class="j-hero">
+  <div class="masthead">
+    <h1>The <em>Journal</em></h1>
+    <div class="vol">
+      Vol. III · No. 04<br/>
+      May · 2026<br/>
+      Sydney, AU
+    </div>
+  </div>
+  <p class="lede">
+    Field notes on writing CVs, country conventions, and how applicant tracking systems actually work. Some of these guides will save you our $9.99 — <em>that's the point.</em> We'd rather you know than not.
+  </p>
+
+  <div class="filter-row">
+    <a href="#" class="j-filter-pill on" data-filter="all">All · {{ posts|length }}</a>
+    {% if diy_posts %}
+      <a href="#" class="j-filter-pill diy" data-filter="diy">★ DIY guides · {{ diy_posts|length }}</a>
+    {% endif %}
+    {% if country_posts %}
+      <a href="#" class="j-filter-pill" data-filter="country">Country conventions</a>
+    {% endif %}
+    {% if ats_posts %}
+      <a href="#" class="j-filter-pill" data-filter="ats">ATS &amp; keywords</a>
+    {% endif %}
+    <a href="#" class="j-filter-pill" data-filter="cover-letters">Cover letters</a>
+    <a href="#" class="j-filter-pill" data-filter="craft">The craft</a>
+    <a href="#" class="j-filter-pill" data-filter="career">Career stories</a>
+  </div>
+
+  {% if supported_langs and supported_langs|length > 1 %}
+  <div class="j-lang-switch">
+    <span>Read in:</span>
+    {% for l in supported_langs %}
+      <a href="/blog/{{ l }}" {% if l == lang %}class="active"{% endif %}>{{ l|upper }}</a>{% if not loop.last %} · {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+<main class="j-body">
+
+  {% if featured %}
+  <article class="j-featured">
+    <div>
+      <a href="/blog/{{ lang }}/{{ featured.slug }}" class="featured-link">
+        <div class="ftag">
+          {% if 'diy' in featured.tags %}★ Featured · DIY guide · free forever{% else %}★ Featured · most recent{% endif %}
         </div>
+        <h2>{{ featured.title }}</h2>
+        <p class="dek">{{ featured.description }}</p>
+      </a>
+      <div class="j-byline">
+        <div class="author">{{ author_initials(featured.author) }}</div>
+        <span>{{ featured.author }}</span>
+        <span class="dot"></span>
+        <span>{{ read_time(featured) }} read</span>
+        <span class="dot"></span>
+        <span>{{ short_date(featured.date) }}</span>
+      </div>
     </div>
+    <a href="/blog/{{ lang }}/{{ featured.slug }}" class="feat-art" aria-hidden="true" tabindex="-1">
+      {% if 'diy' in featured.tags %}<div class="stamp">DIY ·<br/>free<br/>forever</div>{% endif %}
+      <div class="sheet s1">
+        <div class="ln med"></div>
+        <div class="ln short"></div>
+        <div class="ln dim"></div>
+        <div class="ln dim"></div>
+        <div class="ln med"></div>
+        <div class="ln short"></div>
+      </div>
+      <div class="sheet s2">
+        <div class="ln short"></div>
+        <div class="ln dim"></div>
+        <div class="ln med"></div>
+        <div class="ln dim"></div>
+      </div>
+      <div class="scribble-mark">no paywall ↓</div>
+    </a>
+  </article>
+  {% endif %}
 
-    <div class="blog-list">
-        {% for post in posts %}
-        <article class="blog-card sticky-note sticky-note--{% if loop.index % 3 == 1 %}blue{% elif loop.index % 3 == 2 %}yellow{% else %}green{% endif %}">
-            <div class="blog-meta">
-                <time datetime="{{ post.date }}">{{ post.date }}</time>
-                <span class="blog-meta-sep">&middot;</span>
-                <span>{{ post.author }}</span>
+  <div class="j-grid-head">
+    <h3>Recent entries</h3>
+    <span class="count">{{ grid_posts|length }} {{ "entry" if grid_posts|length == 1 else "entries" }}</span>
+  </div>
+
+  <div class="j-post-grid">
+    {% for post in grid_posts %}
+      {% set country = country_for(post)|trim %}
+      {% set art = art_class(post)|trim %}
+      <a href="/blog/{{ lang }}/{{ post.slug }}" class="j-post">
+        <div class="thumb {{ art }}">
+          {% if 'diy' in post.tags %}<div class="diy-corner">★ DIY</div>{% endif %}
+
+          {% if art == 'art-ats' %}
+            <div class="checkmarks">
+              <div class="ck"><span class="box">✓</span><span class="row" style="background:var(--ok); opacity:.7;"></span></div>
+              <div class="ck"><span class="box">✓</span><span class="row" style="background:var(--ok); opacity:.5;"></span></div>
+              <div class="ck no"><span class="box">✗</span><span class="row" style="background:var(--danger); opacity:.4;"></span></div>
+              <div class="ck"><span class="box">✓</span><span class="row" style="background:var(--ok); opacity:.6;"></span></div>
+              <div class="ck"><span class="box">✓</span><span class="row" style="background:var(--ok); opacity:.55;"></span></div>
             </div>
-            <h2><a href="/blog/{{ lang }}/{{ post.slug }}">{{ post.title }}</a></h2>
-            <p>{{ post.description }}</p>
-            <a href="/blog/{{ lang }}/{{ post.slug }}" class="blog-read-more">{{ strings.read_more }}</a>
-        </article>
-        {% endfor %}
-    </div>
-</div>
+          {% elif art == 'art-flag' %}
+            <div class="badge">{{ country }}
+              <span class="crn"><span>2026</span><span>{{ city_for_code.get(country, '') }}</span></span>
+            </div>
+          {% elif art == 'art-bars' %}
+            {% set heights = ['35%','55%','48%','88%','62%','30%'] %}
+            {% set classes = ['lo','','','hi','','lo'] %}
+            {% for h in heights %}<div class="b {{ classes[loop.index0] }}" style="height:{{ h }}"></div>{% endfor %}
+          {% elif art == 'art-quill' %}
+            <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+              <path d="M82 18 Q 60 30 38 58 L 28 78 L 48 68 Q 66 56 82 38 Q 88 28 82 18 Z" fill="var(--accent)" opacity=".85"/>
+              <path d="M28 78 L 18 88" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="68" cy="32" r="3" fill="var(--paper)"/>
+            </svg>
+            <div class="ink-blot"></div>
+          {% elif art == 'art-letter' %}
+            <div class="env"><div class="seal">Q</div></div>
+          {% elif art == 'art-clock' %}
+            <div class="face"><div class="hh"></div><div class="mh"></div><div class="center"></div></div>
+          {% elif art == 'art-type' %}
+            <div class="glyph">aA</div>
+            <div class="baseline"></div>
+            <div class="typemeta"><span>serif</span><span>10pt+</span></div>
+          {% endif %}
+        </div>
+
+        <div class="meta-row">
+          {% if 'diy' in post.tags %}<span class="tag diy">★ DIY</span>{% endif %}
+          {% if country %}<span class="tag country">{{ country }}</span>{% endif %}
+          {% if 'ats' in post.tags %}<span class="tag ats">ATS</span>
+          {% elif 'before-after' in post.tags %}<span class="tag career">Career story</span>
+          {% elif 'cover-letters' in post.tags %}<span class="tag craft">Cover letters</span>
+          {% elif not country and 'diy' not in post.tags %}<span class="tag craft">The craft</span>
+          {% endif %}
+          <span>{{ read_time(post) }}</span>
+        </div>
+
+        <h4>{{ post.title }}</h4>
+        <p class="summ">{{ post.description }}</p>
+        <div class="foot">{{ short_date(post.date) }} · by {{ post.author }}</div>
+      </a>
+    {% endfor %}
+  </div>
+
+  {# ── Newsletter ── #}
+  <section class="j-newsletter">
+    <div class="stub">— for the patient —</div>
+    <h3>One letter, every other Tuesday.<br/><em>Job-hunt field notes.</em></h3>
+    <p>One DIY guide, one country deep-dive, and one piece of bad advice we used to give. No pitches. No "growth hacks". Unsubscribe with one click — we won't take it personally.</p>
+    <form onsubmit="event.preventDefault(); this.querySelector('button').textContent='✓ subscribed'; this.querySelector('input').value='';">
+      <input class="input" type="email" placeholder="you@example.com" required>
+      <button class="btn btn-primary" type="submit">Subscribe</button>
+    </form>
+    <div class="smallprint">~3,200 readers · last issue: <a href="#" style="color:var(--accent)">"The case against three-page CVs"</a></div>
+  </section>
+
+</main>
+
+<script>
+  // Visual-only filter toggle. Real filtering would route to /blog/{lang}?tag=...
+  document.querySelectorAll('.j-filter-pill').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('.j-filter-pill').forEach(p => p.classList.remove('on'));
+      el.classList.add('on');
+
+      const filter = el.dataset.filter;
+      document.querySelectorAll('.j-post-grid > .j-post').forEach(card => {
+        if (filter === 'all') { card.style.display = ''; return; }
+        const tags = card.querySelector('.meta-row')?.textContent?.toLowerCase() || '';
+        const match = (
+          (filter === 'diy'      && tags.includes('★ diy')) ||
+          (filter === 'ats'      && tags.includes('ats')) ||
+          (filter === 'country'  && /AU|UK|DE|US|JP|ES|BR/.test(tags)) ||
+          (filter === 'cover-letters' && tags.includes('cover')) ||
+          (filter === 'craft'    && tags.includes('the craft')) ||
+          (filter === 'career'   && tags.includes('career story'))
+        );
+        card.style.display = match ? '' : 'none';
+      });
+    });
+  });
+</script>
 {% endblock %}

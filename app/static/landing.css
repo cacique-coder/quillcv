@@ -15,17 +15,17 @@
 
 [data-theme="light"] .lp,
 :root:not([data-theme="dark"]) .lp {
-    --lp-paper:       #f4f5f7;   /* cool off-white page */
-    --lp-paper-2:     #ffffff;   /* whiter paper for lifted cards */
-    --lp-surface:     #eef0f4;   /* subtle surface tint */
-    --lp-ink:         #14161f;   /* near-black */
-    --lp-ink-soft:    #4b4f5b;   /* slate body */
-    --lp-ink-softer:  #7b7f8b;   /* muted slate / captions */
-    --lp-rule:        #d9dbe2;   /* cool rule */
-    --lp-grain-opacity: 0.3;
+    --lp-paper:       #f6efde;   /* warm cream parchment */
+    --lp-paper-2:     #faf7ef;   /* warmer lifted card paper */
+    --lp-surface:     #f0e8d4;   /* warm surface tint */
+    --lp-ink:         #1c1820;   /* deep ink */
+    --lp-ink-soft:    #574c3b;   /* sepia body */
+    --lp-ink-softer:  #8a7c69;   /* warm muted / captions */
+    --lp-rule:        #d5c9b5;   /* warm rule */
+    --lp-grain-opacity: 0.05;
     --lp-paper-shadow: 0 20px 50px -20px rgba(20, 22, 31, 0.18),
                        0 4px 14px -4px rgba(20, 22, 31, 0.08);
-    --lp-receipt-bg:  #ffffff;
+    --lp-receipt-bg:  #faf7ef;
 }
 
 [data-theme="dark"] .lp {
@@ -36,28 +36,16 @@
     --lp-ink-soft:    #9ca0ad;
     --lp-ink-softer:  #6b6e7b;
     --lp-rule:        #262832;
-    --lp-grain-opacity: 0.18;
+    --lp-grain-opacity: 0.04;
     --lp-paper-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6),
                        0 4px 14px -4px rgba(0, 0, 0, 0.4);
     --lp-receipt-bg:  #14161f;
 }
 
-/* Fallback when no [data-theme] attribute and prefers-color-scheme: dark */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .lp {
-        --lp-paper:       #0e0f14;
-        --lp-paper-2:     #181a22;
-        --lp-surface:     #1c1e28;
-        --lp-ink:         #f0f1f5;
-        --lp-ink-soft:    #9ca0ad;
-        --lp-ink-softer:  #6b6e7b;
-        --lp-rule:        #262832;
-        --lp-grain-opacity: 0.18;
-        --lp-paper-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6),
-                           0 4px 14px -4px rgba(0, 0, 0, 0.4);
-        --lp-receipt-bg:  #14161f;
-    }
-}
+/* Light-default — landing matches the rest of the site (warm cream).
+ * Dark only flips when [data-theme="dark"] is explicitly set, so OS-level
+ * prefers-color-scheme no longer dark-flips the home page while every
+ * other page stays cream. */
 
 /* ── Page container override ─────────────────────────────────── */
 
@@ -89,14 +77,14 @@ body:has(.lp) {
     background: var(--lp-paper) !important;
 }
 
-/* Paper grain overlay — subtle SVG noise */
+/* Paper grain overlay — fine SVG noise, harmonised with tokens.css .paper-grain */
 .lp-grain {
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 0;
     opacity: var(--lp-grain-opacity);
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10 0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
     mix-blend-mode: multiply;
 }
 

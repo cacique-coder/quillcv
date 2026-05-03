@@ -77,6 +77,8 @@ async def signup_page(request: Request, invite: str | None = None):
             "request": request,
             "invitation": invitation,
             "invite_error": invite_error,
+            "google_enabled": bool(GOOGLE_CLIENT_ID),
+            "github_enabled": bool(GITHUB_CLIENT_ID),
         },
     )
 
@@ -238,25 +240,93 @@ async def signup_submit(
 
         return RedirectResponse("/onboarding", status_code=303)
 
-    # ── Expression of Interest (no invite code) ────────────────────────────
-    async with async_session() as db:
-        existing = await db.scalar(
-            select(ExpressionOfInterest).where(ExpressionOfInterest.email == email.lower().strip())
+    # ── Open signup (no invite code) — real account creation ─────────────
+    errors = []
+    normalized_email = email.lower().strip()
+
+    if not age_confirmed:
+        errors.append("You must confirm that you are 18 years of age or older.")
+    if len(password) < 8:
+        errors.append("Password must be at least 8 characters.")
+    elif password != confirm_password:
+        errors.append("Passwords do not match.")
+
+    existing_user = None
+    if not errors:
+        async with async_session() as db:
+            existing_user = await get_user_by_email(db, normalized_email)
+        if existing_user:
+            errors.append("An account with this email already exists. Try signing in.")
+
+    if errors:
+        return templates.TemplateResponse(
+            "auth/signup.html",
+            {
+                "request": request,
+                "errors": errors,
+                "invitation": None,
+                "email_value": email,
+                "name_value": name,
+            },
         )
-        if not existing:
-            eoi = ExpressionOfInterest(
-                email=email.lower().strip(),
-                name=name.strip(),
-                source="signup",
+
+    # Create the user account
+    async with async_session() as db:
+        new_user = await create_user(db, email=normalized_email, password=password, name=name.strip())
+
+    # Record consents
+    async with async_session() as db:
+        for consent_type in ("age_verification", "terms_acceptance"):
+            db.add(
+                ConsentRecord(
+                    user_id=new_user.id,
+                    consent_type=consent_type,
+                    granted=True,
+                    email=normalized_email,
+                    ip_address=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent", "")[:512],
+                    policy_version=datetime.now(UTC).strftime("%Y-%m-%d"),
+                )
             )
-            db.add(eoi)
+        await db.commit()
+
+    async with async_session() as db:
+        result = await db.execute(select(User).where(User.id == new_user.id))
+        u = result.scalar_one_or_none()
+        if u:
+            u.age_confirmed_at = datetime.now(UTC)
             await db.commit()
 
-    return templates.TemplateResponse(
-        "partials/eoi_success.html",
-        {"request": request},
-        headers={"Content-Type": "text/html"},
+    # Log the user in and seed the vault
+    token = create_access_token(new_user.id, new_user.email)
+    request.state.session["auth_token"] = token
+
+    async with async_session() as db:
+        pii = pii_from_user(new_user)
+        await upsert_vault(db, user_id=new_user.id, pii=pii, password=password)
+
+    request.state.session["pii"] = pii
+    request.state.session["_pii_password"] = password
+    request.state.session["pii_onboarded"] = False
+
+    async with async_session() as db:
+        request.state.session["cached_balance"] = await get_balance(db, new_user.id)
+
+    logger.info("Open signup: user %s created", new_user.id)
+
+    from app.infrastructure.instrumentation import record_custom_event
+
+    record_custom_event(
+        "UserSignup",
+        {"user_id": new_user.id, "method": "open"},
     )
+
+    try:
+        await send_welcome_email(to_email=new_user.email, name=new_user.name)
+    except Exception:
+        logger.exception("Failed to send welcome email to %s", new_user.email)
+
+    return RedirectResponse("/onboarding", status_code=303)
 
 
 @router.get("/login")
@@ -350,11 +420,11 @@ async def login_submit(
                     invitation.credits,
                 )
         if not vault_existed:
-            return RedirectResponse("/onboarding?invite_redeemed=1", status_code=303)
+            return RedirectResponse("/jobs/new?invite_redeemed=1", status_code=303)
         return RedirectResponse("/app?invite_redeemed=1", status_code=303)
 
     if not vault_existed:
-        return RedirectResponse("/onboarding", status_code=303)
+        return RedirectResponse("/jobs/new", status_code=303)
     return RedirectResponse("/app", status_code=303)
 
 
@@ -448,7 +518,7 @@ async def google_callback(request: Request):
         request.state.session["cached_balance"] = await get_balance(db, user.id)
 
     if not vault_existed:
-        return RedirectResponse("/onboarding", status_code=303)
+        return RedirectResponse("/jobs/new", status_code=303)
     return RedirectResponse("/app", status_code=303)
 
 
@@ -547,7 +617,7 @@ async def github_callback(request: Request):
         request.state.session["cached_balance"] = await get_balance(db, user.id)
 
     if not vault_existed:
-        return RedirectResponse("/onboarding", status_code=303)
+        return RedirectResponse("/jobs/new", status_code=303)
     return RedirectResponse("/app", status_code=303)
 
 
