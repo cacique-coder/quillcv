@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import phone_input %}
+{% block body_layout %}{% if mode == 'account' %}app{% else %}marketing{% endif %}{% endblock %}
 
 {% block title %}
   {% if mode == "account" %}Update Personal Information — QuillCV

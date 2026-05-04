@@ -15,6 +15,22 @@
 
 {# All blog-page CSS is scoped here, matching the bundle's "no new CSS files" decision. #}
 <style>
+  /* Mark the Blog nav link as current on journal pages */
+  .site-nav-links .nav-link[href="/blog"],
+  .site-nav-links .nav-link[href="/blog/en"] {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .site-nav-links .nav-link[href="/blog"]::after,
+  .site-nav-links .nav-link[href="/blog/en"]::after {
+    content: "";
+    display: block;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+    margin-top: 2px;
+  }
+
   body { background: var(--paper); }
 
   /* ─── Hero ─── */
@@ -537,6 +553,13 @@
     .j-newsletter form { flex-direction: column; }
   }
 </style>
+<script>
+  // Accessibility: mark the Blog nav link as current page
+  document.addEventListener("DOMContentLoaded", function() {
+    var blogLink = document.querySelector('.site-nav-links a[href="/blog"]');
+    if (blogLink) blogLink.setAttribute("aria-current", "page");
+  });
+</script>
 {% endblock %}
 
 {% block structured_data %}

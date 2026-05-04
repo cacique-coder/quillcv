@@ -519,6 +519,12 @@
 }
 .closing p a { color: var(--accent); }
 
+/* Break pricing out of base.css's <main> 900px cap — same pattern as landing.css main:has(.lp) */
+main:has(.plan-rail) {
+  max-width: none;
+  padding: 0;
+}
+
 /* ─── Plan rail (3-card grid used by pricing) ───────────────────── */
 .plan-rail {
   display: grid;
