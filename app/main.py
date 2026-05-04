@@ -44,7 +44,7 @@ from app.web.routes import account as account_router  # noqa: E402
 from app.web.routes import admin as admin_router  # noqa: E402
 from app.web.routes import auth as auth_router  # noqa: E402
 from app.web.routes import blog as blog_router  # noqa: E402
-from app.web.routes import builder, cv, demo, jobs, my_cvs, photos, profile, wizard  # noqa: E402
+from app.web.routes import builder, cv, demo, my_cvs, photos, profile, wizard  # noqa: E402
 from app.web.routes import invitations as invitations_router  # noqa: E402
 from app.web.routes import landing as landing_router  # noqa: E402
 from app.web.routes import onboarding as onboarding_router  # noqa: E402
@@ -208,7 +208,6 @@ app.include_router(admin_router.router)
 app.include_router(account_router.router)
 app.include_router(wizard.router)
 app.include_router(profile.router)
-app.include_router(jobs.router)
 app.include_router(builder.router)
 app.include_router(my_cvs.router)
 app.include_router(cv.router)

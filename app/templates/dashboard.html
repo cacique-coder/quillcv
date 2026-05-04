@@ -31,14 +31,16 @@
 
   /* ── Resume card ── */
   .resume-card {
-    background: var(--ink); color: var(--paper);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    box-shadow: var(--sh-1);
     padding: 28px 32px; border-radius: var(--r-3);
     display: flex; align-items: center; gap: 24px;
     margin-bottom: 32px; position: relative; overflow: hidden;
   }
   .resume-card .stamp {
     position: absolute; top: 20px; right: 24px;
-    border: 1.5px solid var(--accent-2); color: var(--accent-2);
+    border: 1.5px solid var(--accent); color: var(--accent);
     font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 2px;
     transform: rotate(4deg); letter-spacing: .1em; text-transform: uppercase;
   }
@@ -48,16 +50,16 @@
     border-radius: 14px 18px 14px 18px;
     display: grid; place-items: center;
   }
-  .resume-card h3 { color: var(--paper); font-family: var(--display); font-size: 22px; font-weight: 440; margin-bottom: 4px; }
-  .resume-card p { color: var(--ink-4); font-size: 14px; }
+  .resume-card h3 { font-family: var(--display); font-size: 22px; font-weight: 440; margin-bottom: 4px; }
+  .resume-card p { color: var(--ink-3); font-size: 14px; }
   .resume-card .progress { display: flex; gap: 4px; margin-top: 10px; }
-  .resume-card .progress .tick { width: 24px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.15); }
-  .resume-card .progress .tick.on { background: var(--accent-2); }
-  .resume-card .rc-label { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 6px; }
+  .resume-card .progress .tick { width: 24px; height: 4px; border-radius: 2px; background: var(--rule); }
+  .resume-card .progress .tick.on { background: var(--accent); }
+  .resume-card .rc-label { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
 
   /* ── Quick actions ── */
   .qa-label { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; }
-  .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+  .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 40px; }
   .qa {
     background: var(--paper-raised); border: 1px solid var(--rule);
     border-radius: var(--r-3); padding: 24px;
@@ -74,7 +76,7 @@
   .qa .cost { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-3); position: absolute; top: 24px; right: 24px; letter-spacing: .05em; }
 
   /* ── Dashboard grid ── */
-  .dash-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .dash-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
   .panel { background: var(--paper-raised); border: 1px solid var(--rule); border-radius: var(--r-3); padding: 20px 24px; box-shadow: var(--sh-1); }
   .panel .p-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
   .panel .p-head h3 { font-family: var(--display); font-size: 20px; font-weight: 440; }
@@ -103,32 +105,19 @@
   .panel-empty { padding: 24px 0; color: var(--ink-3); font-size: 14px; text-align: center; }
   .panel-empty a { color: var(--accent); text-decoration: none; }
 
-  /* ── Job rows ── */
-  .job-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--rule-soft); align-items: center; gap: 12px; }
-  .job-row:last-child { border-bottom: none; }
-  .job-row .title { font-weight: 500; font-size: 14px; }
-  .job-row .co { color: var(--ink-3); font-size: 12px; }
-  .status-pill {
-    flex-shrink: 0;
-    font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
-    padding: 3px 8px; border-radius: var(--r-pill); border: 1px solid currentColor;
-  }
-  .status-pill.applying { color: var(--warn); background: var(--warn-wash); border-color: transparent; }
-  .status-pill.applied { color: var(--accent); background: var(--accent-wash); border-color: transparent; }
-  .status-pill.saved { color: var(--ink-3); background: var(--paper-raised); border-color: var(--rule); }
-  .status-pill.interview { color: var(--ok); background: var(--ok-wash); border-color: transparent; }
-  .jobs-add-row { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--rule-soft); }
-
   /* ── Vault strip ── */
   .vault-strip {
-    background: var(--ink); color: var(--paper); padding: 20px 24px;
-    border-radius: var(--r-3); display: flex; align-items: center; gap: 20px;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    box-shadow: var(--sh-1);
+    padding: 20px 24px;
+    border-radius: var(--r-3);
+    display: flex; align-items: center; gap: 20px;
   }
   .vault-strip .ico { width: 44px; height: 44px; flex-shrink: 0; background: var(--accent); color: white; border-radius: 12px 16px 12px 16px; display: grid; place-items: center; }
-  .vault-strip h4 { color: var(--paper); font-family: var(--display); font-size: 18px; font-weight: 440; }
-  .vault-strip p { color: var(--ink-4); font-size: 13px; }
-  .vault-strip .vault-action { margin-left: auto; color: var(--paper); border-color: rgba(255,255,255,.2); background: transparent; white-space: nowrap; }
-  .vault-strip .vault-action:hover { background: rgba(255,255,255,.1); }
+  .vault-strip h4 { font-family: var(--display); font-size: 18px; font-weight: 440; }
+  .vault-strip p { color: var(--ink-3); font-size: 13px; }
+  .vault-strip .vault-action { margin-left: auto; white-space: nowrap; }
 
   /* ── Responsive ── */
   @media (max-width: 768px) {
@@ -146,8 +135,8 @@
 {% block content %}
 
 {# ── Derive first name ── #}
-{% if user.full_name %}
-  {% set first_name = user.full_name.split(' ')[0] %}
+{% if user.name %}
+  {% set first_name = user.name.split(' ')[0] %}
 {% else %}
   {% set first_name = user.email.split('@')[0] %}
 {% endif %}
@@ -175,7 +164,7 @@
   </div>
   <div style="flex:1">
     <div class="rc-label">Continue where you left off</div>
-    <h3>Tailoring CV · <span style="font-style:italic;color:var(--accent-2)">{{ resume.title }}</span></h3>
+    <h3>Tailoring CV · <span style="font-style:italic;color:var(--accent)">{{ resume.title }}</span></h3>
     <p>Step {{ resume.step }} of 5 · reviewing matched keywords</p>
     <div class="progress">
       {% for i in range(1, 6) %}
@@ -190,7 +179,7 @@
 {# ── Quick actions ── #}
 <div class="qa-label">Quick actions</div>
 <div class="quick-actions">
-  <a class="qa" href="/wizard/step/1">
+  <a class="qa" href="/wizard">
     <div class="ico">
       {# Target icon #}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -210,22 +199,11 @@
     </div>
     <h3>Build manually</h3>
     <p>WYSIWYG paper canvas. Click anywhere on the CV to edit.</p>
-    <span class="cost">1 credit</span>
-  </a>
-  <a class="qa" href="/jobs/new">
-    <div class="ico">
-      {# Mail icon #}
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/>
-      </svg>
-    </div>
-    <h3>Write a cover letter</h3>
-    <p>Pair a job with a CV. We draft the letter in your voice.</p>
     <span class="cost">free</span>
   </a>
 </div>
 
-{# ── Dash grid: Recent CVs | Saved jobs ── #}
+{# ── Dash grid: Recent CVs ── #}
 <div class="dash-grid">
 
   {# Recent CVs panel #}
@@ -252,7 +230,7 @@
           <div class="title">{{ cv.title }}</div>
           <div class="meta">{{ region_flag(cv.region) }} {{ cv.region }} &middot; {{ cv.template | title }} &middot; updated {{ cv.updated_human }}</div>
         </div>
-        <div class="score{% if cv.score >= 85 %}{% elif cv.score >= 60 %} mid{% else %} low{% endif %}">{{ cv.score }}%</div>
+        {% if cv.score is not none %}<div class="score{% if cv.score >= 85 %}{% elif cv.score >= 60 %} mid{% else %} low{% endif %}">{{ cv.score }}%</div>{% endif %}
         <a href="/builder/edit/{{ cv.id }}" class="icon-btn" title="Open CV" aria-label="Open {{ cv.title }}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="9,18 15,12 9,6"/>
@@ -262,36 +240,7 @@
       {% endfor %}
     {% else %}
       <div class="panel-empty">
-        No CVs yet &mdash; <a href="/wizard/step/1">Build your first one &rarr;</a>
-      </div>
-    {% endif %}
-  </div>
-
-  {# Saved jobs panel #}
-  <div class="panel">
-    <div class="p-head">
-      <h3>Saved jobs</h3>
-      <a href="/jobs">View all &rarr;</a>
-    </div>
-    {% if recent_jobs %}
-      {% for job in recent_jobs %}
-      <div class="job-row">
-        <div>
-          <div class="title">{{ job.title }}</div>
-          <div class="co">{{ job.company }} &middot; {{ job.location }} &middot; {{ job.created_human }}</div>
-        </div>
-        <span class="status-pill {{ job.status }}">{{ job.status | title }}</span>
-      </div>
-      {% endfor %}
-      <div class="jobs-add-row">
-        <a href="/jobs/new" class="btn btn-sm btn-full" style="justify-content:center">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add a job
-        </a>
-      </div>
-    {% else %}
-      <div class="panel-empty">
-        No saved jobs yet &mdash; <a href="/jobs/new">Track a job &rarr;</a>
+        No CVs yet &mdash; <a href="/wizard">Build your first one &rarr;</a>
       </div>
     {% endif %}
   </div>

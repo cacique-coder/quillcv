@@ -420,11 +420,11 @@ async def login_submit(
                     invitation.credits,
                 )
         if not vault_existed:
-            return RedirectResponse("/jobs/new?invite_redeemed=1", status_code=303)
+            return RedirectResponse("/wizard/step/1?invite_redeemed=1", status_code=303)
         return RedirectResponse("/app?invite_redeemed=1", status_code=303)
 
     if not vault_existed:
-        return RedirectResponse("/jobs/new", status_code=303)
+        return RedirectResponse("/wizard/step/1", status_code=303)
     return RedirectResponse("/app", status_code=303)
 
 
@@ -518,7 +518,7 @@ async def google_callback(request: Request):
         request.state.session["cached_balance"] = await get_balance(db, user.id)
 
     if not vault_existed:
-        return RedirectResponse("/jobs/new", status_code=303)
+        return RedirectResponse("/wizard/step/1", status_code=303)
     return RedirectResponse("/app", status_code=303)
 
 
@@ -617,7 +617,7 @@ async def github_callback(request: Request):
         request.state.session["cached_balance"] = await get_balance(db, user.id)
 
     if not vault_existed:
-        return RedirectResponse("/jobs/new", status_code=303)
+        return RedirectResponse("/wizard/step/1", status_code=303)
     return RedirectResponse("/app", status_code=303)
 
 

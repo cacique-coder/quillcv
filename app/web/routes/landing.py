@@ -1,6 +1,6 @@
 """Landing page and public routes."""
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
@@ -10,7 +10,6 @@ from app.identity.use_cases.authenticate import count_alpha_users
 from app.infrastructure.persistence.attempt_store import get_attempt
 from app.infrastructure.persistence.cv_repo import list_saved_cvs
 from app.infrastructure.persistence.database import async_session
-from app.infrastructure.persistence.job_repo import list_jobs
 from app.infrastructure.persistence.orm_models import PIIVault, User
 from app.web.templates import templates
 from sqlalchemy import select
@@ -20,14 +19,6 @@ router = APIRouter()
 _QUOTE = (
     '"The secret of getting ahead is getting started." — Mark Twain'
 )
-
-_JOB_STATUS_MAP = {
-    # lifecycle statuses → application tracking
-    "draft":      "saved",
-    "generating": "saved",
-    "complete":   "applied",
-    "error":      "saved",
-}
 
 
 def _humanize_delta(dt: datetime | None) -> str:
@@ -93,7 +84,6 @@ async def app_page(request: Request, user: User = Depends(require_auth)):
 async def dashboard(request: Request, user: User = Depends(require_auth)):
     """Main dashboard for authenticated users."""
     today = date.today()
-    today_iso = today.isoformat()
     today_pretty = today.strftime("%A · %-d %B %Y")
 
     # --- In-progress wizard attempt ---
@@ -125,20 +115,6 @@ async def dashboard(request: Request, user: User = Depends(require_auth)):
             for cv in all_cvs[:4]
         ]
 
-        # --- Recent jobs (top 4, newest first) ---
-        all_jobs = await list_jobs(db, user.id)
-        recent_jobs = [
-            {
-                "id": job.id,
-                "title": job.job_title or "Untitled role",
-                "company": job.company_name or "",
-                "location": "",       # Job ORM has no location field
-                "created_human": _humanize_delta(job.created_at),
-                "status": _JOB_STATUS_MAP.get(job.status, "saved"),
-            }
-            for job in all_jobs[:4]
-        ]
-
         # --- Vault ---
         vault = None
         result = await db.execute(
@@ -156,12 +132,10 @@ async def dashboard(request: Request, user: User = Depends(require_auth)):
         {
             "request": request,
             "user": user,
-            "today_iso": today_iso,
             "today_pretty": today_pretty,
             "quote": _QUOTE,
             "resume": resume,
             "recent_cvs": recent_cvs,
-            "recent_jobs": recent_jobs,
             "vault": vault,
         },
     )
