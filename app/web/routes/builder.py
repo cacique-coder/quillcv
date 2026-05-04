@@ -31,9 +31,71 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/builder")
 
+# ---------------------------------------------------------------------------
+# Starter CV — seeded once on first visit so the canvas is never empty
+# ---------------------------------------------------------------------------
+
+STARTER_BUILDER_DATA: dict = {
+    # Personal — left blank so PII vault can fill them in
+    "name": "",
+    "email": "",
+    "phone": "",
+    "linkedin": "",
+    "github": "",
+    "portfolio": "",
+    # Profile defaults
+    "title": "Your job title",
+    "location": "City, Country",
+    "summary": (
+        "Two to four sentences highlighting the strengths you want this CV to lead with. "
+        "Mention the role you're targeting, the scale of work you've delivered, and the "
+        "technologies or methods you've owned."
+    ),
+    "experience": [
+        {
+            "title": "Senior Engineer",
+            "company": "Company name",
+            "location": "City, Country",
+            "date": "2022 – Present",
+            "tech": "Python, FastAPI, PostgreSQL",
+            "bullets": [
+                "Led a small team to ship a critical feature on time and on scope.",
+                "Owned the migration of a legacy system, reducing operational cost by ~30%.",
+                "Mentored two engineers; both promoted within 18 months.",
+            ],
+        }
+    ],
+    "education": [
+        {
+            "degree": "Bachelor of Computer Science",
+            "institution": "University name",
+            "date": "2018",
+        }
+    ],
+    "skills": ["Python", "JavaScript", "PostgreSQL", "Docker", "AWS"],
+    "certifications": [],
+    "projects": [],
+    "references": [],
+    "languages": [],
+    # Region-specific fields
+    "dob": "",
+    "nationality": "",
+    "marital_status": "",
+    "visa_status": "",
+    "photo_url": "",
+    # Display defaults — Australia is QuillCV's primary market
+    "template_id": "modern",
+    "region": "AU",
+}
+
 
 def _get_or_create_builder(request: Request) -> dict:
-    """Get or create a builder attempt (separate from the AI wizard)."""
+    """Get or create a builder attempt (separate from the AI wizard).
+
+    On first visit (new attempt), seeds ``builder_data`` with ``STARTER_BUILDER_DATA``
+    so the canvas always shows real, editable content rather than empty placeholders.
+    Existing in-progress attempts are returned as-is.
+    """
     attempt_id = request.state.session.get("builder_id")
     if attempt_id:
         attempt = get_attempt(attempt_id)
@@ -41,6 +103,7 @@ def _get_or_create_builder(request: Request) -> dict:
             return attempt
     attempt_id = create_attempt()
     request.state.session["builder_id"] = attempt_id
+    update_attempt(attempt_id, builder_data=STARTER_BUILDER_DATA)
     return get_attempt(attempt_id)
 
 
@@ -76,6 +139,11 @@ async def builder_page(request: Request):
             "editing_cv_id": None,
             "editing_label": "",
             "editing_job_title": "",
+            "page_crumbs": [
+                {"label": "Create", "href": "/dashboard"},
+                {"label": "Builder", "href": "/builder"},
+                {"label": "New CV"},
+            ],
         },
     )
 
@@ -145,6 +213,11 @@ async def builder_edit(cv_id: str, request: Request):
             "editing_cv_id": cv_id,
             "editing_label": saved.label or "Untitled CV",
             "editing_job_title": saved.job_title or "",
+            "page_crumbs": [
+                {"label": "Create", "href": "/dashboard"},
+                {"label": "Builder", "href": "/builder"},
+                {"label": saved.label or "Edit CV"},
+            ],
         },
     )
 

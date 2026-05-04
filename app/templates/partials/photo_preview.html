@@ -1,11 +1,11 @@
-<div class="photo-uploaded">
-    <img src="/photos/serve/{{ photo_path }}" alt="CV Photo" class="photo-thumb">
-    <div class="photo-meta">
-        <span class="photo-status">Uploaded</span>
-        {% if r2_synced %}
-        <span class="photo-cloud">Synced to cloud</span>
-        {% endif %}
-    </div>
-    <input type="hidden" name="photo_path" value="{{ photo_path }}">
-    <input type="hidden" name="user_id" value="{{ user_id }}">
+{# Primary swap target: #photo-result (hidden, just holds the path) #}
+<input type="hidden" name="photo_path" id="photo-path-result" value="{{ photo_path }}">
+<input type="hidden" name="user_id" value="{{ user_id }}">
+
+{# OOB swap: update the on-sheet photo slot #}
+<div id="sheet-photo" class="sheet-photo" hx-swap-oob="true">
+  <img src="/photos/serve/{{ photo_path }}" alt="Profile photo" id="sheet-photo-img">
+  <button type="button" class="sheet-photo-replace"
+          onclick="document.getElementById('photo-input').click()"
+          aria-label="Replace profile photo">Replace</button>
 </div>

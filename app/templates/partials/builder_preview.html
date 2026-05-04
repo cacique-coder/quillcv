@@ -1,27 +1,8 @@
-<div class="builder-preview-result">
-    <div class="builder-preview-meta">
-        <span>{{ template_name }} template</span>
-        <span>{{ region }}</span>
-    </div>
-
-    <!-- Save as my CV -->
-    <div class="builder-save-form">
-        <div class="builder-save-fields">
-            <input type="text" name="save_label" class="input-field" placeholder="Name this CV (e.g. Frontend Role — Google)">
-            <input type="text" name="save_job_title" class="input-field" placeholder="Target job title (optional)">
-        </div>
-        <button type="button" class="btn-save-cv"
-                hx-post="/builder/save"
-                hx-include="[name='save_label'],[name='save_job_title']"
-                hx-target="#save-result"
-                hx-swap="innerHTML"
-                hx-disabled-elt="this">
-            Save as My CV
-        </button>
-        <div id="save-result"></div>
-    </div>
-
-    <div class="cv-preview">
-        {{ generated_cv | safe }}
-    </div>
-</div>
+{# Builder preview sync — HTMX swap target: #builder-preview (hidden div).
+   This partial is called by POST /builder/preview after every debounced input.
+   Its purpose is to keep the server-side attempt cache warm so that
+   /builder/download-pdf always has fresh rendered_cv data.
+   The content is not shown to the user — the static click-to-edit sheet
+   in builder.html is the visible canvas.
+   generated_cv / template_name / region are available if needed in future. #}
+<span data-synced="{{ template_name }}" data-region="{{ region }}"></span>

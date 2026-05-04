@@ -1,767 +1,1364 @@
 {% extends "base.html" %}
 {% block body_layout %}app{% endblock %}
-{% from "macros/ui.html" import select_input, phone_input %}
+{% block title %}Builder — QuillCV{% endblock %}
+{% from "macros/ui.html" import phone_input %}
 
 {% block head_extra %}
 <meta name="robots" content="noindex, nofollow">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/builder.css?v=9">
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var c = document.getElementById('main');
+    if (c) c.classList.add('wide');
+  });
+</script>
+{% endblock %}
+
+{# ── Topbar ── #}
+{% block topbar_actions %}
+<span class="autosave"><span class="dot"></span> Saved</span>
+<button type="button" class="btn btn-sm"
+        hx-post="/builder/preview"
+        hx-include="#builder-form"
+        hx-target="#builder-preview"
+        hx-swap="innerHTML">Preview</button>
+<button type="button" class="btn btn-sm"
+        hx-post="/builder/save"
+        hx-include="#builder-form, #save-label-input, #save-job-title-input"
+        hx-target="#save-result"
+        hx-swap="innerHTML">Save</button>
+<button type="submit" form="builder-form"
+        formaction="/builder/download-pdf"
+        formmethod="post"
+        class="btn btn-sm btn-accent">Download PDF</button>
 {% endblock %}
 
 {% block content %}
-<div class="bld">
-    <!-- Top progress bar -->
-    <div class="bld-progress"><div class="bld-progress-fill" id="bld-progress-fill"></div></div>
+{# Hidden save-label inputs #}
+<input type="text" id="save-label-input" name="save_label"
+       value="{{ editing_label }}" style="display:none">
+<input type="text" id="save-job-title-input" name="save_job_title"
+       value="{{ editing_job_title }}" style="display:none">
+<div id="builder-preview" style="display:none;" aria-hidden="true"></div>
+<div id="save-result" style="position:fixed;bottom:70px;right:20px;z-index:50;background:var(--paper-raised);border:1px solid var(--rule);border-radius:var(--r-2);padding:10px 16px;box-shadow:var(--sh-2);font-size:13px;font-family:var(--sans);display:none;"></div>
 
-    <form id="builder-form" class="bld-workspace"
-          hx-post="/builder/preview"
-          hx-target="#builder-preview"
-          hx-swap="innerHTML"
-          hx-trigger="input changed delay:800ms from:find input, input changed delay:800ms from:find textarea, change delay:200ms from:find select"
-          hx-indicator="#builder-form">
-        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+{# ══ BUILDER FORM ══════════════════════════════════════════════ #}
+<form id="builder-form" class="builder"
+      action="/builder/save"
+      method="post"
+      hx-post="/builder/preview"
+      hx-target="#builder-preview"
+      hx-swap="innerHTML"
+      hx-trigger="input changed delay:800ms from:find input, input changed delay:800ms from:find textarea, change delay:200ms from:find select"
+      hx-indicator="#builder-form">
 
-        <!-- ═══ LEFT: Form with tabs ═══ -->
-        <div class="bld-form">
-            {% if editing_cv_id %}
-            <div class="bld-editing-banner">
-                Editing: <strong>{{ editing_label }}</strong>
-                <a href="/builder" class="bld-editing-new">or start fresh</a>
-            </div>
-            <input type="hidden" name="editing_cv_id" value="{{ editing_cv_id }}">
+  <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+  {% if editing_cv_id %}
+  <input type="hidden" name="editing_cv_id" value="{{ editing_cv_id }}">
+  {% endif %}
+
+  {# Regional hidden fields — populated by updateRegionFields(); submitted with form #}
+  <div style="display:none;" id="regional-fields">
+    <input type="text"   name="dob"            id="f-dob"        value="{{ cv_data.dob }}">
+    <input type="text"   name="nationality"    id="f-nationality" value="{{ cv_data.nationality }}">
+    <input type="text"   name="marital_status" id="f-marital"    value="{{ cv_data.marital_status }}">
+    <input type="text"   name="visa_status"    id="f-visa"       value="{{ cv_data.visa_status }}">
+  </div>
+
+  {# ══ LEFT RAIL ══════════════════════════════════════════════ #}
+  <aside class="left-rail">
+
+    {% if editing_cv_id %}
+    <div class="bld-editing-banner">
+      Editing: <strong>{{ editing_label }}</strong>
+      <a href="/builder" class="bld-editing-new">start fresh</a>
+    </div>
+    {% endif %}
+
+    <h4>Document</h4>
+    <div class="grp">
+      <label class="label sr-only" for="rail-cv-title">Document title</label>
+      <input class="input" id="rail-cv-title" name="cv_title"
+             style="font-size:13px;padding:6px 10px;margin:0 0 4px;"
+             placeholder="e.g. Senior Engineer · Canva"
+             value="{{ editing_label if editing_label else '' }}">
+    </div>
+
+    <h4>Region</h4>
+    <select name="region" class="select" style="font-size:13px;padding:6px 10px;" onchange="updateRegionFields()">
+      {% for value, label in region_options %}
+      <option value="{{ value }}" {% if value == selected_region %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <h4>Template</h4>
+    <input type="hidden" name="template_id" id="template-id-field" value="{{ selected_template }}">
+    <div class="tmpl-pick" id="tmpl-pick">
+      {% set tmpl_defs = [
+        ("modern",   "Modern",   "#fbf7ee", false, true),
+        ("classic",  "Classic",  "#fbf7ee", true,  true),
+        ("minimal",  "Minimal",  "#fbf7ee", false, true),
+        ("executive","Executive","#fbf7ee", false, true),
+      ] %}
+      {% for tid, tname, tbg, tcenter, tline in tmpl_defs %}
+      <div class="t {% if tid == selected_template %}on{% endif %}"
+           data-tmpl="{{ tid }}"
+           style="background:{{ '#f1d6c4' if tid == 'executive' else tbg }}"
+           onclick="selectTemplate('{{ tid }}')">
+        <div style="font-family:var(--display);font-size:6px;font-weight:500;{% if tcenter %}text-align:center;{% endif %}">{{ tname }}</div>
+        <div style="height:.5px;background:#1c1a17;opacity:.3;margin:3px 0;"></div>
+        {% if tline %}
+        <div class="t-line" style="width:85%;"></div>
+        <div class="t-line" style="width:65%;"></div>
+        <div class="t-line" style="width:75%;"></div>
+        {% endif %}
+        <span class="lbl">{{ tname }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <a href="/demo" class="see-all">See all templates →</a>
+
+    <h4>Sections</h4>
+    <div class="grp" id="sections-list">
+      {% set sections = [
+        ("sum", "Summary",        true),
+        ("exp", "Experience",     true),
+        ("edu", "Education",      true),
+        ("skl", "Skills",         true),
+        ("prj", "Projects",       false),
+        ("crt", "Certifications", false),
+        ("ref", "References",     false),
+        ("lng", "Languages",      false),
+      ] %}
+      {% for k, l, on in sections %}
+      {# a11y: keyboard reorder TBD — drag handles need key handlers in a future pass #}
+      <label class="row {% if on %}on{% endif %}">
+        <input type="checkbox" name="section_{{ k }}" value="1" {% if on %}checked{% endif %}>
+        <span style="flex:1;">{{ l }}</span>
+        {% if on %}
+        <span class="drag" tabindex="0" aria-grabbed="false" aria-label="Drag to reorder {{ l }}">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5h2m4 0h2M9 12h2m4 0h2M9 19h2m4 0h2"/></svg>
+        </span>
+        {% endif %}
+      </label>
+      {% endfor %}
+    </div>
+
+    <h4>Personal data</h4>
+    <div class="vault-card">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/></svg>
+      From vault
+      <a href="/account/pii">Review →</a>
+    </div>
+
+  </aside>
+  {# /left-rail #}
+
+  {# ══ CANVAS ═════════════════════════════════════════════════ #}
+  <div class="canvas-area" id="canvas-area">
+
+    {# ── ATS bubble (demo — hardcoded against first exp role) ── #}
+    <div class="ats-bubble" id="ats-bubble-0" data-target="exp-0">
+      <button class="ats-bubble-dot" type="button"
+              aria-label="ATS hint for first experience role"
+              onclick="toggleAtsBubble('ats-bubble-0')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </button>
+      <div class="ats-bubble-popover" hidden role="dialog" aria-modal="false" aria-label="ATS suggestion">
+        <div class="ats-bubble-kicker">ATS hint · from job posting</div>
+        <p>Add <b>"observability"</b> — appears 3&times; in the job description.</p>
+        <button type="button" class="btn btn-sm btn-accent"
+                onclick="dismissAtsBubble('ats-bubble-0')">Apply suggestion</button>
+      </div>
+    </div>
+
+    {# ── A4 sheet — the inline-edit canvas ── #}
+    <div class="sheet" id="builder-sheet">
+      {% set cv = cv_data %}
+
+      {# ── On-sheet photo — region-conditional, positioned per template ── #}
+      <div id="sheet-photo" class="sheet-photo" {% if not cv.photo_url %}data-empty="1"{% endif %}>
+        {% if cv.photo_url %}
+        <img src="{{ cv.photo_url }}" alt="Profile photo" id="sheet-photo-img">
+        <button type="button" class="sheet-photo-replace"
+                onclick="document.getElementById('photo-input').click()"
+                aria-label="Replace profile photo">Replace</button>
+        {% else %}
+        <button type="button" class="sheet-photo-empty" id="sheet-photo-empty-trigger"
+                onclick="document.getElementById('photo-input').click()"
+                aria-label="Add profile photo">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Add photo</span>
+        </button>
+        {% endif %}
+      </div>
+
+      {# ── Contact zone ── #}
+      <div class="edit-zone" data-section="contact">
+        <h1 class="name">
+          <label class="sr-only" for="f-name">Full name</label>
+          <input class="inline-input" id="f-name" name="name" type="text"
+                 value="{{ cv.name }}" placeholder="Your name"
+                 aria-label="Full name">
+        </h1>
+        <div class="role">
+          <label class="sr-only" for="f-title">Job title</label>
+          <input class="inline-input" id="f-title" name="title" type="text"
+                 value="{{ cv.title }}" placeholder="Job title"
+                 aria-label="Job title">
+        </div>
+        <div class="contact">
+          <label class="sr-only" for="f-email">Email</label>
+          <input class="inline-input inline-input--inline" id="f-email" name="email" type="email"
+                 value="{{ cv.email }}" placeholder="email@example.com"
+                 aria-label="Email" oninput="autoWidth(this)">
+          <span class="contact-sep"> · </span>
+          <label class="sr-only" for="f-phone">Phone</label>
+          <input class="inline-input inline-input--inline" id="f-phone" name="phone" type="text"
+                 value="{{ cv.phone }}" placeholder="+61 4·· ··· ···"
+                 aria-label="Phone" oninput="autoWidth(this)">
+          <span class="contact-sep"> · </span>
+          <label class="sr-only" for="f-location">Location</label>
+          <input class="inline-input inline-input--inline" id="f-location" name="location" type="text"
+                 value="{{ cv.location }}" placeholder="City, Country"
+                 aria-label="Location" oninput="autoWidth(this)">
+          <span class="contact-sep"> · </span>
+          <label class="sr-only" for="f-linkedin">LinkedIn</label>
+          <input class="inline-input inline-input--inline" id="f-linkedin" name="linkedin" type="text"
+                 value="{{ cv.linkedin }}" placeholder="linkedin.com/in/you"
+                 aria-label="LinkedIn" oninput="autoWidth(this)">
+        </div>
+        {# Hidden regional fields that appear on the sheet when region requires them #}
+        <div id="sheet-regional-fields" style="display:none;">
+          <div class="contact" style="margin-top:4px;">
+            <span id="sheet-dob-label" style="display:none;">
+              <label class="sr-only" for="fs-dob">Date of birth</label>
+              <input class="inline-input inline-input--inline" id="fs-dob" name="dob"
+                     value="{{ cv.dob }}" placeholder="DOB" aria-label="Date of birth" oninput="autoWidth(this)">
+              <span class="contact-sep"> · </span>
+            </span>
+            <span id="sheet-nationality-label" style="display:none;">
+              <label class="sr-only" for="fs-nationality">Nationality</label>
+              <input class="inline-input inline-input--inline" id="fs-nationality" name="nationality"
+                     value="{{ cv.nationality }}" placeholder="Nationality" aria-label="Nationality" oninput="autoWidth(this)">
+              <span class="contact-sep"> · </span>
+            </span>
+            <span id="sheet-visa-label" style="display:none;">
+              <label class="sr-only" for="fs-visa">Visa / work rights</label>
+              <input class="inline-input inline-input--inline" id="fs-visa" name="visa_status"
+                     value="{{ cv.visa_status }}" placeholder="Work rights" aria-label="Visa / work rights" oninput="autoWidth(this)">
+            </span>
+          </div>
+        </div>
+        {# Hidden file input — triggered by .sheet-photo buttons #}
+        <input type="file" id="photo-input" name="photo" accept=".jpg,.jpeg,.png,.webp"
+               style="display:none;"
+               hx-post="/photos/upload" hx-target="#photo-result" hx-swap="innerHTML"
+               hx-encoding="multipart/form-data">
+        <div id="photo-result" style="display:none;"></div>
+        {# GitHub + Portfolio + photo path — hidden inputs kept for form submission compat #}
+        <input type="hidden" name="github"    value="{{ cv.github }}">
+        <input type="hidden" name="portfolio" value="{{ cv.portfolio }}">
+        <input type="hidden" name="marital_status" value="{{ cv.marital_status }}">
+        <input type="hidden" name="photo_path" id="photo-path" value="{{ cv.photo_path|default('') }}">
+      </div>{# /contact #}
+
+      <div class="hr"></div>
+
+      {# ── Summary zone ── #}
+      <section data-sheet-section="sum">
+      <h3>Summary</h3>
+      <div class="edit-zone summary" data-section="summary">
+        <label class="sr-only" for="f-summary">Professional summary</label>
+        <textarea class="inline-input" id="f-summary" name="summary"
+                  placeholder="Two to four sentences highlighting key strengths and career focus…"
+                  rows="3" aria-label="Professional summary">{{ cv.summary }}</textarea>
+      </div>
+      </section>
+
+      {# ── Experience zones ── #}
+      <section data-sheet-section="exp">
+      <h3>Experience</h3>
+      <div id="sheet-experience">
+        {% set exps = cv.experience if cv.experience else [{}] %}
+        {% for exp in exps %}
+        {% set N = loop.index0 %}
+        {% set date_parts = exp.get('date', '').split('–') if '–' in exp.get('date', '') else exp.get('date', '').split('-') %}
+        <div class="edit-zone exp-zone" data-section="exp-{{ N }}" id="sheet-exp-{{ N }}">
+          <div class="role-toolbar" aria-label="Role actions">
+            <button class="btn-icon" type="button" title="Move" aria-label="Move role">&#8942;&#8942;</button>
+            <button class="btn-icon" type="button" title="Duplicate" aria-label="Duplicate role">&#9190;</button>
+            <button class="btn-icon btn-icon--danger" type="button" title="Delete role"
+                    aria-label="Delete role" onclick="removeExpEntry({{ N }})">&#215;</button>
+          </div>
+          <div class="role-hdr">
+            <span>
+              <b>
+                <label class="sr-only" for="f-exp-title-{{ N }}">Role title</label>
+                <input class="inline-input inline-input--inline" id="f-exp-title-{{ N }}"
+                       name="exp_title_{{ N }}" type="text"
+                       value="{{ exp.get('title', '') }}" placeholder="Role title"
+                       aria-label="Role title" oninput="autoWidth(this)">
+              </b>
+              <span> &middot; </span>
+              <b>
+                <label class="sr-only" for="f-exp-company-{{ N }}">Company</label>
+                <input class="inline-input inline-input--inline" id="f-exp-company-{{ N }}"
+                       name="exp_company_{{ N }}" type="text"
+                       value="{{ exp.get('company', '') }}" placeholder="Company"
+                       aria-label="Company" oninput="autoWidth(this)">
+              </b>
+            </span>
+            <span class="dates">
+              <label class="sr-only" for="f-exp-location-{{ N }}">Location</label>
+              <input class="inline-input inline-input--inline" id="f-exp-location-{{ N }}"
+                     name="exp_location_{{ N }}" type="text"
+                     value="{{ exp.get('location', '') }}" placeholder="City, Country"
+                     aria-label="Location" oninput="autoWidth(this)">
+              <span> &middot; </span>
+              <label class="sr-only" for="f-exp-date-start-{{ N }}">Start date</label>
+              <input class="inline-input inline-input--inline" id="f-exp-date-start-{{ N }}"
+                     name="exp_date_start_{{ N }}" type="text"
+                     value="{{ date_parts[0].strip() if date_parts|length > 1 else exp.get('date', '') }}"
+                     placeholder="2022"
+                     aria-label="Start date" oninput="autoWidth(this); syncDateHidden({{ N }})">
+              <span> &ndash; </span>
+              <label class="sr-only" for="f-exp-date-end-{{ N }}">End date</label>
+              <input class="inline-input inline-input--inline" id="f-exp-date-end-{{ N }}"
+                     name="exp_date_end_{{ N }}" type="text"
+                     value="{{ date_parts[1].strip() if date_parts|length > 1 else '' }}"
+                     placeholder="Present"
+                     aria-label="End date" oninput="autoWidth(this); syncDateHidden({{ N }})">
+            </span>
+          </div>
+
+          <ul class="bullets" data-field="exp_bullets_{{ N }}" role="list">
+            {% if exp.get('bullets') %}
+              {% for b in exp.bullets %}
+              <li contenteditable="true" role="textbox" aria-label="Achievement bullet" aria-multiline="false">{{ b }}<button type="button" class="bullet-remove" contenteditable="false" tabindex="-1" aria-label="Remove bullet">&#215;</button></li>
+              {% endfor %}
             {% endif %}
-            <nav class="bld-tabs" role="tablist">
-                <button type="button" class="bld-tab active" data-tab="setup" role="tab" aria-selected="true">
-                    <!-- Hand-drawn gear/settings icon -->
-                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9 C10.2 9, 9 10.3, 9 12 C9 13.8, 10.3 15, 12 15 C13.8 15, 15 13.7, 15 12 C15 10.2, 13.7 9, 12 9"/><path d="M12 2.5 C11.5 2.4, 10.8 3.2, 10.5 4.1 C10 4, 9.5 3.9, 9 3.7 C8.4 3.1, 7.3 3.3, 7.2 3.9 C7.0 4.4, 7.5 5.1, 7.3 5.7 C6.9 6, 6.4 6.3, 6 6.7 C5.4 6.7, 4.6 7.5, 4.8 8.1 C5 8.6, 5.8 8.8, 6 9.4 C5.9 9.9, 5.8 10.5, 5.9 11 C5.4 11.6, 5.2 12.6, 5.8 13 C6.3 13.3, 7 13, 7.5 13.4 C7.8 13.9, 8 14.4, 8.4 14.8 C8.4 15.5, 9 16.4, 9.7 16.3 C10.2 16.2, 10.5 15.5, 11.1 15.4 C11.6 15.5, 12.2 15.6, 12.7 15.5 C13.3 16 14.2 16.2, 14.8 15.7 C15.2 15.3, 15 14.5, 15.4 14.1 C15.9 13.8, 16.4 13.5, 16.9 13.1 C17.6 13.1, 18.4 12.3, 18.2 11.6 C18 11.1, 17.2 10.9, 17.1 10.3 C17.2 9.8, 17.3 9.2, 17.2 8.7 C17.7 8.1, 17.8 7.2, 17.2 6.8 C16.7 6.5, 16 6.8, 15.5 6.4 C15.2 5.9, 15 5.4, 14.6 5.1 C14.5 4.4, 13.9 3.5, 13.2 3.6 C12.7 3.7, 12.5 4.4, 11.9 4.5 C11.6 4.4, 11.3 3.4, 12 2.5"/></svg>
-                    <span class="bld-tab-label">Setup</span>
-                    <span class="bld-tab-dot" id="dot-setup"></span>
-                </button>
-                <button type="button" class="bld-tab" data-tab="profile" role="tab" aria-selected="false">
-                    <!-- Hand-drawn user/profile icon -->
-                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 C9.6 3.4, 8 5.1, 8 7.2 C8 9.4, 9.6 11.2, 12.1 11.1 C14.5 11, 16 9.3, 16 7.1 C16 4.9, 14.4 3.5, 12 3.5"/><path d="M4.5 21 C4.3 18.5, 5.8 16.2, 8.1 15.3 C9.2 14.9, 10.5 14.7, 12 14.7 C13.5 14.6, 14.9 14.8, 16 15.3 C18.3 16.2, 19.7 18.6, 19.5 21"/></svg>
-                    <span class="bld-tab-label">Profile</span>
-                    <span class="bld-tab-dot" id="dot-profile"></span>
-                </button>
-                <button type="button" class="bld-tab" data-tab="experience" role="tab" aria-selected="false">
-                    <!-- Hand-drawn briefcase/experience icon -->
-                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8 C2 7.8, 2 8.3, 2 9 L2 19.5 C2 20.5, 2.8 21.2, 3.8 21 L20.2 21 C21.2 21.2, 22 20.4, 22 19.5 L22 9 C22 8.2, 21.5 7.8, 21 8 Z"/><path d="M8.5 8 C8.3 6.5, 8.5 5.5, 9 5 C9.5 4.5, 10.5 4, 12 4 C13.5 4, 14.5 4.5, 15 5 C15.5 5.5, 15.7 6.5, 15.5 8"/><path d="M2 14 C5 15, 9.5 15.5, 12 15.5 C14.5 15.5, 19 15, 22 14"/></svg>
-                    <span class="bld-tab-label">Experience</span>
-                    <span class="bld-tab-dot" id="dot-experience"></span>
-                </button>
-                <button type="button" class="bld-tab" data-tab="education" role="tab" aria-selected="false">
-                    <!-- Hand-drawn graduation cap/education icon -->
-                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 10 C5 9, 9 7.5, 12 7 C15 7.5, 19 9, 21.5 10 C19 11, 15 12.5, 12 13 C9 12.5, 5 11, 2.5 10"/><path d="M6.5 12.5 C6.5 13.5, 6.3 15, 6.5 16 C7 17.5, 9 18.8, 12 19 C15 18.8, 17 17.5, 17.5 16 C17.7 15, 17.5 13.5, 17.5 12.5"/><path d="M21.5 10 C21.5 11, 21.5 13, 21.5 15"/><path d="M20.5 15.5 C21.5 15.2, 22.5 15.5, 22.5 16.5 L21.5 18.5 L20.5 16.5 C20.5 15.5, 21.5 15.2, 20.5 15.5"/></svg>
-                    <span class="bld-tab-label">Education</span>
-                    <span class="bld-tab-dot" id="dot-education"></span>
-                </button>
-                <button type="button" class="bld-tab" data-tab="extras" role="tab" aria-selected="false">
-                    <!-- Hand-drawn star/extras icon (wobbly 5-point star) -->
-                    <svg class="bld-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 L14.2 8.8 L21 9.3 L16 14 L17.8 20.8 L12 17.2 L6.2 20.8 L8 14 L3 9.3 L9.8 8.8 Z"/></svg>
-                    <span class="bld-tab-label">Extras</span>
-                    <span class="bld-tab-dot" id="dot-extras"></span>
-                </button>
-            </nav>
+            <li contenteditable="true" role="textbox" aria-label="New achievement bullet" aria-multiline="false" data-empty="1"></li>
+          </ul>
+          {# Hidden textarea — populated by bullet MutationObserver for form submission #}
+          <textarea name="exp_bullets_{{ N }}" hidden aria-hidden="true">{{ ('• ' + exp.get('bullets', [])|join('\n• ')) if exp.get('bullets', []) else '' }}</textarea>
+          <button type="button" class="add-handle add-handle--small"
+                  onclick="addBullet({{ N }})">+ Add bullet</button>
 
-            <!-- ── Panels ── -->
-            <div class="bld-panels">
+          <div class="tech-line">
+            <label class="sr-only" for="f-exp-tech-{{ N }}">Tech stack</label>
+            <input class="inline-input" id="f-exp-tech-{{ N }}" name="exp_tech_{{ N }}" type="text"
+                   value="{{ exp.get('tech', '') }}"
+                   placeholder="Tech stack: Python, AWS, …"
+                   aria-label="Tech stack">
+          </div>
 
-                <!-- SETUP -->
-                <section class="bld-panel active" data-panel="setup" role="tabpanel">
-                    <div class="bld-section-head">
-                        <h3>Template &amp; Region</h3>
-                        <p>Choose your CV design and target country.</p>
-                    </div>
-                    <div class="bld-fields">
-                        <div class="bld-row">
-                            <div class="bld-field">
-                                <label class="bld-label">Template</label>
-                                {{ select_input("template_id", options=template_options, selected=selected_template) }}
-                            </div>
-                            <div class="bld-field">
-                                <label class="bld-label">Region</label>
-                                <select name="region" class="input-field" onchange="updateRegionFields()">
-                                    {% for value, label in region_options %}
-                                    <option value="{{ value }}" {% if value == selected_region %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <div id="region-hint" class="bld-hint"></div>
-                    </div>
-                    <div class="bld-nav">
-                        <span></span>
-                        <button type="button" class="bld-btn-next" onclick="switchTab('profile')">Profile <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
-                    </div>
-                </section>
+          {# Combined hidden date field — kept for backend compat #}
+          <input type="hidden" name="exp_date_{{ N }}" id="exp-date-hidden-{{ N }}"
+                 value="{{ exp.get('date', '') }}">
+        </div>
+        {% endfor %}
+      </div>
 
-                <!-- PROFILE -->
-                <section class="bld-panel" data-panel="profile" role="tabpanel">
-                    <div class="bld-section-head">
-                        <h3>Your Profile</h3>
-                        <p>Contact info, summary, and region-specific details.</p>
-                    </div>
-                    <div class="bld-fields">
-                        <div class="bld-row">
-                            <div class="bld-field bld-field--2x">
-                                <label class="bld-label">Full Name</label>
-                                <input type="text" name="name" class="input-field" placeholder="Jane Smith" value="{{ cv_data.name }}">
-                            </div>
-                            <div class="bld-field bld-field--2x">
-                                <label class="bld-label">Job Title</label>
-                                <input type="text" name="title" class="input-field" placeholder="Senior Software Engineer" value="{{ cv_data.title }}">
-                            </div>
-                        </div>
-                        <div class="bld-row bld-row--3">
-                            <div class="bld-field">
-                                <label class="bld-label">Email</label>
-                                <input type="email" name="email" class="input-field" placeholder="jane@example.com" value="{{ cv_data.email }}">
-                            </div>
-                            <div class="bld-field">
-                                <label class="bld-label">Phone</label>
-                                {{ phone_input("phone", value=cv_data.phone | default(''), placeholder="+61 400 000 000") }}
-                            </div>
-                            <div class="bld-field">
-                                <label class="bld-label">Location</label>
-                                <input type="text" name="location" class="input-field" placeholder="Sydney, Australia" value="{{ cv_data.location }}">
-                            </div>
-                        </div>
-                        <div class="bld-row bld-row--3">
-                            <div class="bld-field">
-                                <label class="bld-label">LinkedIn</label>
-                                <input type="text" name="linkedin" class="input-field" placeholder="linkedin.com/in/janesmith" value="{{ cv_data.linkedin }}">
-                            </div>
-                            <div class="bld-field">
-                                <label class="bld-label">GitHub</label>
-                                <input type="text" name="github" class="input-field" placeholder="github.com/janesmith" value="{{ cv_data.github }}">
-                            </div>
-                            <div class="bld-field">
-                                <label class="bld-label">Portfolio</label>
-                                <input type="text" name="portfolio" class="input-field" placeholder="janesmith.dev" value="{{ cv_data.portfolio }}">
-                            </div>
-                        </div>
+      {# Insert handle: add new role #}
+      <button type="button" class="add-handle" onclick="addExpEntry()">+ Add role</button>
 
-                        <div class="bld-divider"></div>
+      </section>{# /exp section #}
 
-                        <div class="bld-field">
-                            <label class="bld-label">Professional Summary</label>
-                            <span class="bld-hint">2-4 sentences highlighting key strengths and career focus.</span>
-                            <textarea name="summary" rows="3" class="input-field" placeholder="Experienced software engineer with 8+ years building scalable web applications...">{{ cv_data.summary }}</textarea>
-                        </div>
+      {# ── Education zones ── #}
+      <section data-sheet-section="edu">
+      <h3>Education</h3>
+      <div id="sheet-education">
+        {% set edus = cv.education if cv.education else [{}] %}
+        {% for edu in edus %}
+        {% set N = loop.index0 %}
+        <div class="edit-zone edu-zone" data-section="edu-{{ N }}" id="sheet-edu-{{ N }}">
+          <div class="role-toolbar" aria-label="Education actions">
+            <button class="btn-icon btn-icon--danger" type="button" title="Delete"
+                    aria-label="Delete education entry" onclick="removeEduEntry({{ N }})">&#215;</button>
+          </div>
+          <div class="role-hdr">
+            <b>
+              <label class="sr-only" for="f-edu-degree-{{ N }}">Degree</label>
+              <input class="inline-input inline-input--inline" id="f-edu-degree-{{ N }}"
+                     name="edu_degree_{{ N }}" type="text"
+                     value="{{ edu.get('degree', '') }}" placeholder="Degree / Qualification"
+                     aria-label="Degree" oninput="autoWidth(this)">
+            </b>
+            <span class="dates">
+              <label class="sr-only" for="f-edu-date-{{ N }}">Year</label>
+              <input class="inline-input inline-input--inline" id="f-edu-date-{{ N }}"
+                     name="edu_date_{{ N }}" type="text"
+                     value="{{ edu.get('date', '') }}" placeholder="2020"
+                     aria-label="Graduation year" oninput="autoWidth(this)">
+            </span>
+          </div>
+          <div class="company">
+            <label class="sr-only" for="f-edu-inst-{{ N }}">Institution</label>
+            <input class="inline-input" id="f-edu-inst-{{ N }}"
+                   name="edu_institution_{{ N }}" type="text"
+                   value="{{ edu.get('institution', '') }}" placeholder="University or institution"
+                   aria-label="Institution">
+          </div>
+        </div>
+        {% endfor %}
+      </div>
 
-                        <!-- Region: Photo -->
-                        <div id="section-photo" class="region-conditional" style="display:none;">
-                            <div class="bld-divider"></div>
-                            <label class="bld-label">CV Photo</label>
-                            <p class="bld-hint" id="photo-level-hint"></p>
-                            <div class="bld-photo-zone">
-                                <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp"
-                                       hx-post="/photos/upload" hx-target="#photo-result" hx-swap="innerHTML"
-                                       hx-encoding="multipart/form-data" hx-indicator="#photo-spinner">
-                                <div class="bld-photo-label">
-                                    <!-- Hand-drawn photo/image upload icon -->
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M3.5 4 C3 3.5, 3 4, 3 4.5 L3 19.5 C3 20.5, 3.5 21, 4.5 21 L19.5 21 C20.5 21.2, 21 20.5, 21 19.5 L21 4.5 C21 3.5, 20.5 3, 19.5 3 L4.5 3 C3.8 3, 3.5 3.5, 3.5 4"/><path d="M8 9 C7.2 8.8, 7 9.2, 7 10 C7 10.8, 7.5 11.2, 8.2 11 C9 10.8, 9.2 10.2, 9 9.5 C8.8 8.9, 8.5 9, 8 9"/><path d="M3.5 16 C5.5 13.5, 8 12, 10 12 C11.5 12, 12.5 13, 14 14 C15.5 15, 17 16, 20.5 16"/></svg>
-                                    <span>Click or drag a photo</span>
-                                    <span class="bld-hint">JPEG, PNG, or WebP — max 5MB</span>
-                                </div>
-                            </div>
-                            <div id="photo-spinner" class="htmx-indicator"><div class="spinner" style="width:18px;height:18px;border-width:2px;"></div></div>
-                            <div id="photo-result"></div>
-                        </div>
+      {# Certifications — hidden field, kept for form compat #}
+      <textarea name="certifications" hidden aria-hidden="true">{{ cv_data.certifications|join('\n') }}</textarea>
 
-                        <!-- Region: Personal Details -->
-                        <div id="section-personal-details" class="region-conditional" style="display:none;">
-                            <div class="bld-divider"></div>
-                            <label class="bld-label">Regional Details</label>
-                            <p class="bld-hint" style="margin-bottom:0.6rem;">Expected on CVs in your selected region.</p>
-                            <div class="bld-row">
-                                <div id="field-dob" class="bld-field region-conditional" style="display:none;">
-                                    <label class="bld-label-sm">Date of Birth</label>
-                                    <input type="text" name="dob" class="input-field" placeholder="15/03/1990" value="{{ cv_data.dob }}">
-                                </div>
-                                <div id="field-nationality" class="bld-field region-conditional" style="display:none;">
-                                    <label class="bld-label-sm">Nationality</label>
-                                    <input type="text" name="nationality" class="input-field" placeholder="Australian" value="{{ cv_data.nationality }}">
-                                </div>
-                                <div id="field-marital" class="bld-field region-conditional" style="display:none;">
-                                    <label class="bld-label-sm">Marital Status</label>
-                                    <input type="text" name="marital_status" class="input-field" placeholder="Single" value="{{ cv_data.marital_status }}">
-                                </div>
-                            </div>
-                            <div id="field-visa" class="bld-field region-conditional" style="display:none;margin-top:0.5rem;">
-                                <label class="bld-label-sm">Visa / Work Rights</label>
-                                <input type="text" name="visa_status" class="input-field" placeholder="Full working rights, PR, Visa subclass 482..." value="{{ cv_data.visa_status }}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bld-nav">
-                        <button type="button" class="bld-btn-prev" onclick="switchTab('setup')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Setup</button>
-                        <button type="button" class="bld-btn-next" onclick="switchTab('experience')">Experience <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
-                    </div>
-                </section>
+      {# Insert handle: add education #}
+      <button type="button" class="add-handle" onclick="addEduEntry()">+ Add education</button>
 
-                <!-- EXPERIENCE -->
-                <section class="bld-panel" data-panel="experience" role="tabpanel">
-                    <div class="bld-section-head">
-                        <h3>Work Experience</h3>
-                        <p>Roles, achievements, and technologies used.</p>
-                    </div>
-                    <div class="bld-fields">
-                        <div id="experience-entries">
-                            {% set exps = cv_data.experience if cv_data.experience else [{}] %}
-                            {% for exp in exps %}
-                            <div class="bld-card">
-                                <div class="bld-card-head">
-                                    <span class="bld-card-num">#{{ loop.index }}</span>
-                                    {% if not loop.first %}
-                                    <button type="button" class="bld-card-remove" onclick="this.closest('.bld-card').remove()">Remove</button>
-                                    {% endif %}
-                                </div>
-                                <div class="bld-card-grid">
-                                    <div class="bld-field">
-                                        <label class="bld-label-sm">Job Title</label>
-                                        <input type="text" name="exp_title_{{ loop.index0 }}" class="input-field" placeholder="Senior Software Engineer" value="{{ exp.get('title', '') }}">
-                                    </div>
-                                    <div class="bld-field">
-                                        <label class="bld-label-sm">Dates</label>
-                                        <input type="text" name="exp_date_{{ loop.index0 }}" class="input-field" placeholder="Jan 2022 – Present" value="{{ exp.get('date', '') }}">
-                                    </div>
-                                    <div class="bld-field">
-                                        <label class="bld-label-sm">Company</label>
-                                        <input type="text" name="exp_company_{{ loop.index0 }}" class="input-field" placeholder="Acme Corp" value="{{ exp.get('company', '') }}">
-                                    </div>
-                                    <div class="bld-field">
-                                        <label class="bld-label-sm">Location</label>
-                                        <input type="text" name="exp_location_{{ loop.index0 }}" class="input-field" placeholder="Sydney" value="{{ exp.get('location', '') }}">
-                                    </div>
-                                    <div class="bld-field bld-field--full">
-                                        <label class="bld-label-sm">Tech / Tools</label>
-                                        <input type="text" name="exp_tech_{{ loop.index0 }}" class="input-field" placeholder="Python, FastAPI, PostgreSQL" value="{{ exp.get('tech', '') }}">
-                                    </div>
-                                    <div class="bld-field bld-field--full">
-                                        <label class="bld-label-sm">Achievements <span class="bld-hint">(one per line)</span></label>
-                                        <textarea name="exp_bullets_{{ loop.index0 }}" rows="6" class="input-field achievements-field" placeholder="• Led migration of legacy system to microservices, reducing deploy time by 60%">{{ ('• ' + exp.get('bullets', [])|join('\n• ')) if exp.get('bullets', []) else '' }}</textarea>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <button type="button" class="bld-add" onclick="addExperience()">
-                            <!-- Hand-drawn plus/add icon -->
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="15" height="15"><path d="M12 5.5 C11.8 8, 12.2 10, 12 12 C11.8 14, 12.2 16, 12 18.5"/><path d="M5.5 12 C8 11.8, 10 12.2, 12 12 C14 11.8, 16 12.2, 18.5 12"/></svg>
-                            Add Experience
-                        </button>
-                    </div>
-                    <div class="bld-nav">
-                        <button type="button" class="bld-btn-prev" onclick="switchTab('profile')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Profile</button>
-                        <button type="button" class="bld-btn-next" onclick="switchTab('education')">Education <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
-                    </div>
-                </section>
+      </section>{# /edu section #}
 
-                <!-- EDUCATION -->
-                <section class="bld-panel" data-panel="education" role="tabpanel">
-                    <div class="bld-section-head">
-                        <h3>Education &amp; Certifications</h3>
-                        <p>Qualifications and professional certifications.</p>
-                    </div>
-                    <div class="bld-fields">
-                        <label class="bld-label">Education</label>
-                        <div id="education-entries">
-                            {% set edus = cv_data.education if cv_data.education else [{}] %}
-                            {% for edu in edus %}
-                            <div class="bld-card bld-card--compact">
-                                <div class="bld-card-head">
-                                    <span class="bld-card-num">#{{ loop.index }}</span>
-                                    {% if not loop.first %}
-                                    <button type="button" class="bld-card-remove" onclick="this.closest('.bld-card').remove()">Remove</button>
-                                    {% endif %}
-                                </div>
-                                <div class="bld-card-grid">
-                                    <div class="bld-field bld-field--full">
-                                        <label class="bld-label-sm">Degree / Qualification</label>
-                                        <input type="text" name="edu_degree_{{ loop.index0 }}" class="input-field" placeholder="Bachelor of Computer Science" value="{{ edu.get('degree', '') }}">
-                                    </div>
-                                    <div class="bld-field">
-                                        <label class="bld-label-sm">Institution</label>
-                                        <input type="text" name="edu_institution_{{ loop.index0 }}" class="input-field" placeholder="University of Sydney" value="{{ edu.get('institution', '') }}">
-                                    </div>
-                                    <div class="bld-field">
-                                        <label class="bld-label-sm">Year</label>
-                                        <input type="text" name="edu_date_{{ loop.index0 }}" class="input-field" placeholder="2018" value="{{ edu.get('date', '') }}">
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <button type="button" class="bld-add" onclick="addEducation()">
-                            <!-- Hand-drawn plus/add icon -->
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="15" height="15"><path d="M12 5.5 C11.8 8, 12.2 10, 12 12 C11.8 14, 12.2 16, 12 18.5"/><path d="M5.5 12 C8 11.8, 10 12.2, 12 12 C14 11.8, 16 12.2, 18.5 12"/></svg>
-                            Add Education
-                        </button>
+      {# ── Skills zone ── #}
+      <section data-sheet-section="skl">
+      <h3>Skills</h3>
+      <div class="edit-zone skills-zone" data-section="skills">
+        <div class="skills-tags" id="skills-tags" role="list" aria-label="Skills">
+          {% if cv.skills %}
+          {% for skill in cv.skills %}
+          <span class="skill-pill" role="listitem">{{ skill }}<button type="button" class="skill-remove" aria-label="Remove {{ skill }}" onclick="removeSkill(this)">&#215;</button></span>
+          {% endfor %}
+          {% endif %}
+          <label class="sr-only" for="skill-input">Add skill</label>
+          <input class="inline-input skill-input" id="skill-input"
+                 placeholder="Add skill…" autocomplete="off"
+                 aria-label="Add skill">
+        </div>
+        <input type="hidden" name="skills" id="skills-hidden"
+               value="{{ cv.skills|join(', ') }}">
+        <input type="hidden" name="languages" id="languages-hidden"
+               value="{{ cv.languages|join(', ') }}">
+      </div>
 
-                        <div class="bld-divider"></div>
+      </section>{# /skl section #}
 
-                        <div class="bld-field">
-                            <label class="bld-label">Certifications</label>
-                            <span class="bld-hint">One per line</span>
-                            <textarea name="certifications" rows="3" class="input-field" placeholder="AWS Solutions Architect Professional (2024)&#10;Certified Kubernetes Administrator (2023)">{{ cv_data.certifications|join('\n') }}</textarea>
-                        </div>
-                    </div>
-                    <div class="bld-nav">
-                        <button type="button" class="bld-btn-prev" onclick="switchTab('experience')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Experience</button>
-                        <button type="button" class="bld-btn-next" onclick="switchTab('extras')">Skills &amp; More <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
-                    </div>
-                </section>
-
-                <!-- EXTRAS -->
-                <section class="bld-panel" data-panel="extras" role="tabpanel">
-                    <div class="bld-section-head">
-                        <h3>Skills &amp; More</h3>
-                        <p>Technical skills, languages, and references.</p>
-                    </div>
-                    <div class="bld-fields">
-                        <div class="bld-field">
-                            <label class="bld-label">Skills</label>
-                            <span class="bld-hint">Comma-separated</span>
-                            <input type="text" name="skills" class="input-field" placeholder="Python, JavaScript, AWS, Docker, PostgreSQL, React" value="{{ cv_data.skills|join(', ') }}">
-                        </div>
-                        <div class="bld-field">
-                            <label class="bld-label">Languages</label>
-                            <span class="bld-hint">Comma-separated with proficiency</span>
-                            <input type="text" name="languages" class="input-field" placeholder="English (Native), Spanish (Professional), French (Basic)" value="{{ cv_data.languages|join(', ') }}">
-                        </div>
-
-                        <!-- References (region-conditional) -->
-                        <div id="section-references" class="region-conditional" style="display:none;">
-                            <div class="bld-divider"></div>
-                            <label class="bld-label">References</label>
-                            <p class="bld-hint" style="margin-bottom:0.6rem;">Expected on CVs in your selected region.</p>
-                            <div id="reference-entries">
-                                {% set refs = cv_data.references if cv_data.references else [{}] %}
-                                {% for ref in refs %}
-                                <div class="bld-card bld-card--compact">
-                                    <div class="bld-card-head">
-                                        <span class="bld-card-num">#{{ loop.index }}</span>
-                                        {% if not loop.first %}
-                                        <button type="button" class="bld-card-remove" onclick="this.closest('.bld-card').remove()">Remove</button>
-                                        {% endif %}
-                                    </div>
-                                    <div class="bld-card-grid">
-                                        <div class="bld-field">
-                                            <label class="bld-label-sm">Name</label>
-                                            <input type="text" name="ref_name_{{ loop.index0 }}" class="input-field" placeholder="John Doe" value="{{ ref.get('name', '') }}">
-                                        </div>
-                                        <div class="bld-field">
-                                            <label class="bld-label-sm">Title</label>
-                                            <input type="text" name="ref_title_{{ loop.index0 }}" class="input-field" placeholder="Engineering Manager" value="{{ ref.get('title', '') }}">
-                                        </div>
-                                        <div class="bld-field">
-                                            <label class="bld-label-sm">Company</label>
-                                            <input type="text" name="ref_company_{{ loop.index0 }}" class="input-field" placeholder="Acme Corp" value="{{ ref.get('company', '') }}">
-                                        </div>
-                                        <div class="bld-field">
-                                            <label class="bld-label-sm">Contact</label>
-                                            <input type="text" name="ref_contact_{{ loop.index0 }}" class="input-field" placeholder="john@acme.com" value="{{ ref.get('contact', '') }}">
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            <button type="button" class="bld-add" onclick="addReference()">
-                                <!-- Hand-drawn plus/add icon -->
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="15" height="15"><path d="M12 5.5 C11.8 8, 12.2 10, 12 12 C11.8 14, 12.2 16, 12 18.5"/><path d="M5.5 12 C8 11.8, 10 12.2, 12 12 C14 11.8, 16 12.2, 18.5 12"/></svg>
-                                Add Reference
-                            </button>
-                        </div>
-                    </div>
-                    <div class="bld-nav">
-                        <button type="button" class="bld-btn-prev" onclick="switchTab('education')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Education</button>
-                        <span class="bld-nav-done">All sections complete</span>
-                    </div>
-                </section>
-
-            </div><!-- /.bld-panels -->
-        </div><!-- /.bld-form -->
-
-        <!-- ═══ RIGHT: Preview ═══ -->
-        <div class="bld-preview">
-            <div class="bld-preview-sticky">
-                <div class="bld-preview-bar">
-                    <div class="bld-preview-title">
-                        <span class="bld-preview-led"></span>
-                        Live Preview
-                        <span class="bld-preview-updating" id="preview-updating-indicator">
-                            <span class="spinner" style="width:12px;height:12px;border-width:1.5px;margin:0;"></span>
-                        </span>
-                    </div>
-                    <div class="bld-preview-btns">
-                        <button type="button" class="bld-btn-save" id="btn-bar-save" onclick="openSaveModal()">
-                            <!-- Hand-drawn save/floppy disk icon -->
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M5 3 C3.8 3, 3 3.8, 3 5 L3 19 C3 20.3, 3.8 21, 5 21 L19 21 C20.2 21, 21 20.2, 21 19 L21 8.5 L15.5 3 Z"/><path d="M8 3 L8 9 L16 9 L16 3"/><path d="M7 13 C7 12.5, 7.5 12, 12 12 C16.5 12, 17 12.5, 17 13 L17 21 L7 21 Z"/></svg>
-                            Save
-                        </button>
-                        <a href="/builder/download-pdf" class="bld-btn-pdf" id="btn-bar-download" hidden download>
-                            <!-- Hand-drawn download icon -->
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 3.5 C11.8 6, 12.2 9, 12 13"/><path d="M7.5 9.5 C9 11, 10.5 12.5, 12 14 C13.5 12.5, 15 11, 16.5 9.5"/><path d="M4 16.5 C3.8 17, 3.5 18, 3.5 19 C3.5 20.2, 4 20.8, 5 21 L19 21 C20 20.8, 20.5 20.2, 20.5 19 C20.5 18, 20.2 17, 20 16.5"/></svg>
-                            PDF
-                        </a>
-                    </div>
-                </div>
-                <div class="bld-paper">
-                    <div id="builder-preview">
-                        <div class="bld-empty">
-                            <!-- Hand-drawn document/empty state icon -->
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" width="44" height="44" style="opacity:0.3;"><path d="M6 2.5 C4.8 2.3, 4 3.1, 4 4 L4 20.5 C4 21.5, 4.8 22, 6 22 L18 22 C19.2 22, 20 21.2, 20 20.5 L20 8.5 L13.5 2.5 Z"/><path d="M13.5 2.5 C13.4 5, 13.6 7.5, 13.5 8.5 L20 8.5"/><path d="M8 13.5 C10 13.2, 14 13.3, 16 13.5"/><path d="M8 17.5 C10 17.2, 14 17.3, 16 17.5"/><path d="M8 9.5 C9 9.3, 10.5 9.4, 11 9.5"/></svg>
-                            <p>Your CV preview will appear here</p>
-                            <span>Fill in the form and it updates automatically</span>
-                        </div>
-                    </div>
-                </div>
+      {# ── Projects ── default-off; toggled by left-rail checkbox #}
+      {# BACKEND NOTE: prj_name_N, prj_desc_N, prj_link_N are submitted-but-ignored
+         by parse_form_into_builder_data — no projects parser exists yet (round 9). #}
+      <section data-sheet-section="prj" hidden>
+        <h3>Projects</h3>
+        <div id="sheet-projects">
+          <div class="edit-zone prj-zone" data-section="prj-0" id="sheet-prj-0">
+            <div class="role-toolbar" aria-label="Project actions">
+              <button class="btn-icon" type="button" title="Move" aria-label="Move project">&#8942;&#8942;</button>
+              <button class="btn-icon" type="button" title="Duplicate" aria-label="Duplicate project">&#9190;</button>
+              <button class="btn-icon btn-icon--danger" type="button" title="Delete project"
+                      aria-label="Delete project" onclick="removePrjEntry(0)">&#215;</button>
             </div>
-        </div><!-- /.bld-preview -->
+            <div class="role-hdr">
+              <b>
+                <label class="sr-only" for="f-prj-name-0">Project name</label>
+                <input class="inline-input inline-input--inline" id="f-prj-name-0"
+                       name="prj_name_0" type="text" value=""
+                       placeholder="Project name"
+                       aria-label="Project name" oninput="autoWidth(this)">
+              </b>
+              <span class="dates">
+                <label class="sr-only" for="f-prj-link-0">Link</label>
+                <input class="inline-input inline-input--inline" id="f-prj-link-0"
+                       name="prj_link_0" type="text" value=""
+                       placeholder="github.com/you/project"
+                       aria-label="Project link" oninput="autoWidth(this)">
+              </span>
+            </div>
+            <div class="company">
+              <label class="sr-only" for="f-prj-desc-0">Description</label>
+              <input class="inline-input" id="f-prj-desc-0"
+                     name="prj_desc_0" type="text" value=""
+                     placeholder="Brief description of what you built and its impact"
+                     aria-label="Project description">
+            </div>
+          </div>
+        </div>
+        <button type="button" class="add-handle" onclick="addPrjEntry()">+ Add project</button>
+      </section>
 
-    </form>
+      {# ── Certifications ── default-off
+         BACKEND NOTE: cert_name_N, cert_issuer_N, cert_date_N are submitted-but-ignored.
+         The backend parses only the single `name="certifications"` textarea (newline list).
+         Full structured cert persistence is a round-9 backend task. #}
+      <section data-sheet-section="crt" hidden>
+        <h3>Certifications</h3>
+        <div id="sheet-certifications">
+          <div class="edit-zone crt-zone" data-section="crt-0" id="sheet-crt-0">
+            <div class="role-toolbar" aria-label="Certification actions">
+              <button class="btn-icon btn-icon--danger" type="button" title="Delete"
+                      aria-label="Delete certification" onclick="removeCrtEntry(0)">&#215;</button>
+            </div>
+            <div class="role-hdr">
+              <b>
+                <label class="sr-only" for="f-cert-name-0">Certification name</label>
+                <input class="inline-input inline-input--inline" id="f-cert-name-0"
+                       name="cert_name_0" type="text" value=""
+                       placeholder="Certification name"
+                       aria-label="Certification name" oninput="autoWidth(this)">
+              </b>
+              <span class="dates">
+                <label class="sr-only" for="f-cert-date-0">Date</label>
+                <input class="inline-input inline-input--inline" id="f-cert-date-0"
+                       name="cert_date_0" type="text" value=""
+                       placeholder="2024"
+                       aria-label="Certification date" oninput="autoWidth(this)">
+              </span>
+            </div>
+            <div class="company">
+              <label class="sr-only" for="f-cert-issuer-0">Issuer</label>
+              <input class="inline-input inline-input--inline" id="f-cert-issuer-0"
+                     name="cert_issuer_0" type="text" value=""
+                     placeholder="Issuing organisation"
+                     aria-label="Certification issuer" oninput="autoWidth(this)">
+            </div>
+          </div>
+        </div>
+        <button type="button" class="add-handle" onclick="addCrtEntry()">+ Add certification</button>
+      </section>
+
+      {# ── Languages ── default-off
+         BACKEND NOTE: lang_name_N and lang_level_N are submitted-but-ignored.
+         Persistence uses the existing hidden `name="languages"` comma-joined field
+         (driven by the skills-style tag input in the Skills zone above).
+         Structured language persistence (name + level) is a round-9 backend task. #}
+      <section data-sheet-section="lng" hidden>
+        <h3>Languages</h3>
+        <div id="sheet-languages">
+          <div class="edit-zone lng-zone" data-section="lng-0" id="sheet-lng-0">
+            <div class="role-toolbar" aria-label="Language actions">
+              <button class="btn-icon btn-icon--danger" type="button" title="Delete"
+                      aria-label="Delete language" onclick="removeLngEntry(0)">&#215;</button>
+            </div>
+            <div class="role-hdr">
+              <b>
+                <label class="sr-only" for="f-lang-name-0">Language</label>
+                <input class="inline-input inline-input--inline" id="f-lang-name-0"
+                       name="lang_name_0" type="text" value=""
+                       placeholder="Language"
+                       aria-label="Language" oninput="autoWidth(this)">
+              </b>
+              <span class="dates">
+                <label class="sr-only" for="f-lang-level-0">Proficiency</label>
+                <input class="inline-input inline-input--inline" id="f-lang-level-0"
+                       name="lang_level_0" type="text" value=""
+                       placeholder="Native / Fluent / Intermediate"
+                       aria-label="Language proficiency" oninput="autoWidth(this)">
+              </span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="add-handle" onclick="addLngEntry()">+ Add language</button>
+      </section>
+
+      {# ── References ── default-off; ALSO region-conditional via updateRegionFields().
+         Both constraints layer: region logic controls whether the section is appropriate;
+         the checkbox controls whether the user wants to show it. The section is hidden
+         unless the checkbox is checked. Region logic additionally disables the checkbox
+         if references aren't appropriate for the selected region (round-9 UX refinement).
+         Backend: ref_name_N, ref_title_N, ref_company_N, ref_contact_N are fully parsed
+         and persisted by parse_form_references(). #}
+      <section data-sheet-section="ref" hidden id="section-references">
+        <h3>References</h3>
+        <div id="reference-entries">
+          {% set refs = cv_data.references if cv_data.references else [] %}
+          {% for ref in refs %}
+          <div class="edit-zone ref-zone" data-section="ref-{{ loop.index0 }}" id="sheet-ref-{{ loop.index0 }}">
+            <div class="role-toolbar" aria-label="Reference actions">
+              <button class="btn-icon btn-icon--danger" type="button" title="Delete"
+                      aria-label="Delete reference" onclick="removeRefEntry({{ loop.index0 }})">&#215;</button>
+            </div>
+            <div class="role-hdr">
+              <b>
+                <label class="sr-only" for="f-ref-name-{{ loop.index0 }}">Reference name</label>
+                <input class="inline-input inline-input--inline" id="f-ref-name-{{ loop.index0 }}"
+                       name="ref_name_{{ loop.index0 }}" type="text"
+                       value="{{ ref.get('name', '') }}" placeholder="Reference name"
+                       aria-label="Reference name" oninput="autoWidth(this)">
+              </b>
+              <span class="dates">
+                <label class="sr-only" for="f-ref-title-{{ loop.index0 }}">Title</label>
+                <input class="inline-input inline-input--inline" id="f-ref-title-{{ loop.index0 }}"
+                       name="ref_title_{{ loop.index0 }}" type="text"
+                       value="{{ ref.get('title', '') }}" placeholder="Title"
+                       aria-label="Reference title" oninput="autoWidth(this)">
+              </span>
+            </div>
+            <div class="company">
+              <label class="sr-only" for="f-ref-company-{{ loop.index0 }}">Company</label>
+              <input class="inline-input inline-input--inline" id="f-ref-company-{{ loop.index0 }}"
+                     name="ref_company_{{ loop.index0 }}" type="text"
+                     value="{{ ref.get('company', '') }}" placeholder="Company"
+                     aria-label="Reference company" oninput="autoWidth(this)">
+              <span> &middot; </span>
+              <label class="sr-only" for="f-ref-contact-{{ loop.index0 }}">Contact</label>
+              <input class="inline-input inline-input--inline" id="f-ref-contact-{{ loop.index0 }}"
+                     name="ref_contact_{{ loop.index0 }}" type="text"
+                     value="{{ ref.get('contact', '') }}" placeholder="email or phone"
+                     aria-label="Reference contact" oninput="autoWidth(this)">
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button type="button" class="add-handle" onclick="addRefEntry()">+ Add reference</button>
+      </section>
+
+    </div>{# /.sheet #}
+
+    <div class="page-indicator">Page 1 of 1 · A4 · 720 × 1018 px</div>
+    <div class="current-template-note" id="current-template-note">
+      Currently showing {{ selected_template|capitalize }} · Download will use the selected template.
+    </div>
+
+  </div>
+  {# /canvas-area #}
+
+</form>
+{# /builder-form #}
+
+{# ── Zoom controls ── #}
+<div class="zoom-controls" id="zoom-controls">
+  <button type="button" onclick="adjustZoom(-0.1)">−</button>
+  <button type="button" id="zoom-label">100%</button>
+  <button type="button" onclick="adjustZoom(0.1)">+</button>
+  <button type="button" onclick="setZoom(1)">Fit</button>
 </div>
 
-<!-- Save modal -->
-<div id="save-modal-backdrop" class="bld-modal-bg" style="display:none;" onclick="closeSaveModal()"></div>
-<div id="save-modal" class="bld-modal" role="dialog" aria-modal="true" aria-label="Save CV" style="display:none;">
-    <h3>{% if editing_cv_id %}Update this CV{% else %}Save this CV{% endif %}</h3>
-    <div class="bld-modal-body">
-        <input type="text" id="modal-save-label" name="save_label" class="input-field" placeholder="Name this CV (e.g. Frontend Role — Google)" value="{{ editing_label }}">
-        <input type="text" id="modal-save-job-title" name="save_job_title" class="input-field" placeholder="Target job title (optional)" value="{{ editing_job_title }}">
-    </div>
-    <div class="bld-modal-foot">
-        <button type="button" class="bld-btn-cancel" onclick="closeSaveModal()">Cancel</button>
-        <button type="button" class="bld-btn-save"
-                hx-post="/builder/save"
-                hx-include="#builder-form, #modal-save-label, #modal-save-job-title"
-                hx-target="#modal-save-result"
-                hx-swap="innerHTML"
-                hx-disabled-elt="this">Save</button>
-    </div>
-    <div id="modal-save-result" style="margin-top:0.5rem;font-size:0.82rem;"></div>
-</div>
-
-<!-- Toast -->
+{# ── Toast ── #}
 <div id="builder-toast" class="bld-toast" role="status" aria-live="polite"></div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   Builder — Tabs, Region Fields, Dynamic Entries
-   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   Builder v6 — inline-edit canvas
+   ═══════════════════════════════════════════════════════════════ */
 
 var REGION_FIELDS = {{ region_fields_json | safe }};
-var expCount = {{ (cv_data.experience|length) or 1 }};
-var eduCount = {{ (cv_data.education|length) or 1 }};
-var refCount = {{ (cv_data.references|length) or 1 }};
+var expCount = {{ (cv_data.experience|length) if cv_data.experience else 1 }};
+var eduCount = {{ (cv_data.education|length) if cv_data.education else 1 }};
 
-/* ── Tab switching ── */
-function switchTab(tabName) {
-    // Deactivate all tabs & panels
-    document.querySelectorAll('.bld-tab').forEach(function(t) {
-        t.classList.remove('active');
-        t.setAttribute('aria-selected', 'false');
-    });
-    document.querySelectorAll('.bld-panel').forEach(function(p) {
-        p.classList.remove('active');
-    });
-    // Activate target
-    var tab = document.querySelector('.bld-tab[data-tab="' + tabName + '"]');
-    var panel = document.querySelector('.bld-panel[data-panel="' + tabName + '"]');
-    if (tab) { tab.classList.add('active'); tab.setAttribute('aria-selected', 'true'); }
-    if (panel) {
-        panel.classList.add('active');
-        // Smooth scroll to top of form
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    updateProgress();
+/* ── Auto-width for inline inputs ──────────────────────────────
+ * Uses Math.max(value, placeholder) so empty inputs show full
+ * placeholder, and adds +2ch headroom. Sets min-width so
+ * field-sizing:content can grow upward where supported.         */
+function autoWidth(el) {
+  var txt = el.value || el.placeholder || '';
+  var w = Math.max(txt.length + 2, 4);
+  el.style.minWidth = w + 'ch';
+  el.style.width    = w + 'ch';
 }
 
-// Tab click handlers
-document.querySelectorAll('.bld-tab').forEach(function(tab) {
-    tab.addEventListener('click', function() {
-        switchTab(this.dataset.tab);
-    });
+/* Run autoWidth on all inline inputs at load */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.inline-input--inline').forEach(function(el) {
+    autoWidth(el);
+    // Keep binding so oninput="" in markup still delegates here
+  });
+  positionAtsBubbles();
+  initSkillInput();
+  initAllBulletLists();
+  initSectionToggles();
+  updateRegionFields();
+  // Apply saved template to sheet
+  (function() {
+    var tid = document.getElementById('template-id-field').value;
+    if (tid) {
+      var sheet = document.getElementById('builder-sheet');
+      if (sheet) sheet.setAttribute('data-template', tid);
+    }
+  })();
 });
 
-/* ── Region fields ── */
+/* ── Sync combined date hidden field ── */
+function syncDateHidden(i) {
+  var start  = document.getElementById('f-exp-date-start-' + i);
+  var end    = document.getElementById('f-exp-date-end-' + i);
+  var hidden = document.getElementById('exp-date-hidden-' + i);
+  if (start && hidden) {
+    hidden.value = start.value + (end && end.value ? ' – ' + end.value : '');
+  }
+}
+
+/* ── Template picker ── */
+function selectTemplate(tid) {
+  document.getElementById('template-id-field').value = tid;
+  document.querySelectorAll('.tmpl-pick .t').forEach(function(t) {
+    t.classList.toggle('on', t.dataset.tmpl === tid);
+  });
+  var sheet = document.getElementById('builder-sheet');
+  if (sheet) {
+    sheet.setAttribute('data-template', tid);
+    sheet.classList.remove('flashing');
+    void sheet.offsetWidth;
+    sheet.classList.add('flashing');
+    setTimeout(function() { sheet.classList.remove('flashing'); }, 240);
+  }
+  var note = document.getElementById('current-template-note');
+  if (note) note.textContent = 'Currently showing ' + tid.charAt(0).toUpperCase() + tid.slice(1) + ' · Download will use the selected template.';
+  document.getElementById('template-id-field').dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/* ── Region conditional fields ── */
 function updateRegionFields() {
-    var region = document.querySelector('select[name="region"]').value;
-    var fields = REGION_FIELDS[region] || {};
+  var region = document.querySelector('select[name="region"]').value;
+  var fields = REGION_FIELDS[region] || {};
 
-    toggle('section-photo', fields.photo);
-    var photoHint = document.getElementById('photo-level-hint');
-    if (photoHint) {
-        var levelText = {
-            'required': 'A professional photo is required for CVs in this region.',
-            'common': 'A professional photo is common and expected.',
-            'optional': 'A photo is optional but sometimes included.'
-        };
-        photoHint.textContent = levelText[fields.photo_level] || '';
+  // Toggle on-sheet photo slot via data-photo attribute
+  var sheet = document.getElementById('builder-sheet');
+  if (sheet) sheet.setAttribute('data-photo', fields.photo ? 'on' : 'off');
+
+  var hasRegional = fields.dob || fields.nationality || fields.visa;
+  showHide('sheet-regional-fields', hasRegional);
+  showHide('sheet-dob-label',         fields.dob);
+  showHide('sheet-nationality-label', fields.nationality);
+  showHide('sheet-visa-label',        fields.visa);
+
+  // References: region gates availability; checkbox controls user intent.
+  // showHide('section-references', ...) applies BOTH constraints:
+  //   visible only when region permits AND checkbox is checked.
+  var refCb = document.querySelector('input[name="section_ref"]');
+  if (refCb) {
+    if (!fields.references) {
+      // Region forbids references — disable and uncheck
+      refCb.disabled = true;
+      refCb.checked  = false;
+      var refRow = refCb.closest('.row');
+      if (refRow) refRow.classList.remove('on');
+    } else {
+      refCb.disabled = false;
     }
-
-    var hasPersonal = fields.dob || fields.nationality || fields.marital || fields.visa;
-    toggle('section-personal-details', hasPersonal);
-    toggle('field-dob', fields.dob);
-    toggle('field-nationality', fields.nationality);
-    toggle('field-marital', fields.marital);
-    toggle('field-visa', fields.visa);
-    toggle('section-references', fields.references);
-
-    var hints = [];
-    if (fields.photo) hints.push('Photo (' + fields.photo_level + ')');
-    if (fields.dob) hints.push('Date of birth');
-    if (fields.nationality) hints.push('Nationality');
-    if (fields.marital) hints.push('Marital status');
-    if (fields.visa) hints.push('Visa/work rights');
-    if (fields.references) hints.push('References');
-
-    var hintEl = document.getElementById('region-hint');
-    hintEl.textContent = hints.length > 0
-        ? 'This region expects: ' + hints.join(', ')
-        : 'No extra field requirements for this region.';
+  }
+  // Now apply visibility via showHide which reads current checkbox state
+  showHide('section-references', fields.references);
 }
 
-function toggle(id, show) {
-    var el = document.getElementById(id);
-    if (el) el.style.display = show ? '' : 'none';
+function showHide(id, show) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  // section-references uses hidden attribute (controlled by both checkbox + region).
+  // All other showHide targets use style.display.
+  if (id === 'section-references') {
+    var cb = document.querySelector('input[name="section_ref"]');
+    var cbOn = cb ? cb.checked : false;
+    el.hidden = !(show && cbOn);
+  } else {
+    el.style.display = show ? '' : 'none';
+  }
 }
 
-/* ── Dynamic entries ── */
-function _expCardHtml(i) {
-    return '<div class="bld-card">'
-        + '<div class="bld-card-head"><span class="bld-card-num">#' + (i+1) + '</span>'
-        + '<button type="button" class="bld-card-remove" onclick="this.closest(\'.bld-card\').remove()">Remove</button></div>'
-        + '<div class="bld-card-grid">'
-        + '<div class="bld-field"><label class="bld-label-sm">Job Title</label>'
-        + '<input type="text" name="exp_title_' + i + '" class="input-field" placeholder="Senior Software Engineer"></div>'
-        + '<div class="bld-field"><label class="bld-label-sm">Dates</label>'
-        + '<input type="text" name="exp_date_' + i + '" class="input-field" placeholder="Jan 2022 – Present"></div>'
-        + '<div class="bld-field"><label class="bld-label-sm">Company</label>'
-        + '<input type="text" name="exp_company_' + i + '" class="input-field" placeholder="Acme Corp"></div>'
-        + '<div class="bld-field"><label class="bld-label-sm">Location</label>'
-        + '<input type="text" name="exp_location_' + i + '" class="input-field" placeholder="Sydney"></div>'
-        + '<div class="bld-field bld-field--full"><label class="bld-label-sm">Tech / Tools</label>'
-        + '<input type="text" name="exp_tech_' + i + '" class="input-field" placeholder="Python, FastAPI"></div>'
-        + '<div class="bld-field bld-field--full"><label class="bld-label-sm">Achievements <span class="bld-hint">(one per line)</span></label>'
-        + '<textarea name="exp_bullets_' + i + '" rows="6" class="input-field achievements-field" placeholder="• Led migration of legacy system..."></textarea></div>'
-        + '</div></div>';
-}
-
-function addExperience() {
-    var i = expCount++;
-    var container = document.getElementById('experience-entries');
-    var div = document.createElement('div');
-    div.innerHTML = _expCardHtml(i);
-    container.appendChild(div.firstChild);
-    container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    updateProgress();
-}
-
-function addEducation() {
-    var i = eduCount++;
-    var container = document.getElementById('education-entries');
-    var div = document.createElement('div');
-    div.className = 'bld-card bld-card--compact';
-    div.innerHTML = '<div class="bld-card-head"><span class="bld-card-num">#' + (i+1) + '</span>'
-        + '<button type="button" class="bld-card-remove" onclick="this.closest(\'.bld-card\').remove()">Remove</button></div>'
-        + '<div class="bld-card-grid">'
-        + '<div class="bld-field bld-field--full"><label class="bld-label-sm">Degree / Qualification</label>'
-        + '<input type="text" name="edu_degree_' + i + '" class="input-field" placeholder="Bachelor of Computer Science"></div>'
-        + '<div class="bld-field"><label class="bld-label-sm">Institution</label>'
-        + '<input type="text" name="edu_institution_' + i + '" class="input-field" placeholder="University of Sydney"></div>'
-        + '<div class="bld-field"><label class="bld-label-sm">Year</label>'
-        + '<input type="text" name="edu_date_' + i + '" class="input-field" placeholder="2018"></div>'
-        + '</div>';
-    container.appendChild(div);
-    updateProgress();
-}
-
-function addReference() {
-    var i = refCount++;
-    var container = document.getElementById('reference-entries');
-    var div = document.createElement('div');
-    div.className = 'bld-card bld-card--compact';
-    div.innerHTML = '<div class="bld-card-head"><span class="bld-card-num">#' + (i+1) + '</span>'
-        + '<button type="button" class="bld-card-remove" onclick="this.closest(\'.bld-card\').remove()">Remove</button></div>'
-        + '<div class="bld-card-grid">'
-        + '<div class="bld-field"><label class="bld-label-sm">Name</label>'
-        + '<input type="text" name="ref_name_' + i + '" class="input-field" placeholder="John Doe"></div>'
-        + '<div class="bld-field"><label class="bld-label-sm">Title</label>'
-        + '<input type="text" name="ref_title_' + i + '" class="input-field" placeholder="Engineering Manager"></div>'
-        + '<div class="bld-field"><label class="bld-label-sm">Company</label>'
-        + '<input type="text" name="ref_company_' + i + '" class="input-field" placeholder="Acme Corp"></div>'
-        + '<div class="bld-field"><label class="bld-label-sm">Contact</label>'
-        + '<input type="text" name="ref_contact_' + i + '" class="input-field" placeholder="john@acme.com"></div>'
-        + '</div>';
-    container.appendChild(div);
-    updateProgress();
-}
-
-/* ── Progress bar + completion dots ── */
-function updateProgress() {
-    var fields = ['name', 'title', 'email', 'summary', 'exp_title_0', 'edu_degree_0', 'skills'];
-    var filled = 0;
-    fields.forEach(function(f) {
-        var el = document.querySelector('[name="' + f + '"]');
-        if (el && el.value.trim()) filled++;
-    });
-    var pct = Math.round((filled / fields.length) * 100);
-    var bar = document.getElementById('bld-progress-fill');
-    if (bar) bar.style.width = pct + '%';
-
-    // Tab dots
-    _setDot('dot-setup', !!document.querySelector('select[name="template_id"]').value);
-    _setDot('dot-profile', !!(
-        _val('name') && _val('title') && _val('email')
-    ));
-    _setDot('dot-experience', !!_val('exp_title_0'));
-    _setDot('dot-education', !!_val('edu_degree_0'));
-    _setDot('dot-extras', !!_val('skills'));
-}
-
-function _val(name) {
-    var el = document.querySelector('[name="' + name + '"]');
-    return el ? el.value.trim() : '';
-}
-
-function _setDot(id, filled) {
-    var dot = document.getElementById(id);
-    if (dot) dot.classList.toggle('filled', filled);
-}
-
-/* ── HTMX hooks ── */
-document.body.addEventListener('htmx:beforeRequest', function(e) {
-    if (e.detail.target && e.detail.target.id === 'builder-preview') {
-        var led = document.querySelector('.bld-preview-led');
-        if (led) led.classList.add('pulse');
-    }
-});
-
+/* ── HTMX save-result toast ── */
 document.body.addEventListener('htmx:afterSwap', function(e) {
-    if (e.detail.target && e.detail.target.id === 'builder-preview') {
-        var led = document.querySelector('.bld-preview-led');
-        if (led) led.classList.remove('pulse');
-        document.getElementById('btn-bar-download').removeAttribute('hidden');
-        showToast('Preview updated');
-        updateProgress();
+  if (e.detail.target && e.detail.target.id === 'save-result') {
+    var sr = document.getElementById('save-result');
+    if (sr) {
+      sr.style.display = 'block';
+      if (sr.innerHTML.indexOf('save-success') !== -1) {
+        showToast('CV saved');
+        setTimeout(function() { sr.style.display = 'none'; }, 3000);
+      } else if (sr.innerHTML.indexOf('save-error') !== -1) {
+        showToast('Save failed — try again');
+      }
     }
-    if (e.detail.target && e.detail.target.id === 'modal-save-result') {
-        if (e.detail.target.innerHTML.indexOf('save-success') !== -1) {
-            setTimeout(closeSaveModal, 1500);
-            showToast('CV saved');
-        }
+  }
+
+  // After photo upload: propagate photo_path to the main hidden form input
+  if (e.detail.target && e.detail.target.id === 'photo-result') {
+    var pathEl = document.getElementById('photo-path-result');
+    if (pathEl) {
+      var mainPath = document.getElementById('photo-path');
+      if (mainPath) mainPath.value = pathEl.value;
     }
+    // Mark the sheet-photo slot as filled
+    var slot = document.getElementById('sheet-photo');
+    if (slot) slot.removeAttribute('data-empty');
+  }
 });
 
-/* Track input changes for progress */
-document.getElementById('builder-form').addEventListener('input', updateProgress, { passive: true });
+/* ── Zoom ── */
+var currentZoom = 1;
+function adjustZoom(delta) { setZoom(Math.max(0.5, Math.min(1.5, currentZoom + delta))); }
+function setZoom(z) {
+  currentZoom = z;
+  document.getElementById('builder-sheet').style.transform = 'scale(' + z + ')';
+  document.getElementById('zoom-label').textContent = Math.round(z * 100) + '%';
+}
 
-/* ── Ctrl+S shortcut ── */
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+/* ── Bullet serializer — shared by all bullet handlers ── */
+function serializeBullets(ul) {
+  var fieldName = ul.dataset.field;
+  var hidden = ul.parentElement.querySelector('textarea[name="' + fieldName + '"][hidden]');
+  if (!hidden) return;
+  var lines = [];
+  ul.querySelectorAll('li:not([data-empty])').forEach(function(li) {
+    // Clone and strip the .bullet-remove button before reading textContent
+    var clone = li.cloneNode(true);
+    clone.querySelectorAll('.bullet-remove').forEach(function(b) { b.remove(); });
+    var t = (clone.textContent || '').trim();
+    if (t) lines.push(t);
+  });
+  hidden.value = lines.join('\n');
+  hidden.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/* ── Make a new bullet <li> ── */
+function _makeBulletLi() {
+  var li = document.createElement('li');
+  li.contentEditable = 'true';
+  li.setAttribute('role', 'textbox');
+  li.setAttribute('aria-label', 'Achievement bullet');
+  li.setAttribute('aria-multiline', 'false');
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'bullet-remove';
+  btn.setAttribute('contenteditable', 'false');
+  btn.setAttribute('tabindex', '-1');
+  btn.setAttribute('aria-label', 'Remove bullet');
+  btn.innerHTML = '&#215;';
+  li.appendChild(btn);
+  return li;
+}
+
+/* ── Bullet list: contenteditable handlers ── */
+function initBulletList(ul) {
+  if (!ul || ul._bInit) return;
+  ul._bInit = true;
+
+  // Debounced serializer
+  var _timer;
+  function scheduleSerialize() {
+    clearTimeout(_timer);
+    _timer = setTimeout(function() { serializeBullets(ul); }, 300);
+  }
+
+  // MutationObserver for paste/programmatic changes
+  var mo = new MutationObserver(scheduleSerialize);
+  mo.observe(ul, { childList: true, subtree: true, characterData: true });
+
+  // Mousedown delegation — bullet remove button.
+  // Must use mousedown (not click): contenteditable swallows click events on
+  // child buttons. preventDefault() stops the editable from capturing focus.
+  ul.addEventListener('mousedown', function(e) {
+    var btn = e.target.closest('.bullet-remove');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var li = btn.closest('li');
+    if (!li) return;
+    var realBullets = ul.querySelectorAll('li:not([data-empty])');
+    if (realBullets.length <= 1) return; // never remove the last real bullet
+    li.remove();
+    serializeBullets(ul);
+  });
+
+  // Keyboard handling
+  ul.addEventListener('keydown', function(e) {
+    var li = e.target.closest('li[contenteditable]');
+    if (!li) return;
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var newLi = _makeBulletLi();
+      // Insert after current li (before sentinel if current is the last real bullet)
+      var sentinel = ul.querySelector('li[data-empty="1"]');
+      if (sentinel && li.nextElementSibling === sentinel) {
+        ul.insertBefore(newLi, sentinel);
+      } else {
+        li.after(newLi);
+      }
+      // Focus the text node, not the button
+      newLi.focus();
+    }
+
+    if (e.key === 'Backspace' && li.dataset.empty !== '1') {
+      // Strip remove button text before checking emptiness
+      var clone = li.cloneNode(true);
+      clone.querySelectorAll('.bullet-remove').forEach(function(b) { b.remove(); });
+      var text = (clone.textContent || '').trim();
+      if (text === '') {
+        var realBullets = ul.querySelectorAll('li:not([data-empty])');
+        if (realBullets.length <= 1) return; // keep the last bullet
         e.preventDefault();
-        htmx.trigger(document.getElementById('builder-form'), 'submit');
-        showToast('Updating preview...');
+        var prev = li.previousElementSibling;
+        li.remove();
+        if (prev) {
+          // Move cursor to end of prev, before its remove button
+          var range = document.createRange();
+          var sel   = window.getSelection();
+          // Select the first text node if present, else the element
+          var textNode = null;
+          for (var c = 0; c < prev.childNodes.length; c++) {
+            if (prev.childNodes[c].nodeType === Node.TEXT_NODE) {
+              textNode = prev.childNodes[c];
+              break;
+            }
+          }
+          if (textNode) {
+            range.setStart(textNode, textNode.length);
+            range.collapse(true);
+          } else {
+            range.selectNodeContents(prev);
+            range.collapse(false);
+          }
+          sel.removeAllRanges();
+          sel.addRange(range);
+          prev.focus();
+        }
+        serializeBullets(ul);
+      }
     }
+  });
+
+  // input event for real-time sync
+  ul.addEventListener('input', scheduleSerialize);
+}
+
+function initAllBulletLists() {
+  document.querySelectorAll('ul.bullets').forEach(initBulletList);
+}
+
+/* ── Add bullet button handler ── */
+function addBullet(n) {
+  var ul = document.querySelector('ul.bullets[data-field="exp_bullets_' + n + '"]');
+  if (!ul) return;
+  var sentinel = ul.querySelector('li[data-empty="1"]');
+  var newLi = _makeBulletLi();
+  if (sentinel) {
+    ul.insertBefore(newLi, sentinel);
+  } else {
+    ul.appendChild(newLi);
+  }
+  newLi.focus();
+}
+
+/* ── Section toggle — checkbox ↔ sheet section visibility ──
+ * Covers all 8 sections. For the 4 default-off sections the
+ * sheet markup is present but starts with the `hidden` attribute.
+ * `ref` maps to the #section-references element which doubles as
+ * a region-conditional section — the checkbox adds a second
+ * visibility constraint on top of updateRegionFields().         */
+function initSectionToggles() {
+  document.querySelectorAll('input[name^="section_"]').forEach(function(cb) {
+    var key = cb.name.replace('section_', '');
+    // Mirror initial checkbox state to the section at load
+    var section = document.querySelector('[data-sheet-section="' + key + '"]');
+    if (section) section.hidden = !cb.checked;
+
+    cb.addEventListener('change', function() {
+      if (key === 'ref') {
+        // References: re-evaluate both region and checkbox constraints together
+        updateRegionFields();
+      } else {
+        var s = document.querySelector('[data-sheet-section="' + key + '"]');
+        if (s) s.hidden = !cb.checked;
+      }
+      var row = cb.closest('.row');
+      if (row) row.classList.toggle('on', cb.checked);
+      positionAtsBubbles();
+      cb.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
+}
+
+/* ── Skill tag-input ── */
+function initSkillInput() {
+  var input  = document.getElementById('skill-input');
+  var tags   = document.getElementById('skills-tags');
+  var hidden = document.getElementById('skills-hidden');
+  if (!input || !tags || !hidden) return;
+
+  function syncHidden() {
+    var pills = tags.querySelectorAll('.skill-pill');
+    var vals  = [];
+    pills.forEach(function(p) { vals.push((p.textContent || '').replace('×','').trim()); });
+    hidden.value = vals.join(', ');
+    hidden.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function addSkill(val) {
+    val = val.trim();
+    if (!val) return;
+    var pill = document.createElement('span');
+    pill.className = 'skill-pill';
+    pill.setAttribute('role', 'listitem');
+    pill.textContent = val;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'skill-remove';
+    btn.setAttribute('aria-label', 'Remove ' + val);
+    btn.innerHTML = '&#215;';
+    btn.addEventListener('click', function() { pill.remove(); syncHidden(); });
+    pill.appendChild(btn);
+    tags.insertBefore(pill, input);
+    syncHidden();
+  }
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addSkill(input.value.replace(',', ''));
+      input.value = '';
+    }
+  });
+}
+
+function removeSkill(btn) {
+  var pill   = btn.closest('.skill-pill');
+  var tags   = document.getElementById('skills-tags');
+  var hidden = document.getElementById('skills-hidden');
+  if (pill) pill.remove();
+  if (tags && hidden) {
+    var pills = tags.querySelectorAll('.skill-pill');
+    var vals  = [];
+    pills.forEach(function(p) { vals.push((p.textContent || '').replace('×','').trim()); });
+    hidden.value = vals.join(', ');
+    hidden.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
+
+/* ── ATS bubble ── */
+function positionAtsBubbles() {
+  var canvasArea = document.getElementById('canvas-area');
+  if (!canvasArea) return;
+  document.querySelectorAll('.ats-bubble[data-target]').forEach(function(bubble) {
+    var target = document.querySelector('[data-section="' + bubble.dataset.target + '"]');
+    if (!target) return;
+    bubble.style.top  = (target.offsetTop + 4) + 'px';
+    bubble.style.left = '24px';
+  });
+}
+
+function toggleAtsBubble(id) {
+  var bubble   = document.getElementById(id);
+  if (!bubble) return;
+  var popover  = bubble.querySelector('.ats-bubble-popover');
+  if (!popover) return;
+  var isHidden = popover.hasAttribute('hidden');
+  // Close all others
+  document.querySelectorAll('.ats-bubble-popover').forEach(function(p) { p.setAttribute('hidden', ''); });
+  if (isHidden) popover.removeAttribute('hidden');
+}
+
+function dismissAtsBubble(id) {
+  var bubble = document.getElementById(id);
+  if (bubble) { bubble.style.opacity = '0'; bubble.style.pointerEvents = 'none'; }
+}
+
+// Close ATS popovers when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.ats-bubble')) {
+    document.querySelectorAll('.ats-bubble-popover').forEach(function(p) { p.setAttribute('hidden', ''); });
+  }
 });
+
+/* ── Dynamic experience entries ── */
+function addExpEntry() {
+  var i = expCount++;
+  var expContainer = document.getElementById('sheet-experience');
+  if (!expContainer) return;
+
+  var zone = document.createElement('div');
+  zone.className = 'edit-zone exp-zone';
+  zone.id = 'sheet-exp-' + i;
+  zone.dataset.section = 'exp-' + i;
+  zone.innerHTML = _expZoneHtml(i);
+  expContainer.appendChild(zone);
+
+  // Init bullet list in new zone
+  var ul = zone.querySelector('ul.bullets');
+  if (ul) initBulletList(ul);
+
+  // Auto-width inline inputs
+  zone.querySelectorAll('.inline-input--inline').forEach(autoWidth);
+
+  positionAtsBubbles();
+  showToast('New experience role added');
+}
+
+function _expZoneHtml(i) {
+  return '<div class="role-toolbar" aria-label="Role actions">'
+       +   '<button class="btn-icon" type="button" title="Move" aria-label="Move role">&#8942;&#8942;</button>'
+       +   '<button class="btn-icon" type="button" title="Duplicate" aria-label="Duplicate role">&#9190;</button>'
+       +   '<button class="btn-icon btn-icon--danger" type="button" title="Delete role" aria-label="Delete role" onclick="removeExpEntry(' + i + ')">&#215;</button>'
+       + '</div>'
+       + '<div class="role-hdr">'
+       +   '<span>'
+       +     '<b><label class="sr-only" for="f-exp-title-' + i + '">Role title</label>'
+       +        '<input class="inline-input inline-input--inline" id="f-exp-title-' + i + '" name="exp_title_' + i + '" type="text" value="" placeholder="Role title" aria-label="Role title" oninput="autoWidth(this)"></b>'
+       +     '<span> &middot; </span>'
+       +     '<b><label class="sr-only" for="f-exp-company-' + i + '">Company</label>'
+       +        '<input class="inline-input inline-input--inline" id="f-exp-company-' + i + '" name="exp_company_' + i + '" type="text" value="" placeholder="Company" aria-label="Company" oninput="autoWidth(this)"></b>'
+       +   '</span>'
+       +   '<span class="dates">'
+       +     '<label class="sr-only" for="f-exp-location-' + i + '">Location</label>'
+       +     '<input class="inline-input inline-input--inline" id="f-exp-location-' + i + '" name="exp_location_' + i + '" type="text" value="" placeholder="City, Country" aria-label="Location" oninput="autoWidth(this)">'
+       +     '<span> &middot; </span>'
+       +     '<label class="sr-only" for="f-exp-date-start-' + i + '">Start date</label>'
+       +     '<input class="inline-input inline-input--inline" id="f-exp-date-start-' + i + '" name="exp_date_start_' + i + '" type="text" value="" placeholder="2022" aria-label="Start date" oninput="autoWidth(this);syncDateHidden(' + i + ')">'
+       +     '<span> &ndash; </span>'
+       +     '<label class="sr-only" for="f-exp-date-end-' + i + '">End date</label>'
+       +     '<input class="inline-input inline-input--inline" id="f-exp-date-end-' + i + '" name="exp_date_end_' + i + '" type="text" value="" placeholder="Present" aria-label="End date" oninput="autoWidth(this);syncDateHidden(' + i + ')">'
+       +   '</span>'
+       + '</div>'
+       + '<ul class="bullets" data-field="exp_bullets_' + i + '" role="list">'
+       +   '<li contenteditable="true" role="textbox" aria-label="New achievement bullet" aria-multiline="false" data-empty="1">'
+       +     '<button type="button" class="bullet-remove" contenteditable="false" tabindex="-1" aria-label="Remove bullet" style="display:none">&#215;</button>'
+       +   '</li>'
+       + '</ul>'
+       + '<textarea name="exp_bullets_' + i + '" hidden aria-hidden="true"></textarea>'
+       + '<button type="button" class="add-handle add-handle--small" onclick="addBullet(' + i + ')">+ Add bullet</button>'
+       + '<div class="tech-line">'
+       +   '<label class="sr-only" for="f-exp-tech-' + i + '">Tech stack</label>'
+       +   '<input class="inline-input" id="f-exp-tech-' + i + '" name="exp_tech_' + i + '" type="text" value="" placeholder="Tech stack: Python, AWS, …" aria-label="Tech stack">'
+       + '</div>'
+       + '<input type="hidden" name="exp_date_' + i + '" id="exp-date-hidden-' + i + '" value="">';
+}
+
+function removeExpEntry(i) {
+  var zone = document.getElementById('sheet-exp-' + i);
+  if (zone) zone.remove();
+  positionAtsBubbles();
+  showToast('Role removed');
+}
+
+/* ── Dynamic education entries ── */
+function addEduEntry() {
+  var i = eduCount++;
+  var eduContainer = document.getElementById('sheet-education');
+  if (!eduContainer) return;
+
+  var zone = document.createElement('div');
+  zone.className = 'edit-zone edu-zone';
+  zone.id = 'sheet-edu-' + i;
+  zone.dataset.section = 'edu-' + i;
+  zone.innerHTML = _eduZoneHtml(i);
+  eduContainer.appendChild(zone);
+
+  zone.querySelectorAll('.inline-input--inline').forEach(autoWidth);
+  positionAtsBubbles();
+  showToast('Education entry added');
+}
+
+function _eduZoneHtml(i) {
+  return '<div class="role-toolbar" aria-label="Education actions">'
+       +   '<button class="btn-icon btn-icon--danger" type="button" title="Delete" aria-label="Delete education entry" onclick="removeEduEntry(' + i + ')">&#215;</button>'
+       + '</div>'
+       + '<div class="role-hdr">'
+       +   '<b><label class="sr-only" for="f-edu-degree-' + i + '">Degree</label>'
+       +      '<input class="inline-input inline-input--inline" id="f-edu-degree-' + i + '" name="edu_degree_' + i + '" type="text" value="" placeholder="Degree / Qualification" aria-label="Degree" oninput="autoWidth(this)"></b>'
+       +   '<span class="dates">'
+       +     '<label class="sr-only" for="f-edu-date-' + i + '">Year</label>'
+       +     '<input class="inline-input inline-input--inline" id="f-edu-date-' + i + '" name="edu_date_' + i + '" type="text" value="" placeholder="2020" aria-label="Graduation year" oninput="autoWidth(this)">'
+       +   '</span>'
+       + '</div>'
+       + '<div class="company">'
+       +   '<label class="sr-only" for="f-edu-inst-' + i + '">Institution</label>'
+       +   '<input class="inline-input" id="f-edu-inst-' + i + '" name="edu_institution_' + i + '" type="text" value="" placeholder="University or institution" aria-label="Institution">'
+       + '</div>';
+}
+
+function removeEduEntry(i) {
+  var zone = document.getElementById('sheet-edu-' + i);
+  if (zone) zone.remove();
+  positionAtsBubbles();
+  showToast('Education entry removed');
+}
+
+/* ── Dynamic reference entries ── */
+var refCount = {{ (cv_data.references|length) if cv_data.references else 0 }};
+
+function addRefEntry() {
+  var i = refCount++;
+  var container = document.getElementById('reference-entries');
+  if (!container) return;
+  var zone = document.createElement('div');
+  zone.className = 'edit-zone ref-zone';
+  zone.id = 'sheet-ref-' + i;
+  zone.dataset.section = 'ref-' + i;
+  zone.innerHTML = '<div class="role-toolbar" aria-label="Reference actions">'
+    +   '<button class="btn-icon btn-icon--danger" type="button" title="Delete" aria-label="Delete reference" onclick="removeRefEntry(' + i + ')">&#215;</button>'
+    + '</div>'
+    + '<div class="role-hdr">'
+    +   '<b><label class="sr-only" for="f-ref-name-' + i + '">Name</label>'
+    +      '<input class="inline-input inline-input--inline" id="f-ref-name-' + i + '" name="ref_name_' + i + '" type="text" value="" placeholder="Reference name" aria-label="Reference name" oninput="autoWidth(this)"></b>'
+    +   '<span class="dates"><label class="sr-only" for="f-ref-title-' + i + '">Title</label>'
+    +     '<input class="inline-input inline-input--inline" id="f-ref-title-' + i + '" name="ref_title_' + i + '" type="text" value="" placeholder="Title" aria-label="Reference title" oninput="autoWidth(this)"></span>'
+    + '</div>'
+    + '<div class="company">'
+    +   '<label class="sr-only" for="f-ref-company-' + i + '">Company</label>'
+    +   '<input class="inline-input inline-input--inline" id="f-ref-company-' + i + '" name="ref_company_' + i + '" type="text" value="" placeholder="Company" aria-label="Reference company" oninput="autoWidth(this)">'
+    +   '<span> &middot; </span>'
+    +   '<label class="sr-only" for="f-ref-contact-' + i + '">Contact</label>'
+    +   '<input class="inline-input inline-input--inline" id="f-ref-contact-' + i + '" name="ref_contact_' + i + '" type="text" value="" placeholder="email or phone" aria-label="Reference contact" oninput="autoWidth(this)">'
+    + '</div>';
+  container.appendChild(zone);
+  zone.querySelectorAll('.inline-input--inline').forEach(autoWidth);
+}
+
+function removeRefEntry(i) {
+  var zone = document.getElementById('sheet-ref-' + i);
+  if (zone) zone.remove();
+  positionAtsBubbles();
+}
+
+/* ── Dynamic projects entries ── */
+var prjCount = 1;
+
+function addPrjEntry() {
+  var i = prjCount++;
+  var container = document.getElementById('sheet-projects');
+  if (!container) return;
+  var zone = document.createElement('div');
+  zone.className = 'edit-zone prj-zone';
+  zone.id = 'sheet-prj-' + i;
+  zone.dataset.section = 'prj-' + i;
+  zone.innerHTML = '<div class="role-toolbar" aria-label="Project actions">'
+    +   '<button class="btn-icon" type="button" title="Move" aria-label="Move project">&#8942;&#8942;</button>'
+    +   '<button class="btn-icon" type="button" title="Duplicate" aria-label="Duplicate project">&#9190;</button>'
+    +   '<button class="btn-icon btn-icon--danger" type="button" title="Delete project" aria-label="Delete project" onclick="removePrjEntry(' + i + ')">&#215;</button>'
+    + '</div>'
+    + '<div class="role-hdr">'
+    +   '<b><label class="sr-only" for="f-prj-name-' + i + '">Project name</label>'
+    +      '<input class="inline-input inline-input--inline" id="f-prj-name-' + i + '" name="prj_name_' + i + '" type="text" value="" placeholder="Project name" aria-label="Project name" oninput="autoWidth(this)"></b>'
+    +   '<span class="dates"><label class="sr-only" for="f-prj-link-' + i + '">Link</label>'
+    +     '<input class="inline-input inline-input--inline" id="f-prj-link-' + i + '" name="prj_link_' + i + '" type="text" value="" placeholder="github.com/you/project" aria-label="Project link" oninput="autoWidth(this)"></span>'
+    + '</div>'
+    + '<div class="company"><label class="sr-only" for="f-prj-desc-' + i + '">Description</label>'
+    +   '<input class="inline-input" id="f-prj-desc-' + i + '" name="prj_desc_' + i + '" type="text" value="" placeholder="Brief description of what you built and its impact" aria-label="Project description">'
+    + '</div>';
+  container.appendChild(zone);
+  zone.querySelectorAll('.inline-input--inline').forEach(autoWidth);
+  positionAtsBubbles();
+  showToast('Project added');
+}
+
+function removePrjEntry(i) {
+  var zone = document.getElementById('sheet-prj-' + i);
+  if (zone) zone.remove();
+  positionAtsBubbles();
+  showToast('Project removed');
+}
+
+/* ── Dynamic certification entries ── */
+var crtCount = 1;
+
+function addCrtEntry() {
+  var i = crtCount++;
+  var container = document.getElementById('sheet-certifications');
+  if (!container) return;
+  var zone = document.createElement('div');
+  zone.className = 'edit-zone crt-zone';
+  zone.id = 'sheet-crt-' + i;
+  zone.dataset.section = 'crt-' + i;
+  zone.innerHTML = '<div class="role-toolbar" aria-label="Certification actions">'
+    +   '<button class="btn-icon btn-icon--danger" type="button" title="Delete" aria-label="Delete certification" onclick="removeCrtEntry(' + i + ')">&#215;</button>'
+    + '</div>'
+    + '<div class="role-hdr">'
+    +   '<b><label class="sr-only" for="f-cert-name-' + i + '">Certification name</label>'
+    +      '<input class="inline-input inline-input--inline" id="f-cert-name-' + i + '" name="cert_name_' + i + '" type="text" value="" placeholder="Certification name" aria-label="Certification name" oninput="autoWidth(this)"></b>'
+    +   '<span class="dates"><label class="sr-only" for="f-cert-date-' + i + '">Date</label>'
+    +     '<input class="inline-input inline-input--inline" id="f-cert-date-' + i + '" name="cert_date_' + i + '" type="text" value="" placeholder="2024" aria-label="Certification date" oninput="autoWidth(this)"></span>'
+    + '</div>'
+    + '<div class="company"><label class="sr-only" for="f-cert-issuer-' + i + '">Issuer</label>'
+    +   '<input class="inline-input inline-input--inline" id="f-cert-issuer-' + i + '" name="cert_issuer_' + i + '" type="text" value="" placeholder="Issuing organisation" aria-label="Certification issuer" oninput="autoWidth(this)">'
+    + '</div>';
+  container.appendChild(zone);
+  zone.querySelectorAll('.inline-input--inline').forEach(autoWidth);
+  positionAtsBubbles();
+  showToast('Certification added');
+}
+
+function removeCrtEntry(i) {
+  var zone = document.getElementById('sheet-crt-' + i);
+  if (zone) zone.remove();
+  positionAtsBubbles();
+  showToast('Certification removed');
+}
+
+/* ── Dynamic language entries ── */
+var lngCount = 1;
+
+function addLngEntry() {
+  var i = lngCount++;
+  var container = document.getElementById('sheet-languages');
+  if (!container) return;
+  var zone = document.createElement('div');
+  zone.className = 'edit-zone lng-zone';
+  zone.id = 'sheet-lng-' + i;
+  zone.dataset.section = 'lng-' + i;
+  zone.innerHTML = '<div class="role-toolbar" aria-label="Language actions">'
+    +   '<button class="btn-icon btn-icon--danger" type="button" title="Delete" aria-label="Delete language" onclick="removeLngEntry(' + i + ')">&#215;</button>'
+    + '</div>'
+    + '<div class="role-hdr">'
+    +   '<b><label class="sr-only" for="f-lang-name-' + i + '">Language</label>'
+    +      '<input class="inline-input inline-input--inline" id="f-lang-name-' + i + '" name="lang_name_' + i + '" type="text" value="" placeholder="Language" aria-label="Language" oninput="autoWidth(this)"></b>'
+    +   '<span class="dates"><label class="sr-only" for="f-lang-level-' + i + '">Proficiency</label>'
+    +     '<input class="inline-input inline-input--inline" id="f-lang-level-' + i + '" name="lang_level_' + i + '" type="text" value="" placeholder="Native / Fluent / Intermediate" aria-label="Language proficiency" oninput="autoWidth(this)"></span>'
+    + '</div>';
+  container.appendChild(zone);
+  zone.querySelectorAll('.inline-input--inline').forEach(autoWidth);
+  positionAtsBubbles();
+  showToast('Language added');
+}
+
+function removeLngEntry(i) {
+  var zone = document.getElementById('sheet-lng-' + i);
+  if (zone) zone.remove();
+  positionAtsBubbles();
+  showToast('Language removed');
+}
 
 /* ── Toast ── */
 var _toastTimer = null;
 function showToast(msg) {
-    var toast = document.getElementById('builder-toast');
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.classList.add('show');
-    if (_toastTimer) clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2200);
+  var toast = document.getElementById('builder-toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2200);
 }
 
-/* ── Save modal ── */
-function openSaveModal() {
-    document.getElementById('save-modal-backdrop').style.display = '';
-    document.getElementById('save-modal').style.display = '';
-    document.getElementById('modal-save-label').focus();
-}
-function closeSaveModal() {
-    document.getElementById('save-modal-backdrop').style.display = 'none';
-    document.getElementById('save-modal').style.display = 'none';
-    document.getElementById('modal-save-result').innerHTML = '';
-}
+/* ── Ctrl+S shortcut ── */
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('save-modal').style.display !== 'none') {
-        closeSaveModal();
-    }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    htmx.trigger(document.getElementById('builder-form'), 'submit');
+    showToast('Updating preview…');
+  }
 });
-
-/* ── Init ── */
-updateRegionFields();
-updateProgress();
 </script>
 
+{# ── Dev fill button ── #}
 {% if dev_mode %}
-<button type="button" class="btn-dev-fill" onclick="devFillBuilder()">Dev: Fill form</button>
+<button type="button" style="position:fixed;bottom:70px;right:20px;z-index:50;font-size:11px;" onclick="devFillBuilder()">Dev: Fill</button>
 <script>
 function devFillBuilder() {
-    var fields = {
-        name: "Anakin Skywalker",
-        title: "Senior Full-Stack Engineer",
-        email: "anakin.skywalker@rebellion.dev",
-        phone: "+61 412 345 678",
-        location: "Sydney, Australia",
-        linkedin: "linkedin.com/in/anakin-skywalker",
-        github: "github.com/anakinskywalker",
-        portfolio: "rebellion.dev",
-        summary: "Full-stack engineer with 8+ years of experience building high-traffic web applications. Specialising in Python/FastAPI backends and React frontends. Passionate about clean architecture, developer experience, and mentoring junior engineers. Led a team of 6 to deliver a platform serving 2M+ monthly users.",
-        skills: "Python, TypeScript, FastAPI, React, PostgreSQL, Redis, Docker, Kubernetes, AWS, Terraform, GraphQL, REST APIs",
-        languages: "English (Native), Mandarin (Professional), Japanese (Basic)",
-        certifications: "AWS Solutions Architect Professional (2024)\nCertified Kubernetes Administrator (2023)\nGoogle Cloud Professional Cloud Architect (2022)",
-        visa_status: "Full working rights — Australian Citizen",
-        dob: "15/03/1990",
-        nationality: "Australian",
-        marital_status: "Single",
-    };
-    for (var key in fields) {
-        var el = document.querySelector('[name="' + key + '"]');
-        if (el) el.value = fields[key];
-    }
-    // Experience 0
-    var exp0 = {
-        exp_title_0: "Senior Full-Stack Engineer", exp_date_0: "Mar 2022 – Present",
-        exp_company_0: "Canva", exp_location_0: "Sydney",
-        exp_tech_0: "Python, FastAPI, React, TypeScript, PostgreSQL, Kubernetes",
-        exp_bullets_0: "Led migration of monolithic API to microservices architecture, reducing p95 latency from 800ms to 120ms\nDesigned and shipped real-time collaboration feature used by 500K+ users within first quarter\nEstablished code review standards and mentored 4 junior engineers, all promoted within 18 months\nReduced CI/CD pipeline time from 25 min to 8 min by parallelising test suites and optimising Docker builds"
-    };
-    for (var key in exp0) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = exp0[key]; }
-    addExperience();
-    var exp1 = {
-        exp_title_1: "Software Engineer", exp_date_1: "Jan 2019 – Feb 2022",
-        exp_company_1: "Atlassian", exp_location_1: "Sydney",
-        exp_tech_1: "Java, Spring Boot, React, AWS, DynamoDB",
-        exp_bullets_1: "Built and maintained microservices handling 10M+ API requests per day for Jira Cloud\nImplemented feature flagging system that reduced release risk and enabled 3x faster feature rollouts\nLed cross-team initiative to standardise error handling, reducing customer-reported bugs by 40%"
-    };
-    for (var key in exp1) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = exp1[key]; }
-    addExperience();
-    var exp2 = {
-        exp_title_2: "Junior Developer", exp_date_2: "Jul 2016 – Dec 2018",
-        exp_company_2: "Tyro Payments", exp_location_2: "Sydney",
-        exp_tech_2: "Ruby on Rails, PostgreSQL, React, AWS",
-        exp_bullets_2: "Developed payment processing features handling $2M+ daily transaction volume\nBuilt internal admin dashboard used by 50+ support staff, reducing ticket resolution time by 30%"
-    };
-    for (var key in exp2) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = exp2[key]; }
-    // Education 0
-    var edu0 = { edu_degree_0: "Bachelor of Computer Science (Honours)", edu_institution_0: "University of New South Wales", edu_date_0: "2016" };
-    for (var key in edu0) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = edu0[key]; }
-    // References 0
-    var ref0 = { ref_name_0: "Obi-Wan Kenobi", ref_title_0: "Engineering Manager", ref_company_0: "Canva", ref_contact_0: "obiwan.kenobi@jediorder.org" };
-    for (var key in ref0) { var el = document.querySelector('[name="' + key + '"]'); if (el) el.value = ref0[key]; }
-    // Set region to AU
-    document.querySelector('select[name="region"]').value = 'AU';
-    updateRegionFields();
-    updateProgress();
-    htmx.trigger(document.getElementById('builder-form'), 'submit');
-    showToast('Dev data filled — generating preview...');
+  var map = {
+    name: "Anakin Skywalker", title: "Senior Full-Stack Engineer",
+    email: "anakin.skywalker@rebellion.dev", phone: "+61 412 345 678",
+    location: "Sydney, Australia", linkedin: "linkedin.com/in/anakin-skywalker",
+    summary: "Full-stack engineer with 8+ years building high-traffic web applications.",
+    exp_title_0: "Senior Full-Stack Engineer", exp_company_0: "Canva",
+    exp_location_0: "Sydney", exp_tech_0: "Python, FastAPI, React, TypeScript, PostgreSQL",
+    exp_date_start_0: "Mar 2022", exp_date_end_0: "Present",
+    edu_degree_0: "Bachelor of Computer Science (Honours)",
+    edu_institution_0: "UNSW Sydney", edu_date_0: "2016",
+    region: "AU"
+  };
+  for (var k in map) {
+    var el = document.querySelector('[name="' + k + '"]') || document.getElementById('f-' + k.replace(/_/g,'-'));
+    if (el) { el.value = map[k]; if (el.classList && el.classList.contains('inline-input--inline')) autoWidth(el); }
+  }
+  // Set bullets via the hidden textarea
+  var bt = document.querySelector('[name="exp_bullets_0"]');
+  if (bt) { bt.value = "• Led migration of monolithic API to microservices\n• Designed real-time collaboration for 500K+ users"; }
+  // Set skills
+  var sh = document.getElementById('skills-hidden');
+  if (sh) sh.value = "Python, TypeScript, FastAPI, React, PostgreSQL, Redis, Docker";
+  syncDateHidden(0);
+  updateRegionFields();
+  htmx.trigger(document.getElementById('builder-form'), 'submit');
+  showToast('Dev data filled — generating preview…');
 }
 </script>
 {% endif %}
+
 {% endblock %}

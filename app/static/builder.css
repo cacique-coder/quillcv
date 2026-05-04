@@ -1,0 +1,751 @@
+/* QuillCV Builder v6 — 2-column inline-edit canvas.
+ * Tokens: tokens.css → base.css → shell.css
+ * Grid: 240px left-rail | 1fr canvas-area
+ * ATS bubbles live in the gutter between rail edge and sheet.
+ */
+
+/* ── Shell override ─────────────────────────────────────────── */
+.content.wide { padding: 0; }
+
+/* ── 2-column builder grid ──────────────────────────────────── */
+.builder {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 57px);
+}
+
+/* ── Left rail ──────────────────────────────────────────────── */
+.left-rail {
+  background: var(--paper-sunk);
+  border-right: 1px solid var(--rule);
+  padding: 20px 16px;
+  overflow-y: auto;
+}
+
+.left-rail h4 {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin: 16px 8px 8px;
+}
+.left-rail h4:first-child { margin-top: 0; }
+
+.left-rail .grp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.left-rail .grp .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--r-2);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.left-rail .grp .row:hover { background: var(--paper); color: var(--ink); }
+.left-rail .grp .row input[type="checkbox"] { margin: 0; }
+.left-rail .grp .row.on { background: var(--paper); color: var(--ink); }
+.left-rail .grp .row .drag { color: var(--ink-4); margin-left: auto; cursor: grab; }
+
+/* Template picker */
+.tmpl-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.tmpl-pick .t {
+  aspect-ratio: 210/297;
+  background: #fbf7ee;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 6px;
+  font-size: 3px;
+  cursor: pointer;
+  position: relative;
+}
+.tmpl-pick .t.on { outline: 2px solid var(--accent); }
+.tmpl-pick .t .lbl {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #6b6356;
+  font-weight: 600;
+}
+.tmpl-pick .t .t-line { height: 1px; background: #d9cfb9; margin: 1px 0; }
+
+.left-rail .see-all {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 8px;
+  text-decoration: none;
+}
+.left-rail .see-all:hover { text-decoration: underline; }
+
+/* Vault card */
+.vault-card {
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  font-size: 12px;
+  color: var(--ink-3);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.vault-card a { color: var(--accent); margin-left: auto; font-size: 11px; text-decoration: none; }
+.vault-card a:hover { text-decoration: underline; }
+
+/* Edit-mode banner */
+.bld-editing-banner {
+  padding: var(--s-2) var(--s-3);
+  background: var(--accent-wash);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--rule));
+  border-radius: var(--r-2);
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bld-editing-banner strong { color: var(--ink); }
+.bld-editing-new { margin-left: auto; font-size: 11px; color: var(--accent); text-decoration: none; }
+.bld-editing-new:hover { text-decoration: underline; }
+
+/* ── Canvas area ────────────────────────────────────────────── */
+.canvas-area {
+  background: var(--paper-sunk);
+  padding: 40px 40px 40px 100px; /* left padding creates gutter for ATS bubbles */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative; /* context for absolutely-positioned ATS bubbles */
+}
+
+/* ── A4 sheet ───────────────────────────────────────────────── */
+.sheet {
+  width: min(720px, 100%);
+  background: #fbf7ee;
+  color: #1c1a17;
+  padding: 56px 64px;
+  border-radius: 3px;
+  box-shadow: var(--sh-paper);
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative;
+  transform-origin: top center;
+  transition: transform 0.2s ease;
+}
+
+/* Sheet typography */
+.sheet .name {
+  font-family: var(--display);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.sheet .role { color: #6b6356; font-size: 14px; margin-top: 4px; font-family: var(--sans); letter-spacing: 0.02em; }
+.sheet .contact { font-size: 11px; color: #6b6356; margin-top: 8px; font-family: var(--mono); }
+.sheet .contact-sep { opacity: .6; }
+
+/* ── On-sheet photo ─────────────────────────────────────────── */
+/* Default: top-right of header, 96×96, visible when region wants a photo */
+.sheet .sheet-photo {
+  position: absolute;
+  top: 56px;
+  right: 64px;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--r-2);
+  overflow: hidden;
+  border: 1px solid #d9cfb9;
+  background: #fbf7ee;
+  z-index: 2;
+}
+.sheet .sheet-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sheet .sheet-photo .sheet-photo-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--ink-4);
+  font-size: 11px;
+  font-family: var(--mono);
+  cursor: pointer;
+}
+.sheet .sheet-photo .sheet-photo-empty:hover { color: var(--accent); background: var(--accent-wash); }
+.sheet .sheet-photo .sheet-photo-replace {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px;
+  background: rgba(28, 26, 23, .7);
+  color: white;
+  font-size: 10px;
+  font-family: var(--mono);
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s;
+  text-align: center;
+}
+.sheet .sheet-photo:hover .sheet-photo-replace { opacity: 1; }
+
+/* Hide the photo entirely when region doesn't want one */
+.sheet[data-photo="off"] .sheet-photo { display: none; }
+
+/* Add right-side padding to contact block so name doesn't overlap photo */
+.sheet[data-photo="on"] .contact { padding-right: 120px; }
+
+/* Per-template overrides */
+.sheet[data-template="classic"] .sheet-photo {
+  top: 56px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+.sheet[data-template="classic"][data-photo="on"] .contact {
+  padding-right: 0;
+  padding-top: 110px;
+  text-align: center;
+}
+.sheet[data-template="editorial"] .sheet-photo {
+  top: 24px;
+  right: 24px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+}
+/* Minimal template skips photos */
+.sheet[data-template="minimal"] .sheet-photo { display: none !important; }
+
+.sheet .hr { height: 1px; background: #1c1a17; opacity: .3; margin: 20px 0 18px; }
+.sheet h3 {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #6b6356;
+  font-weight: 500;
+  margin: 22px 0 10px;
+}
+.sheet .role-hdr { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px; }
+.sheet .role-hdr b { font-family: var(--sans); font-weight: 600; font-size: 14px; }
+.sheet .role-hdr .dates { font-family: var(--mono); font-size: 11px; color: #6b6356; white-space: nowrap; }
+.sheet .company { font-style: italic; color: #3b362e; font-size: 13px; margin-bottom: 4px; }
+.sheet ul { padding-left: 18px; margin: 4px 0 6px; }
+.sheet li { margin: 4px 0; }
+.sheet .summary { font-size: 14px; }
+.sheet .tech-line { font-size: 11px; color: #6b6356; font-family: var(--mono); margin-top: 4px; }
+
+.sheet .skill-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(91,61,189,0.08);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+/* ── .sr-only (screen-reader only) ─────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Inline inputs — the core UX primitive ──────────────────── */
+.sheet input.inline-input,
+.sheet textarea.inline-input {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  outline: none;
+  resize: none;
+  field-sizing: content; /* progressive enhancement */
+  box-sizing: border-box;
+}
+.sheet input.inline-input:focus,
+.sheet textarea.inline-input:focus {
+  background: var(--accent-wash);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.sheet input.inline-input::placeholder,
+.sheet textarea.inline-input::placeholder {
+  color: rgba(28,26,23,.35);
+  font-style: italic;
+}
+
+/* Inline modifier — flows with surrounding text.
+ * Must be inline-block (not inline) so width applies correctly. */
+.sheet input.inline-input--inline {
+  display: inline-block;
+  width: auto;
+  min-width: 4ch;
+  max-width: 100%;
+  vertical-align: baseline;
+}
+.sheet input.inline-input--inline:focus {
+  outline-offset: 1px;
+}
+
+/* role-hdr title/company inputs inherit serif from sheet body */
+.sheet .role-hdr > span input.inline-input--inline {
+  font-family: var(--serif);
+}
+
+/* date/location inputs in .dates use mono so ch unit is accurate */
+.sheet .dates input.inline-input--inline {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #6b6356;
+}
+
+/* Skill tag input — inside .skills-tags flex */
+.sheet .skill-input {
+  flex: 1;
+  min-width: 80px;
+  width: auto;
+  font-family: var(--sans);
+  font-size: 12px;
+}
+
+/* ── Edit zone — section wrapper ────────────────────────────── */
+.edit-zone {
+  position: relative;
+  border-radius: 3px;
+  padding: 4px 4px 4px 4px;
+  margin: 0 -4px;
+  transition: background 0.1s;
+}
+.edit-zone:hover { background: rgba(91,61,189,.04); }
+.edit-zone:focus-within { background: var(--accent-wash); outline: none; }
+
+/* Experience zone needs room for toolbar */
+.exp-zone, .edu-zone,
+.prj-zone, .crt-zone, .lng-zone, .ref-zone { padding-top: 28px; margin-bottom: 14px; }
+
+/* Defensive: sheet sections must be block when not hidden.
+ * Ensures no cascade or browser quirk suppresses section visibility
+ * when the [hidden] attribute is removed by JS. */
+.sheet section:not([hidden]) { display: block; }
+
+/* ── Per-role hover toolbar ─────────────────────────────────── */
+.role-toolbar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.edit-zone:hover .role-toolbar,
+.edit-zone:focus-within .role-toolbar {
+  opacity: .85;
+  pointer-events: auto;
+}
+
+/* Always visible on touch devices */
+@media (pointer: coarse) {
+  .role-toolbar { opacity: .85; pointer-events: auto; }
+}
+
+.btn-icon {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.1s, color 0.1s;
+}
+.btn-icon:hover { background: var(--paper-sunk); color: var(--ink); }
+.btn-icon--danger:hover { background: var(--danger-wash); color: var(--danger); }
+
+/* ── Bullet list (contenteditable) ──────────────────────────── */
+.sheet ul.bullets {
+  padding-left: 18px;
+  margin: 4px 0 6px;
+}
+.sheet ul.bullets li[contenteditable] {
+  outline: none;
+  margin: 4px 0;
+  border-radius: 2px;
+  min-height: 1.4em;
+  position: relative;
+  padding-right: 28px; /* room for × button */
+}
+.sheet ul.bullets li[contenteditable]:focus {
+  background: var(--accent-wash);
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Per-bullet remove button — visible by default at low opacity */
+.sheet ul.bullets li .bullet-remove {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  opacity: .45;
+  transition: opacity .15s, color .15s;
+  font-size: 14px;
+  line-height: 18px;
+  padding: 0;
+  text-align: center;
+  border-radius: 2px;
+  pointer-events: auto;
+  user-select: none;
+}
+.sheet ul.bullets li .bullet-remove:hover { opacity: 1; color: var(--danger); }
+/* Never show remove on the sentinel empty bullet */
+.sheet ul.bullets li[data-empty="1"] .bullet-remove { display: none; }
+
+/* Empty placeholder bullet — :not(:focus) so it hides when typing starts */
+.sheet ul.bullets li[data-empty="1"]:not(:focus)::before {
+  content: '+ Add bullet';
+  color: rgba(28,26,23,.3);
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* ── Skills tags ────────────────────────────────────────────── */
+.skills-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+.skill-remove {
+  border: none;
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.skill-remove:hover { color: var(--danger); }
+
+/* ── Add-handle (persistent insert affordance) ──────────────── */
+.add-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: var(--r-2);
+  cursor: pointer;
+  padding: 10px 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  margin: 12px 0;
+  box-sizing: border-box;
+}
+.add-handle:hover,
+.add-handle:focus-visible {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  border-style: solid;
+  outline: none;
+}
+
+/* Small variant — used for + Add bullet inside a role */
+.add-handle--small {
+  padding: 6px 12px;
+  font-size: 10px;
+  margin: 4px 0 8px;
+}
+
+/* The rule+label layout is replaced by the dashed-border button;
+ * keep these for any legacy callers but they'll be invisible. */
+.add-handle-rule { display: none; }
+.add-handle-plus { flex-shrink: 0; white-space: nowrap; }
+
+/* ── ATS bubbles — positioned in the left gutter ────────────── */
+.ats-bubble {
+  position: absolute;
+  left: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  z-index: 5;
+}
+
+.ats-bubble-dot {
+  width: 32px;   /* 32px min tap target per a11y */
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+  color: var(--accent);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sh-2);
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.ats-bubble-dot:hover { background: var(--accent); color: #fff; }
+
+.ats-bubble-popover {
+  position: absolute;
+  left: 40px;
+  top: 0;
+  width: 280px;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-soft);
+  box-shadow: var(--sh-2);
+  padding: 14px 16px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  /* Pointer arrow */
+  filter: drop-shadow(0 1px 3px rgba(28,26,23,.1));
+}
+.ats-bubble-popover::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 10px;
+  border: 7px solid transparent;
+  border-right-color: var(--paper-raised);
+}
+.ats-bubble-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 6px;
+}
+.ats-bubble-popover p { margin: 0 0 12px; line-height: 1.5; }
+
+/* ── Page meta indicators ───────────────────────────────────── */
+.page-indicator {
+  margin-top: 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.current-template-note {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  font-style: italic;
+  letter-spacing: .04em;
+  text-align: center;
+}
+
+/* ── Topbar extras ──────────────────────────────────────────── */
+.autosave {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ok);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .05em;
+}
+.autosave .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+/* ── Zoom controls ──────────────────────────────────────────── */
+.zoom-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  padding: 4px;
+  box-shadow: var(--sh-2);
+  z-index: 10;
+}
+.zoom-controls button {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  border-radius: var(--r-pill);
+}
+.zoom-controls button:hover { background: var(--paper-sunk); color: var(--ink); }
+
+/* ── Utility / misc ─────────────────────────────────────────── */
+.save-success { font-size: 13px; color: var(--ok); padding: 4px 0; }
+.save-success .save-date { color: var(--ink-3); margin-left: 4px; }
+.save-error { font-size: 13px; color: var(--danger); padding: 4px 0; }
+
+/* ── Toast ──────────────────────────────────────────────────── */
+.bld-toast {
+  position: fixed;
+  bottom: 64px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-soft);
+  padding: 8px 20px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  box-shadow: var(--sh-2);
+  z-index: 20;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+.bld-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Photo upload zone ──────────────────────────────────────── */
+.bld-photo-zone {
+  position: relative;
+  border: 1.5px dashed var(--rule);
+  border-radius: var(--r-soft);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  margin-top: 6px;
+}
+.bld-photo-zone:hover { border-color: var(--accent); background: var(--accent-wash); }
+.bld-photo-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.bld-photo-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+/* ── Template flash animation ───────────────────────────────── */
+@keyframes sheet-flash { 0%,100% { opacity: 1; } 50% { opacity: .85; } }
+.sheet.flashing { animation: sheet-flash 220ms ease; }
+
+/* ── Per-template theming hooks ─────────────────────────────── */
+.sheet[data-template="classic"] .name { text-align: center; font-family: var(--serif); }
+.sheet[data-template="classic"] .role { text-align: center; }
+.sheet[data-template="classic"] .contact { text-align: center; }
+.sheet[data-template="editorial"] { background: #f5e9d8; }
+.sheet[data-template="minimal"] { font-family: var(--sans); }
+.sheet[data-template="minimal"] h3 { letter-spacing: .06em; }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .builder {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .left-rail {
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+    overflow-y: visible;
+  }
+  .canvas-area {
+    padding: 16px;
+  }
+  .sheet { padding: 32px 24px; }
+  .zoom-controls { display: none; }
+  /* ATS bubbles: switch from gutter to inline */
+  .ats-bubble {
+    position: static;
+    display: inline-flex;
+    margin-bottom: 8px;
+  }
+  .ats-bubble-popover {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(90vw, 320px);
+  }
+  .ats-bubble-popover::before { display: none; }
+}
+
+@media (max-width: 640px) {
+  .left-rail { padding: 12px; }
+  .tmpl-pick { grid-template-columns: 1fr 1fr; }
+  .sheet { padding: 24px 16px; }
+  .exp-zone, .edu-zone { padding-top: 32px; }
+}
