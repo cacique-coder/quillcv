@@ -220,17 +220,55 @@ async def step2_save(
 
     pii_prefilled = bool(request.state.session.get("pii"))
 
+    # ------------------------------------------------------------------
+    # Age gate validation
+    # ------------------------------------------------------------------
+    current_user = await get_current_user(request)
+    # Capture id while the object is fresh; used later in upsert_vault
+    user_id = current_user.id if current_user else None
+
+    # If the authenticated user has already confirmed their age in a previous
+    # session, we skip the checkbox requirement — they've already consented.
+    already_age_confirmed = bool(
+        current_user and current_user.age_confirmed_at
+    )
+
+    # ------------------------------------------------------------------
+    # Build references list from form fields (needed by _render_error)
+    # ------------------------------------------------------------------
+    references = []
+    for _i, (ref_n, ref_t, ref_c, ref_e, ref_p) in enumerate([
+        (ref_name_1, ref_title_1, ref_company_1, ref_email_1, ref_phone_1),
+        (ref_name_2, ref_title_2, ref_company_2, ref_email_2, ref_phone_2),
+    ], 1):
+        if ref_n.strip():
+            references.append({
+                "name": ref_n.strip(),
+                "title": ref_t.strip(),
+                "company": ref_c.strip(),
+                "email": ref_e.strip(),
+                "phone": normalize_phone(ref_p),
+            })
+
     def _render_error(error: str, extra: dict | None = None) -> templates.TemplateResponse:
+        pii = request.state.session.get("pii") or {}
+        attempt_with_overrides = {
+            **attempt,
+            "full_name": full_name,
+            "email": email,
+            "phone": phone,
+            "nationality": nationality,
+            "marital_status": marital_status,
+            "visa_status": visa_status,
+            "self_description": self_description,
+            "values": values,
+            "offer_appeal": offer_appeal,
+            "references": references,
+        }
+        pii_complete, pii_missing = _check_pii_completeness(attempt_with_overrides, pii, region)
         ctx = {
             "request": request,
-            "attempt": {
-                **attempt,
-                "full_name": full_name,
-                "email": email,
-                "phone": phone,
-                "nationality": nationality,
-                "marital_status": marital_status,
-            },
+            "attempt": attempt_with_overrides,
             "region": region,
             "region_config": region_config,
             "fields": fields,
@@ -239,21 +277,12 @@ async def step2_save(
             # Must be re-passed so the template knows whether to show the checkbox
             "age_already_confirmed": already_age_confirmed,
             "pii_prefilled": pii_prefilled,
+            "pii_incomplete": not pii_complete,
+            "pii_missing": pii_missing,
         }
         if extra:
             ctx.update(extra)
         return templates.TemplateResponse("partials/wizard/step2_details.html", ctx)
-
-    # ------------------------------------------------------------------
-    # Age gate validation
-    # ------------------------------------------------------------------
-    current_user = await get_current_user(request)
-
-    # If the authenticated user has already confirmed their age in a previous
-    # session, we skip the checkbox requirement — they've already consented.
-    already_age_confirmed = bool(
-        current_user and current_user.age_confirmed_at
-    )
 
     if not already_age_confirmed and not age_confirmed:
         return _render_error(
@@ -290,6 +319,13 @@ async def step2_save(
         )
 
     # ------------------------------------------------------------------
+    # Email format validation (only when a value is provided)
+    # ------------------------------------------------------------------
+    import re as _re
+    if email.strip() and not _re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email.strip()):
+        return _render_error("Please enter a valid email address.")
+
+    # ------------------------------------------------------------------
     # Persist consent records for authenticated users
     # ------------------------------------------------------------------
     if current_user:
@@ -319,7 +355,7 @@ async def step2_save(
                 if submitted:
                     await record_consent(
                         db,
-                        user_id=current_user.id,
+                        user_id=user_id,
                         consent_type=consent_type,
                         granted=True,
                         email=current_user.email,
@@ -329,23 +365,6 @@ async def step2_save(
                     )
 
             await db.commit()
-
-    # ------------------------------------------------------------------
-    # Build references list from form fields
-    # ------------------------------------------------------------------
-    references = []
-    for _i, (ref_n, ref_t, ref_c, ref_e, ref_p) in enumerate([
-        (ref_name_1, ref_title_1, ref_company_1, ref_email_1, ref_phone_1),
-        (ref_name_2, ref_title_2, ref_company_2, ref_email_2, ref_phone_2),
-    ], 1):
-        if ref_n.strip():
-            references.append({
-                "name": ref_n.strip(),
-                "title": ref_t.strip(),
-                "company": ref_c.strip(),
-                "email": ref_e.strip(),
-                "phone": normalize_phone(ref_p),
-            })
 
     update_attempt(
         attempt["id"],
@@ -367,7 +386,7 @@ async def step2_save(
     # pre-fill on future wizard runs.
     # `offer_appeal` is intentionally excluded — it is role-specific.
     # ------------------------------------------------------------------
-    if current_user:
+    if user_id:
         from app.pii.adapters.vault import upsert_vault
         pii = request.state.session.get("pii") or {}
         pii["references"] = references
@@ -377,7 +396,7 @@ async def step2_save(
             pii["values"] = values
         password = request.state.session.get("_pii_password")
         async with async_session() as db:
-            await upsert_vault(db, user_id=current_user.id, pii=pii, password=password or None)
+            await upsert_vault(db, user_id=user_id, pii=pii, password=password or None)
         request.state.session["pii"] = pii
 
     return await step3(request)

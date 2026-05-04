@@ -163,6 +163,15 @@ async def run_generation_pipeline(
     logger.info("Pipeline[%s] step=ai_generate duration=%.2fs success=%s", attempt_id, timings["ai_generate"], cv_data is not None)
 
     if cv_data is None:
+        import hashlib as _hashlib
+        _input_len = len(cv_text_for_llm) + len(job_description)
+        _last_char_hash = _hashlib.sha256(cv_text_for_llm[-64:].encode(errors="replace")).hexdigest()[:8]
+        logger.error(
+            "Pipeline[%s] generate_tailored_cv returned None — "
+            "input_chars=%d last_char_hash=%s model=%s duration=%.2fs",
+            attempt_id, _input_len, _last_char_hash,
+            getattr(llm, "model", "unknown"), timings["ai_generate"],
+        )
         raise ValueError("CV generation failed. Please try again.")
 
     # Restore real PII values from tokens

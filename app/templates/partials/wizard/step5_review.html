@@ -73,6 +73,10 @@
                 </ul>
                 {% endif %}
                 <p>Go back to <a href="#" onclick="htmx.ajax('GET','/wizard/step/2',{target:'#wizard-container',swap:'innerHTML'});return false" class="pii-incomplete-link">Step 2: Details</a> or <a href="/account/pii" class="pii-incomplete-link">update your vault</a> to fill these in.</p>
+                <button type="button" class="btn-primary"
+                        onclick="htmx.ajax('GET','/wizard/step/2',{target:'#wizard-container',swap:'innerHTML'});return false;">
+                    Go back to Step 2
+                </button>
             </div>
         </div>
         {% endif %}

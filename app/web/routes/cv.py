@@ -173,6 +173,7 @@ async def analyze(request: Request):
             {"request": request, "error": "No active session. Please start from the beginning."},
         )
 
+    # TODO(billing): de-dup concurrent /analyze calls per attempt before enabling credit gating
     http_user = getattr(request.state, "user", None)
     http_user_id = http_user.id if http_user else None
 
