@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block body_layout %}app{% endblock %}
+{% block title %}Dashboard — QuillCV{% endblock %}
+
+{# ── Macro: region code → emoji flag ── #}
+{% macro region_flag(code) %}
+  {%- if code == 'AU' %}🇦🇺
+  {%- elif code == 'US' %}🇺🇸
+  {%- elif code == 'UK' %}🇬🇧
+  {%- elif code == 'CA' %}🇨🇦
+  {%- elif code == 'NZ' %}🇳🇿
+  {%- elif code == 'DE' %}🇩🇪
+  {%- elif code == 'FR' %}🇫🇷
+  {%- elif code == 'NL' %}🇳🇱
+  {%- elif code == 'IN' %}🇮🇳
+  {%- elif code == 'BR' %}🇧🇷
+  {%- elif code == 'AE' %}🇦🇪
+  {%- elif code == 'JP' %}🇯🇵
+  {%- else %}{% endif -%}
+{% endmacro %}
+
+{% block head_extra %}
+<meta name="robots" content="noindex, nofollow">
+<style>
+  /* ── Welcome row ── */
+  .welcome { display: flex; align-items: flex-end; gap: 32px; margin-bottom: 40px; }
+  .welcome h1 { font-size: 56px; font-weight: 340; line-height: 1; }
+  .welcome h1 em { color: var(--accent); font-style: italic; }
+  .welcome .today { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+  .welcome .quote { margin-left: auto; color: var(--ink-3); font-family: var(--serif); font-size: 16px; max-width: 320px; text-align: right; font-style: italic; }
+
+  /* ── Resume card ── */
+  .resume-card {
+    background: var(--ink); color: var(--paper);
+    padding: 28px 32px; border-radius: var(--r-3);
+    display: flex; align-items: center; gap: 24px;
+    margin-bottom: 32px; position: relative; overflow: hidden;
+  }
+  .resume-card .stamp {
+    position: absolute; top: 20px; right: 24px;
+    border: 1.5px solid var(--accent-2); color: var(--accent-2);
+    font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 2px;
+    transform: rotate(4deg); letter-spacing: .1em; text-transform: uppercase;
+  }
+  .resume-card .ico {
+    width: 56px; height: 56px; flex-shrink: 0;
+    background: var(--accent); color: white;
+    border-radius: 14px 18px 14px 18px;
+    display: grid; place-items: center;
+  }
+  .resume-card h3 { color: var(--paper); font-family: var(--display); font-size: 22px; font-weight: 440; margin-bottom: 4px; }
+  .resume-card p { color: var(--ink-4); font-size: 14px; }
+  .resume-card .progress { display: flex; gap: 4px; margin-top: 10px; }
+  .resume-card .progress .tick { width: 24px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.15); }
+  .resume-card .progress .tick.on { background: var(--accent-2); }
+  .resume-card .rc-label { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 6px; }
+
+  /* ── Quick actions ── */
+  .qa-label { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; }
+  .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+  .qa {
+    background: var(--paper-raised); border: 1px solid var(--rule);
+    border-radius: var(--r-3); padding: 24px;
+    display: flex; flex-direction: column; gap: 10px;
+    text-decoration: none; color: var(--ink);
+    transition: transform .1s ease, border-color .15s ease;
+    box-shadow: var(--sh-1); position: relative;
+  }
+  .qa:hover { transform: translateY(-2px); border-color: var(--ink); }
+  .qa .ico { width: 40px; height: 40px; border-radius: 10px 14px 10px 14px; background: var(--accent-wash); color: var(--accent-ink); display: grid; place-items: center; }
+  [data-theme="dark"] .qa .ico { color: var(--accent-2); }
+  .qa h3 { font-family: var(--display); font-size: 20px; font-weight: 440; }
+  .qa p { color: var(--ink-3); font-size: 13px; line-height: 1.5; }
+  .qa .cost { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-3); position: absolute; top: 24px; right: 24px; letter-spacing: .05em; }
+
+  /* ── Dashboard grid ── */
+  .dash-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .panel { background: var(--paper-raised); border: 1px solid var(--rule); border-radius: var(--r-3); padding: 20px 24px; box-shadow: var(--sh-1); }
+  .panel .p-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+  .panel .p-head h3 { font-family: var(--display); font-size: 20px; font-weight: 440; }
+  .panel .p-head a { color: var(--accent); font-size: 13px; text-decoration: none; }
+
+  /* ── CV rows ── */
+  .cv-row { display: grid; grid-template-columns: 60px 1fr auto auto; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--rule-soft); }
+  .cv-row:last-child { border-bottom: none; }
+  .cv-thumb {
+    width: 44px; height: 60px;
+    background: #fbf7ee; border: 1px solid var(--rule); border-radius: 2px;
+    padding: 4px; font-family: var(--serif); color: #1c1a17; font-size: 4px;
+    box-shadow: var(--sh-1); position: relative; overflow: hidden;
+  }
+  .cv-thumb .hdr { font-family: var(--display); font-size: 5px; font-weight: 500; }
+  .cv-thumb .rle { height: 0.5px; background: #1c1a17; margin: 2px 0; opacity: .3; }
+  .cv-thumb .ln { height: 1px; background: #d9cfb9; margin: 1px 0; border-radius: .5px; }
+  .cv-row .title { font-weight: 500; font-size: 14px; }
+  .cv-row .meta { color: var(--ink-3); font-size: 12px; font-family: var(--mono); margin-top: 2px; }
+  .cv-row .score {
+    font-family: var(--mono); font-size: 12px; padding: 3px 8px;
+    background: var(--ok-wash); color: var(--ok); border-radius: var(--r-pill); font-weight: 600;
+  }
+  .cv-row .score.mid { background: var(--warn-wash); color: var(--warn); }
+  .cv-row .score.low { background: var(--paper-raised); color: var(--ink-3); border: 1px solid var(--rule); }
+  .panel-empty { padding: 24px 0; color: var(--ink-3); font-size: 14px; text-align: center; }
+  .panel-empty a { color: var(--accent); text-decoration: none; }
+
+  /* ── Job rows ── */
+  .job-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--rule-soft); align-items: center; gap: 12px; }
+  .job-row:last-child { border-bottom: none; }
+  .job-row .title { font-weight: 500; font-size: 14px; }
+  .job-row .co { color: var(--ink-3); font-size: 12px; }
+  .status-pill {
+    flex-shrink: 0;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: var(--r-pill); border: 1px solid currentColor;
+  }
+  .status-pill.applying { color: var(--warn); background: var(--warn-wash); border-color: transparent; }
+  .status-pill.applied { color: var(--accent); background: var(--accent-wash); border-color: transparent; }
+  .status-pill.saved { color: var(--ink-3); background: var(--paper-raised); border-color: var(--rule); }
+  .status-pill.interview { color: var(--ok); background: var(--ok-wash); border-color: transparent; }
+  .jobs-add-row { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--rule-soft); }
+
+  /* ── Vault strip ── */
+  .vault-strip {
+    background: var(--ink); color: var(--paper); padding: 20px 24px;
+    border-radius: var(--r-3); display: flex; align-items: center; gap: 20px;
+  }
+  .vault-strip .ico { width: 44px; height: 44px; flex-shrink: 0; background: var(--accent); color: white; border-radius: 12px 16px 12px 16px; display: grid; place-items: center; }
+  .vault-strip h4 { color: var(--paper); font-family: var(--display); font-size: 18px; font-weight: 440; }
+  .vault-strip p { color: var(--ink-4); font-size: 13px; }
+  .vault-strip .vault-action { margin-left: auto; color: var(--paper); border-color: rgba(255,255,255,.2); background: transparent; white-space: nowrap; }
+  .vault-strip .vault-action:hover { background: rgba(255,255,255,.1); }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .welcome { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .welcome h1 { font-size: 36px; }
+    .welcome .quote { margin-left: 0; text-align: left; }
+    .quick-actions { grid-template-columns: 1fr; }
+    .dash-grid { grid-template-columns: 1fr; }
+    .cv-row { grid-template-columns: 48px 1fr auto; }
+    .cv-row .score { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Derive first name ── #}
+{% if user.full_name %}
+  {% set first_name = user.full_name.split(' ')[0] %}
+{% else %}
+  {% set first_name = user.email.split('@')[0] %}
+{% endif %}
+
+{# ── Welcome row ── #}
+<div class="welcome">
+  <div>
+    <div class="today">{{ today_pretty }}</div>
+    <h1>Welcome back, <em>{{ first_name }}</em>.</h1>
+  </div>
+  {% if quote %}
+  <div class="quote">{{ quote }}</div>
+  {% endif %}
+</div>
+
+{# ── Resume card (only when resume is set) ── #}
+{% if resume %}
+<div class="resume-card">
+  <div class="stamp">in progress</div>
+  <div class="ico">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3l1.8 3.6L18 7.5l-3 2.9.7 4.1L12 12.4l-3.7 2.1.7-4.1L6 7.5l4.2-.9z"/>
+      <path d="M5 20h14M8 17h8"/>
+    </svg>
+  </div>
+  <div style="flex:1">
+    <div class="rc-label">Continue where you left off</div>
+    <h3>Tailoring CV · <span style="font-style:italic;color:var(--accent-2)">{{ resume.title }}</span></h3>
+    <p>Step {{ resume.step }} of 5 · reviewing matched keywords</p>
+    <div class="progress">
+      {% for i in range(1, 6) %}
+        <div class="tick{% if i <= resume.step %} on{% endif %}"></div>
+      {% endfor %}
+    </div>
+  </div>
+  <a href="{{ resume.url }}" class="btn btn-accent">Resume &rarr;</a>
+</div>
+{% endif %}
+
+{# ── Quick actions ── #}
+<div class="qa-label">Quick actions</div>
+<div class="quick-actions">
+  <a class="qa" href="/wizard/step/1">
+    <div class="ico">
+      {# Target icon #}
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+      </svg>
+    </div>
+    <h3>Tailor to a job</h3>
+    <p>Paste a job description. We rewrite yours to match &mdash; truthfully.</p>
+    <span class="cost">1 credit</span>
+  </a>
+  <a class="qa" href="/builder">
+    <div class="ico">
+      {# Pen icon #}
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/>
+      </svg>
+    </div>
+    <h3>Build manually</h3>
+    <p>WYSIWYG paper canvas. Click anywhere on the CV to edit.</p>
+    <span class="cost">1 credit</span>
+  </a>
+  <a class="qa" href="/jobs/new">
+    <div class="ico">
+      {# Mail icon #}
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/>
+      </svg>
+    </div>
+    <h3>Write a cover letter</h3>
+    <p>Pair a job with a CV. We draft the letter in your voice.</p>
+    <span class="cost">free</span>
+  </a>
+</div>
+
+{# ── Dash grid: Recent CVs | Saved jobs ── #}
+<div class="dash-grid">
+
+  {# Recent CVs panel #}
+  <div class="panel">
+    <div class="p-head">
+      <h3>Recent CVs</h3>
+      <a href="/my-cvs">View all &rarr;</a>
+    </div>
+    {% if recent_cvs %}
+      {% for cv in recent_cvs %}
+      <div class="cv-row">
+        <div class="cv-thumb">
+          <div class="hdr">{{ first_name[0] }}.</div>
+          <div class="rle"></div>
+          <div class="ln" style="width:85%"></div>
+          <div class="ln" style="width:65%"></div>
+          <div class="ln" style="width:75%"></div>
+          <div class="rle" style="margin-top:3px"></div>
+          <div class="ln" style="width:85%"></div>
+          <div class="ln" style="width:55%"></div>
+          <div class="ln" style="width:70%"></div>
+        </div>
+        <div>
+          <div class="title">{{ cv.title }}</div>
+          <div class="meta">{{ region_flag(cv.region) }} {{ cv.region }} &middot; {{ cv.template | title }} &middot; updated {{ cv.updated_human }}</div>
+        </div>
+        <div class="score{% if cv.score >= 85 %}{% elif cv.score >= 60 %} mid{% else %} low{% endif %}">{{ cv.score }}%</div>
+        <a href="/builder/edit/{{ cv.id }}" class="icon-btn" title="Open CV" aria-label="Open {{ cv.title }}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9,18 15,12 9,6"/>
+          </svg>
+        </a>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="panel-empty">
+        No CVs yet &mdash; <a href="/wizard/step/1">Build your first one &rarr;</a>
+      </div>
+    {% endif %}
+  </div>
+
+  {# Saved jobs panel #}
+  <div class="panel">
+    <div class="p-head">
+      <h3>Saved jobs</h3>
+      <a href="/jobs">View all &rarr;</a>
+    </div>
+    {% if recent_jobs %}
+      {% for job in recent_jobs %}
+      <div class="job-row">
+        <div>
+          <div class="title">{{ job.title }}</div>
+          <div class="co">{{ job.company }} &middot; {{ job.location }} &middot; {{ job.created_human }}</div>
+        </div>
+        <span class="status-pill {{ job.status }}">{{ job.status | title }}</span>
+      </div>
+      {% endfor %}
+      <div class="jobs-add-row">
+        <a href="/jobs/new" class="btn btn-sm btn-full" style="justify-content:center">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add a job
+        </a>
+      </div>
+    {% else %}
+      <div class="panel-empty">
+        No saved jobs yet &mdash; <a href="/jobs/new">Track a job &rarr;</a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{# ── Vault strip ── #}
+<div class="vault-strip">
+  <div class="ico">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+      <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    </svg>
+  </div>
+  <div>
+    <h4>Your vault</h4>
+    {% if vault and vault.configured %}
+      <p>Personal data &middot; encrypted with your password &middot; last updated {{ vault.updated_human }}</p>
+    {% else %}
+      <p>Set up your vault to autofill future CVs</p>
+    {% endif %}
+  </div>
+  {% if vault and vault.configured %}
+    <a href="/account/pii" class="btn vault-action">Review &rarr;</a>
+  {% else %}
+    <a href="/onboarding" class="btn vault-action">Set up vault &rarr;</a>
+  {% endif %}
+</div>
+
+{% endblock %}
