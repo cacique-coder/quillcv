@@ -14,7 +14,8 @@
     {% if saved_cvs %}
     <div class="my-cvs-grid">
         {% for cv in saved_cvs %}
-        <div class="cv-card">
+        {% set missing = (cv_status or {}).get(cv.id, []) %}
+        <div class="cv-card{% if missing %} cv-card--incomplete{% endif %}">
             <div class="cv-card-header">
                 <h3 class="cv-card-label">{{ cv.label or "Untitled CV" }}</h3>
                 {% if cv.job_title %}
@@ -27,6 +28,17 @@
                 <span class="cv-card-region">{{ cv.region }}</span>
                 <span class="cv-card-date">{{ cv.created_at.strftime("%d %b %Y") }}</span>
             </div>
+            {% if missing %}
+            <div class="cv-card-warning" role="status">
+                <strong>Some values are missing.</strong>
+                <span>Unfilled or placeholder fields: <em>{{ missing | join(", ") }}</em>.</span>
+                <span class="cv-card-warning-actions">
+                    <a href="/account/pii">Update vault</a>
+                    <span aria-hidden="true">·</span>
+                    <a href="/builder/edit/{{ cv.id }}">Edit CV</a>
+                </span>
+            </div>
+            {% endif %}
             <div class="cv-card-actions">
                 <a href="/builder/edit/{{ cv.id }}" class="btn-secondary">Edit</a>
                 <a href="/my-cvs/{{ cv.id }}/preview" class="btn-secondary" target="_blank">Preview</a>

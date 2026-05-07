@@ -48,11 +48,9 @@ _STARTER_SENTINELS = {
 }
 
 
-def _missing_token_banner(rendered: str, cv_data: dict | None = None, cv_id: str = "") -> str:
-    """Return an HTML banner if any PII placeholders or starter sentinels survive.
-
-    Empty string when the CV looks fully personalised.
-    """
+def _detect_missing_fields(rendered: str, cv_data: dict | None = None) -> list[str]:
+    """Collect human-readable labels for unresolved tokens, starter sentinels,
+    and empty contact fields. Empty list means the CV looks fully personalised."""
     seen: list[str] = []
 
     for token in _PII_TOKEN_RE.findall(rendered):
@@ -68,12 +66,19 @@ def _missing_token_banner(rendered: str, cv_data: dict | None = None, cv_id: str
             seen.append(label)
 
     if cv_data:
-        # Empty top-of-CV fields render as blank gaps that read as "missing"
-        # even though no token survives.
         for key, label in (("name", "name"), ("email", "email"), ("phone", "phone")):
             if not (cv_data.get(key) or "").strip() and label not in seen:
                 seen.append(label)
 
+    return seen
+
+
+def _missing_token_banner(rendered: str, cv_data: dict | None = None, cv_id: str = "") -> str:
+    """Return an HTML banner if any PII placeholders or starter sentinels survive.
+
+    Empty string when the CV looks fully personalised.
+    """
+    seen = _detect_missing_fields(rendered, cv_data)
     if not seen:
         return ""
 
@@ -112,13 +117,14 @@ async def my_cvs_page(request: Request):
     if wizard_id := request.state.session.get("attempt_id"):
         attempt_ids.append(wizard_id)
 
+    pii = request.state.session.get("pii") or {}
     async with async_session() as db:
         cvs = []
         if user_id:
-            cvs = await list_saved_cvs(db, user_id=user_id)
+            cvs = await list_saved_cvs(db, user_id=user_id, pii=pii)
         # Also fetch session-based CVs (anonymous users)
         for aid in attempt_ids:
-            session_cvs = await list_saved_cvs(db, attempt_id=aid)
+            session_cvs = await list_saved_cvs(db, attempt_id=aid, pii=pii)
             existing_ids = {c.id for c in cvs}
             for cv in session_cvs:
                 if cv.id not in existing_ids:
@@ -127,11 +133,28 @@ async def my_cvs_page(request: Request):
         # Sort by created_at descending
         cvs.sort(key=lambda c: c.created_at, reverse=True)
 
+    # Flag any CV that still carries unresolved tokens, starter sentinels,
+    # or an empty contact triple — surfaced as a card badge in the template.
+    cv_status: dict[str, list[str]] = {}
+    for cv in cvs:
+        try:
+            data = json.loads(cv.cv_data_json) if cv.cv_data_json else {}
+        except (json.JSONDecodeError, TypeError):
+            data = {}
+        # Use cv_data_json itself as the "rendered" haystack — it carries the
+        # same starter strings and tokens we want to detect, without paying
+        # for a full template render per card.
+        haystack = cv.cv_data_json or ""
+        missing = _detect_missing_fields(haystack, data)
+        if missing:
+            cv_status[cv.id] = missing
+
     return templates.TemplateResponse(
         "my_cvs.html",
         {
             "request": request,
             "saved_cvs": cvs,
+            "cv_status": cv_status,
         },
     )
 
