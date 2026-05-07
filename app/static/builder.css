@@ -221,7 +221,10 @@
 /* Hide the photo entirely when region doesn't want one */
 .sheet[data-photo="off"] .sheet-photo { display: none; }
 
-/* Add right-side padding to contact block so name doesn't overlap photo */
+/* Reserve right-side space in the header so the photo never overlaps text.
+ * Default photo sits top-right (96px wide) + 64px sheet padding = 120px reserve. */
+.sheet[data-photo="on"] .name,
+.sheet[data-photo="on"] .role,
 .sheet[data-photo="on"] .contact { padding-right: 120px; }
 
 /* Per-template overrides */
@@ -231,11 +234,15 @@
   right: auto;
   transform: translateX(-50%);
 }
+/* Classic centers the photo above the header, so undo right-padding and push
+ * the contact zone down past the photo (96px photo + 14px gap = 110px). */
+.sheet[data-template="classic"][data-photo="on"] .name,
+.sheet[data-template="classic"][data-photo="on"] .role,
 .sheet[data-template="classic"][data-photo="on"] .contact {
   padding-right: 0;
-  padding-top: 110px;
   text-align: center;
 }
+.sheet[data-template="classic"][data-photo="on"] .name { padding-top: 110px; }
 .sheet[data-template="editorial"] .sheet-photo {
   top: 24px;
   right: 24px;
@@ -302,6 +309,7 @@
   resize: none;
   field-sizing: content; /* progressive enhancement */
   box-sizing: border-box;
+  text-align: inherit; /* respect template-driven alignment on the wrapper */
 }
 .sheet input.inline-input:focus,
 .sheet textarea.inline-input:focus {
