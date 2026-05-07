@@ -92,43 +92,61 @@
 }
 .left-rail .see-all:hover { text-decoration: underline; }
 
-/* Template picker pagination — small prev/next under the rail grid. */
+/* Template picker pagination — sits flush under the 2-col thumbnail grid.
+ * Prev arrow pinned left, label centered, next arrow pinned right, so it
+ * reads as a self-contained control band rather than floating buttons. */
 .tmpl-pager {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 8px;
   margin-top: 10px;
+  padding: 4px 4px;
+  background: var(--paper-sunk, rgba(0, 0, 0, .025));
+  border: 1px solid var(--rule);
+  border-radius: 999px;
 }
 .tmpl-pager-arrow {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  background: transparent;
+  background: var(--paper, #fbf7ee);
   border: 1px solid var(--rule);
-  border-radius: 6px;
+  border-radius: 999px;
   color: var(--ink-2);
   cursor: pointer;
-  transition: color .12s, border-color .12s, background .12s;
+  transition: color .12s, border-color .12s, background .12s, transform .12s;
 }
 .tmpl-pager-arrow:hover:not(:disabled) {
-  color: var(--ink-1);
-  border-color: var(--ink-3);
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #fff;
+}
+.tmpl-pager-arrow:active:not(:disabled) {
+  transform: scale(.94);
+}
+.tmpl-pager-arrow:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .tmpl-pager-arrow:disabled {
-  opacity: .35;
+  opacity: .3;
   cursor: not-allowed;
+  background: transparent;
 }
+.tmpl-pager-arrow svg { display: block; }
 .tmpl-pager-label {
+  flex: 1;
+  text-align: center;
   font-family: var(--mono);
   font-size: 11px;
-  letter-spacing: .06em;
-  color: var(--ink-3);
-  min-width: 36px;
-  text-align: center;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: var(--ink-2);
+  user-select: none;
 }
 
 /* Vault card */
