@@ -89,17 +89,42 @@
         <input type="hidden" name="age_confirmed" value="1">
         {% endif %}
 
-        {% call form_group("Full Name", hint="Required — your name is replaced with a placeholder before your CV is sent to AI, and restored in the final output. This keeps your identity private during processing.", required=true) %}
-            {{ text_input("full_name", placeholder="e.g. Jane Doe", value=attempt.get('full_name', ''), required=true) }}
-        {% endcall %}
+        {% set _identity_full_name = (attempt.get('full_name') or '')|trim %}
+        {% set _identity_email = (attempt.get('email') or '')|trim %}
+        {% set _identity_phone = (attempt.get('phone') or '')|trim %}
+        {% set identity_complete = _identity_full_name and _identity_email and _identity_phone %}
 
-        {% call form_group("Contact Email", hint="The email address to appear on your CV — can differ from your login email.", optional=true) %}
-            {{ text_input("email", type="email", placeholder="e.g. jane@example.com", value=attempt.get('email', '')) }}
-        {% endcall %}
+        <details class="identity-collapse"{% if not identity_complete %} open{% endif %}>
+            <summary class="identity-collapse-summary" aria-label="Toggle identity & contact fields">
+                {% if identity_complete %}
+                    <span class="identity-collapse-preview">
+                        <strong>{{ _identity_full_name }}</strong>
+                        <span class="identity-collapse-meta">{{ _identity_email }} &middot; {{ _identity_phone }}</span>
+                    </span>
+                    <span class="identity-collapse-cue">Open if you need to edit something</span>
+                {% else %}
+                    <span class="identity-collapse-preview">
+                        <strong>Identity &amp; contact</strong>
+                        <span class="identity-collapse-meta">A few details we'll print on your CV header</span>
+                    </span>
+                    <span class="identity-collapse-cue">Open to fill in</span>
+                {% endif %}
+            </summary>
 
-        {% call form_group("Phone Number", hint="Include country code, e.g. +61 400 123 456.", optional=true) %}
-            {{ phone_input("phone", value=attempt.get('phone', ''), placeholder="+61 400 123 456") }}
-        {% endcall %}
+            <div class="identity-collapse-body">
+                {% call form_group("Full Name", hint="Required — your name is replaced with a placeholder before your CV is sent to AI, and restored in the final output. This keeps your identity private during processing.", required=true) %}
+                    {{ text_input("full_name", placeholder="e.g. Jane Doe", value=attempt.get('full_name', ''), required=true) }}
+                {% endcall %}
+
+                {% call form_group("Contact Email", hint="The email address to appear on your CV — can differ from your login email.", optional=true) %}
+                    {{ text_input("email", type="email", placeholder="e.g. jane@example.com", value=attempt.get('email', '')) }}
+                {% endcall %}
+
+                {% call form_group("Phone Number", hint="Include country code, e.g. +61 400 123 456.", optional=true) %}
+                    {{ phone_input("phone", value=attempt.get('phone', ''), placeholder="+61 400 123 456") }}
+                {% endcall %}
+            </div>
+        </details>
     </div>
 
     {# ── Wavy divider ─────────────────────────────────────────── #}
@@ -251,7 +276,7 @@
         {% endif %}
 
         {% if fields.references %}
-        {% call form_group("References", hint=region_config.name ~ " expects references on the CV. Add 2-3 professional referees — this is something AI cannot fabricate.") %}
+        {% call form_group("References", hint=region_config.name ~ " expects references on the CV. Add 2-3 professional referees — this is something AI cannot fabricate. Each reference needs at least one contact method (email or phone).") %}
             {% set refs = attempt.get('references', []) %}
             <div id="references-list">
                 {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}

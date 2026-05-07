@@ -10,6 +10,7 @@
   <nav class="nav">
     <a href="/dashboard" {% if request.url.path == '/dashboard' or request.url.path == '/app' %}class="active"{% endif %}>Dashboard</a>
     <a href="/my-cvs"    {% if '/my-cvs' in request.url.path %}class="active"{% endif %}>My CVs</a>
+    <a href="/wizard"    {% if '/wizard' in request.url.path %}class="active"{% endif %}>Tailor to a job</a>
     <a href="/builder"   {% if '/builder' in request.url.path %}class="active"{% endif %}>Builder</a>
   </nav>
 

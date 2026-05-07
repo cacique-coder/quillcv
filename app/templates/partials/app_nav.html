@@ -1,6 +1,6 @@
 <nav class="app-nav">
     <a href="/profile" class="app-nav-link {% if '/profile' in request.url.path %}app-nav-link--active{% endif %}">Profile</a>
-    <a href="/builder" class="app-nav-link {% if '/builder' in request.url.path %}app-nav-link--active{% endif %}">CV Builder</a>
-    <a href="/app" class="app-nav-link {% if request.url.path == '/app' %}app-nav-link--active{% endif %}">Generate CV</a>
+    <a href="/wizard" class="app-nav-link {% if '/wizard' in request.url.path %}app-nav-link--active{% endif %}">Tailor to a job</a>
+    <a href="/builder" class="app-nav-link {% if '/builder' in request.url.path %}app-nav-link--active{% endif %}">Builder</a>
     <a href="/my-cvs" class="app-nav-link {% if request.url.path == '/my-cvs' %}app-nav-link--active{% endif %}">My CVs</a>
 </nav>
