@@ -18,11 +18,6 @@
 {% block topbar_actions %}
 <span class="autosave"><span class="dot"></span> Saved</span>
 <button type="button" class="btn btn-sm"
-        hx-post="/builder/preview"
-        hx-include="#builder-form"
-        hx-target="#builder-preview"
-        hx-swap="innerHTML">Preview</button>
-<button type="button" class="btn btn-sm"
         hx-post="/builder/save"
         hx-include="#builder-form, #save-label-input, #save-job-title-input"
         hx-target="#save-result"

@@ -111,6 +111,12 @@ def _get_or_create_builder(request: Request) -> dict:
 async def builder_page(request: Request):
     """Main builder page with the form."""
     attempt = _get_or_create_builder(request)
+    # /builder is the "new CV" entry point. If a prior /builder/edit/{id}
+    # session left editing_cv_id on the reused attempt, save would try to
+    # UPDATE that (possibly deleted) row and surface "CV not found".
+    if attempt.get("editing_cv_id"):
+        update_attempt(attempt["id"], editing_cv_id=None)
+        attempt = get_attempt(attempt["id"])
     cv_data = cv_data_from_attempt(attempt)
 
     # Pre-fill from PII vault when builder fields are empty
