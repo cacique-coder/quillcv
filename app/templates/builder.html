@@ -103,11 +103,31 @@
       'federal':    {'bg': '#eef0f6', 'center': false},
       'minimal':    {'bg': '#fbf7ee', 'center': false},
     } %}
+    {# Build the chip row from the actual category mix in template_options. #}
+    {% set ns = namespace(counts={}) %}
+    {% for _tid, _tname, tcat in template_options %}
+      {% set _ = ns.counts.update({tcat: ns.counts.get(tcat, 0) + 1}) %}
+    {% endfor %}
+    {% set cat_order = ['universal', 'industry', 'specialty', 'region'] %}
+    {% set cat_labels = {'universal': 'Universal', 'industry': 'Industry', 'specialty': 'Specialty', 'region': 'Regional'} %}
+    <div class="tmpl-filter" role="tablist" aria-label="Filter templates by category">
+      <button type="button" class="tmpl-chip on" data-cat="all" role="tab" aria-selected="true"
+              onclick="filterTemplates('all', this)">All
+        <span class="tmpl-chip-count">{{ template_options|length }}</span>
+      </button>
+      {% for cat in cat_order if ns.counts.get(cat) %}
+      <button type="button" class="tmpl-chip" data-cat="{{ cat }}" role="tab" aria-selected="false"
+              onclick="filterTemplates('{{ cat }}', this)">{{ cat_labels[cat] }}
+        <span class="tmpl-chip-count">{{ ns.counts[cat] }}</span>
+      </button>
+      {% endfor %}
+    </div>
     <div class="tmpl-pick" id="tmpl-pick">
-      {% for tid, tname in template_options %}
+      {% for tid, tname, tcat in template_options %}
       {% set v = tmpl_visuals.get(tid, {'bg': '#fbf7ee', 'center': false}) %}
       <div class="t {% if tid == selected_template %}on{% endif %}"
            data-tmpl="{{ tid }}"
+           data-cat="{{ tcat }}"
            style="background:{{ v.bg }}"
            onclick="selectTemplate('{{ tid }}')"
            title="{{ tname }}">
@@ -119,6 +139,7 @@
         <span class="lbl">{{ tname }}</span>
       </div>
       {% endfor %}
+      <div class="tmpl-empty" id="tmpl-empty" hidden>No templates in this category.</div>
     </div>
     <a href="/demo" class="see-all">Preview full size →</a>
 
@@ -736,6 +757,28 @@ function syncDateHidden(i) {
   if (start && hidden) {
     hidden.value = start.value + (end && end.value ? ' – ' + end.value : '');
   }
+}
+
+/* ── Template category filter ──────────────────────────────────
+ * Hides .t thumbnails whose data-cat doesn't match the chosen chip.
+ * 'all' shows everything. Empty state shows when nothing matches. */
+function filterTemplates(cat, chipEl) {
+  document.querySelectorAll('.tmpl-chip').forEach(function(c) {
+    var on = c === chipEl;
+    c.classList.toggle('on', on);
+    c.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  var visible = 0;
+  document.querySelectorAll('#tmpl-pick .t').forEach(function(t) {
+    var match = (cat === 'all') || (t.dataset.cat === cat);
+    t.hidden = !match;
+    if (match) visible++;
+  });
+  var empty = document.getElementById('tmpl-empty');
+  if (empty) empty.hidden = visible !== 0;
+  // Reset scroll so the user sees the top of the filtered set.
+  var grid = document.getElementById('tmpl-pick');
+  if (grid) grid.scrollTop = 0;
 }
 
 /* ── Template picker ── */

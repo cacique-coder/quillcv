@@ -121,7 +121,7 @@ async def builder_page(request: Request):
     region = attempt.get("builder_data", {}).get("region", "US")
     template_id = attempt.get("builder_data", {}).get("template_id", "modern")
 
-    template_options = [(t.id, t.name) for t in list_templates()]
+    template_options = [(t.id, t.name, t.category) for t in list_templates()]
     region_options = [(r.code, f"{r.flag} {r.name}") for r in list_regions()]
     region_fields = region_fields_map()
 
@@ -195,7 +195,7 @@ async def builder_edit(cv_id: str, request: Request):
     region = saved.region
     template_id = saved.template_id
 
-    template_options = [(t.id, t.name) for t in list_templates()]
+    template_options = [(t.id, t.name, t.category) for t in list_templates()]
     region_options = [(r.code, f"{r.flag} {r.name}") for r in list_regions()]
     region_fields = region_fields_map()
 

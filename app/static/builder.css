@@ -53,6 +53,49 @@
 .left-rail .grp .row.on { background: var(--paper); color: var(--ink); }
 .left-rail .grp .row .drag { color: var(--ink-4); margin-left: auto; cursor: grab; }
 
+/* Template category filter chips — sit above the picker grid. */
+.tmpl-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 8px;
+}
+.tmpl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .03em;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.tmpl-chip:hover { color: var(--ink-1); border-color: var(--ink-3); }
+.tmpl-chip.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.tmpl-chip-count {
+  font-size: 9px;
+  opacity: .7;
+}
+.tmpl-chip.on .tmpl-chip-count { opacity: .85; }
+
+.tmpl-empty {
+  grid-column: 1 / -1;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  text-align: center;
+  padding: 16px 8px;
+}
+
 /* Template picker */
 .tmpl-pick {
   display: grid;
