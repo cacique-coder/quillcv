@@ -142,21 +142,24 @@
    Usage: {{ wizard_nav(back_step=1, next_label="Continue", loading_text="Analyzing...") }}
    Pass back_step=0 for no back button (step 1).
 #}
-{% macro wizard_nav(back_step=0, next_label="Continue", next_type="submit", loading_text="", hx_indicator="") %}
-<div class="panel-actions">
+{% macro wizard_nav(back_step=0, next_label="Continue →", next_type="submit", loading_text="", hx_indicator="", step=0, total_steps=5) %}
+<div class="wiz-footer">
     {% if back_step > 0 %}
-    <button type="button" class="btn-back"
-            hx-get="/wizard/step/{{ back_step }}" hx-target="#wizard-container" hx-swap="innerHTML">Back</button>
+    <button type="button" class="btn btn-ghost btn-sm"
+            hx-get="/wizard/step/{{ back_step }}" hx-target="#wizard-container" hx-swap="innerHTML">← Back</button>
     {% else %}
     <span></span>
     {% endif %}
-    <button type="{{ next_type }}" class="btn-next"
-            {% if loading_text %}
-            hx-disabled-elt="this"
-            hx-on::before-request="this.innerHTML='{{ loading_text }}'; this.classList.add('btn-generating');"
-            {% endif %}>
-        {{ next_label }}
-    </button>
+    {% if step > 0 %}<span class="step-counter">Step {{ step }} of {{ total_steps }}</span>{% endif %}
+    <div class="right">
+        <button type="{{ next_type }}" class="btn btn-accent btn-sm"
+                {% if loading_text %}
+                hx-disabled-elt="this"
+                hx-on::before-request="this.innerHTML='{{ loading_text }}'; this.classList.add('btn-generating');"
+                {% endif %}>
+            {{ next_label }}
+        </button>
+    </div>
 </div>
 {% if hx_indicator %}
 <div class="ai-loading-hint htmx-indicator" id="{{ hx_indicator }}">
@@ -276,4 +279,34 @@
         {{ phone_input("ref_phone_" ~ index, value=ref.get('phone', '') if ref else '', placeholder="+1 (555) 123-4567") }}
     </div>
 </div>
+{% endmacro %}
+
+
+{# ── Region Warnings ──────────────────────────────────────────────
+   Render region-convention warnings filtered by one or more fields.
+
+   Usage:
+     {{ region_warnings(warnings, "photo") }}
+     {{ region_warnings(warnings, ["dob", "marital_status", "nationality"]) }}
+     {{ region_warnings(warnings) }}   # all warnings, unfiltered
+
+   Each warning is a dict with keys: severity ("warning"|"info"),
+   field (str), and message (str). Style uses tokens via
+   .region-warning / .region-warning--info in components.css.
+#}
+{% macro region_warnings(warnings, fields=None) %}
+{% if warnings %}
+{% set _fields = ([fields] if fields is string else fields) %}
+{% set filtered = warnings if _fields is none else warnings | selectattr("field", "in", _fields) | list %}
+{% if filtered %}
+<div class="region-warning-list">
+    {% for w in filtered %}
+    <div class="region-warning region-warning--{{ w.severity }}" role="status">
+        <span class="region-warning__icon" aria-hidden="true"></span>
+        <div class="region-warning__body">{{ w.message }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endif %}
 {% endmacro %}

@@ -1,9 +1,38 @@
 {% set steps = [
-    (1, "i", "Country"),
+    (1, "i", "Region"),
     (2, "ii", "Details"),
-    (3, "iii", "Documents"),
-    (4, "iv", "Generate"),
+    (3, "iii", "Job & CV"),
+    (4, "iv", "Template"),
+    (5, "v", "Generate"),
 ] %}
+
+{# Wizard header — shown from step 3+ when job or region info is available #}
+{% if step >= 3 and (attempt is defined and attempt) %}
+<div class="wiz-head">
+    <div>
+        <div class="overline">✦ Per-job tailoring &middot; 1 credit</div>
+        {% if attempt.get('job_description') %}
+        <h1>Tailoring your CV for <em>{{ region_config.flag if region_config is defined else "" }} {{ (attempt.get('job_description') or '')|truncate(50, killwords=true, end='…') }}</em></h1>
+        {% else %}
+        <h1>Tailor your CV <em>with AI</em></h1>
+        {% endif %}
+    </div>
+    {% if cv_filename is defined and cv_filename %}
+    <div class="wiz-head-meta">
+        <div class="overline">Based on</div>
+        <div class="based-on">{{ cv_filename }}</div>
+    </div>
+    {% endif %}
+</div>
+{% elif step == 1 %}
+<div class="wiz-head">
+    <div>
+        <div class="overline">✦ Per-job tailoring &middot; 1 credit</div>
+        <h1>Tailor your CV <em>with AI</em></h1>
+    </div>
+</div>
+{% endif %}
+
 <div class="wiz-tabs">
     {% for num, roman, label in steps %}
     {% set state = "done" if step > num else ("on" if step == num else "") %}

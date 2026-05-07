@@ -1,4 +1,5 @@
-{% set step = 4 %}
+{% from "macros/ui.html" import region_warnings %}
+{% set step = 5 %}
 {% include "partials/wizard/progress.html" %}
 
 <div class="wiz-body">
@@ -50,6 +51,9 @@
             {% endif %}
         </div>
 
+        {# Region-convention warnings (non-blocking — informational nudges). #}
+        {{ region_warnings(warnings|default([])) }}
+
         <div class="review-note">
             <p>Your uploaded CV will be parsed and combined with your personal details to generate an ATS-optimized CV for {{ region_config.name }}. No need to re-upload — your documents are saved.</p>
         </div>
@@ -81,13 +85,25 @@
         </div>
         {% endif %}
 
-        <div class="panel-actions panel-actions-center">
-            <button type="button" class="btn-back"
-                    hx-get="/wizard/step/3" hx-target="#wizard-container" hx-swap="innerHTML">Back</button>
-            <button type="button" class="btn-generate" id="btn-generate"
-                    onclick="startGenerate()" {% if pii_incomplete %}disabled title="Complete your profile first"{% endif %}>
-                Generate CV
-            </button>
+        {# Cover letter upsell — shown when not blocked by PII #}
+        {% if not pii_incomplete %}
+        <div class="cl-upsell">
+            <div class="cl-upsell-label">✦ Recommended &mdash; included free</div>
+            <h4>Pair it with a tailored cover letter</h4>
+            <p>Same job, same voice &mdash; drafted from your CV in about 30 seconds.</p>
+        </div>
+        {% endif %}
+
+        <div class="wiz-footer" style="margin-top:20px;padding-top:18px;border-top:1px solid var(--rule,var(--border));">
+            <button type="button" class="btn btn-ghost btn-sm"
+                    hx-get="/wizard/step/4" hx-target="#wizard-container" hx-swap="innerHTML">← Back</button>
+            <span class="step-counter">Step 5 of 5</span>
+            <div class="right">
+                <button type="button" class="btn btn-accent" id="btn-generate"
+                        onclick="startGenerate()" {% if pii_incomplete %}disabled title="Complete your profile first"{% endif %}>
+                    Generate CV ✦
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -106,6 +122,14 @@
         <div class="meta">{{ attempt.get('job_description')[:80] | truncate(80, killwords=true, end='…') }}</div>
         {% endif %}
     </div>
+    {% if job_keywords %}
+    <h4>Keywords detected</h4>
+    <div class="kw-list">
+        {% for kw in job_keywords %}
+        <span class="kw">{{ kw }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% endif %}
     <h4>What happens next</h4>
     <p class="aside-tip">We'll parse your CV, match keywords from the job posting, and generate an ATS-optimized version. You'll see a live progress stream as each section is crafted.</p>

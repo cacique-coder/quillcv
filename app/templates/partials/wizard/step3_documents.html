@@ -1,4 +1,4 @@
-{% from "macros/ui.html" import form_group, file_input, text_area, section_divider, wizard_nav %}
+{% from "macros/ui.html" import form_group, file_input, text_area, section_divider, wizard_nav, region_warnings %}
 {% set step = 3 %}
 {% include "partials/wizard/progress.html" %}
 
@@ -14,6 +14,9 @@
     {% if error %}
     <div class="error-banner" role="alert">{{ error }}</div>
     {% endif %}
+
+    {# Region-convention warnings inherited from step 2 (photo/DOB/etc.). #}
+    {{ region_warnings(warnings|default([])) }}
 
     {% call form_group("Your CV / Resume", hint="PDF, DOCX, or TXT — this is your primary document", required=true) %}
         <div id="cv-file-section">
@@ -66,7 +69,7 @@
         {{ text_area("job_description", rows=10, placeholder="Paste the job description here...", value=attempt.get('job_description', ''), required=true) }}
     {% endcall %}
 
-    {{ wizard_nav(back_step=2, next_label="Continue", loading_text="Analyzing with AI...", hx_indicator="step3-loader") }}
+    {{ wizard_nav(back_step=2, next_label="Continue →", loading_text="Saving…", hx_indicator="step3-loader", step=3, total_steps=5) }}
 </form>
 
 <aside class="wiz-aside">

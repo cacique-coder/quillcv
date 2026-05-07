@@ -296,26 +296,63 @@
             <div>
                 <h3 class="wizard-section-title">Your Professional Voice</h3>
                 <p class="wizard-section-desc">
-                    These optional fields help AI capture <em>your</em> voice — not generic corporate speak.
-                    The more you share, the more authentic your CV will sound. Think of it as giving the AI a coffee chat about who you really are.
+                    <strong>This is what makes your CV yours.</strong> Two candidates with the same skills land different jobs because of how they sound. The AI uses what you share here to write in your voice — not generic corporate speak. Pick a starter pill below and rewrite it to be true.
                 </p>
             </div>
         </div>
 
+        <div class="voice-emphasis">
+            &#10033; Optional, but the candidates who fill this in get noticeably better CVs.
+        </div>
+
+        {% set self_description_pills = [
+            ('Pragmatic builder', "I'm a pragmatic builder who turns ambiguous requirements into shipped products. Colleagues describe me as reliable, calm under pressure, and the one who quietly unblocks the team."),
+            ('Quiet leader', "I lead by example, not by volume. I'm the engineer teammates DM when they're stuck, and I take pride in mentoring juniors into confident shippers."),
+            ('Detail-driven', "I'm meticulous about quality and care deeply about the craft. I write thorough tests, review carefully, and would rather ship something solid than something fast."),
+            ('Systems thinker', "I love understanding how things connect — untangling complex domains, simplifying architecture, and writing code that's still readable in two years.")
+        ] %}
+        {% set values_pills = [
+            ('Quality first', "Code quality over speed, but never at the cost of momentum. I value honest reviews, thorough testing, and simplicity over cleverness."),
+            ('User-centred', "I build for the person on the other end of the screen. I value clear UX, accessible defaults, and shipping what genuinely helps."),
+            ('Open & honest', "Transparent communication, generous credit-sharing, and the willingness to admit when I'm wrong. I value a team that can disagree well."),
+            ('Always learning', "Continuous learning, pairing with people smarter than me, and reading code outside my stack. I'd rather learn than be right.")
+        ] %}
+        {% set offer_appeal_pills = [
+            ('The mission', "I care about the problem you're solving and the impact your product has. I want to work somewhere where the 'why' is clear."),
+            ('Technical challenge', "Distributed systems at scale, hard performance constraints, the kind of problems where the obvious answer doesn't work. I want to keep growing as an engineer."),
+            ('Team & culture', "I want to work with people who care about craft, give honest reviews, and ship together. The way the team works matters more than the perks."),
+            ('Career growth', "The chance to grow into a senior or tech-lead role, take on bigger architectural decisions, and mentor others as I'm mentored.")
+        ] %}
+
         {% call form_group("How would you describe yourself as a professional?", hint="Your working style, strengths, what colleagues say about you.", optional=true) %}
+            <div class="voice-pills" data-target="self_description">
+                {% for label, text in self_description_pills %}
+                <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                {% endfor %}
+            </div>
             {{ text_area("self_description", rows=3, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems...", value=attempt.get('self_description', '')) }}
         {% endcall %}
 
         {% call form_group("What are your professional values?", hint="What matters to you in how you work and what you build.", optional=true) %}
+            <div class="voice-pills" data-target="values">
+                {% for label, text in values_pills %}
+                <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                {% endfor %}
+            </div>
             {{ text_area("values", rows=3, placeholder="e.g. Code quality, user-centric design, continuous learning, transparent communication...", value=attempt.get('values', '')) }}
         {% endcall %}
 
         {% call form_group("What attracts you to this role?", hint="What excites you about the job? This helps align the CV's tone with your genuine motivation.", optional=true) %}
+            <div class="voice-pills" data-target="offer_appeal">
+                {% for label, text in offer_appeal_pills %}
+                <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                {% endfor %}
+            </div>
             {{ text_area("offer_appeal", rows=3, placeholder="e.g. The chance to work on distributed systems at scale, the team's open-source culture...", value=attempt.get('offer_appeal', '')) }}
         {% endcall %}
     </div>
 
-    {{ wizard_nav(back_step=1, next_label="Continue") }}
+    {{ wizard_nav(back_step=1, next_label="Continue →", step=2, total_steps=5) }}
 
     {% if dev_mode %}
     <button type="button" class="btn-dev-fill" onclick="devFillStep2()">Dev: Fill form</button>
@@ -355,6 +392,8 @@
     }
     </script>
     {% endif %}
+
+    <script src="/static/voice_pills.js" defer></script>
 </form>
 
 <aside class="wiz-aside">

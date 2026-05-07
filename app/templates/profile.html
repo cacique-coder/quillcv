@@ -143,7 +143,11 @@
         </div>
 
         {# ── Section 4: Professional Voice ── #}
-        <section class="profile-section" aria-labelledby="section-voice-title">
+        <section class="profile-section profile-section--voice" aria-labelledby="section-voice-title">
+            <div class="voice-kicker">
+                <span class="voice-kicker-dot"></span>
+                The Difference-Maker
+            </div>
             <div class="wizard-section-header">
                 <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
                     <path d="M18 3 C26 2, 33 9, 33 18 C32 27, 25 34, 18 33 C11 34, 3 27, 3 18 C4 9, 11 2, 18 3 Z"
@@ -153,15 +157,42 @@
                 </svg>
                 <div>
                     <h3 class="wizard-section-title" id="section-voice-title">Professional Voice</h3>
-                    <p class="wizard-section-desc">Help AI capture <em>your</em> voice — not generic corporate speak. The more you share, the more authentic your CV will sound.</p>
+                    <p class="wizard-section-desc"><strong>This is what makes your CV yours.</strong> Two candidates with the same skills land different jobs because of how they sound. Pick a starter pill below and rewrite it to be true.</p>
                 </div>
             </div>
 
+            <div class="voice-emphasis">
+                &#10033; Optional, but profiles that fill this in get noticeably better CVs every time.
+            </div>
+
+            {% set self_description_pills = [
+                ('Pragmatic builder', "I'm a pragmatic builder who turns ambiguous requirements into shipped products. Colleagues describe me as reliable, calm under pressure, and the one who quietly unblocks the team."),
+                ('Quiet leader', "I lead by example, not by volume. I'm the engineer teammates DM when they're stuck, and I take pride in mentoring juniors into confident shippers."),
+                ('Detail-driven', "I'm meticulous about quality and care deeply about the craft. I write thorough tests, review carefully, and would rather ship something solid than something fast."),
+                ('Systems thinker', "I love understanding how things connect — untangling complex domains, simplifying architecture, and writing code that's still readable in two years.")
+            ] %}
+            {% set values_pills = [
+                ('Quality first', "Code quality over speed, but never at the cost of momentum. I value honest reviews, thorough testing, and simplicity over cleverness."),
+                ('User-centred', "I build for the person on the other end of the screen. I value clear UX, accessible defaults, and shipping what genuinely helps."),
+                ('Open & honest', "Transparent communication, generous credit-sharing, and the willingness to admit when I'm wrong. I value a team that can disagree well."),
+                ('Always learning', "Continuous learning, pairing with people smarter than me, and reading code outside my stack. I'd rather learn than be right.")
+            ] %}
+
             {% call form_group("How would you describe yourself as a professional?", hint="Your working style, strengths, what colleagues say about you.", optional=true) %}
+                <div class="voice-pills" data-target="self_description">
+                    {% for label, text in self_description_pills %}
+                    <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                    {% endfor %}
+                </div>
                 {{ text_area("self_description", rows=3, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems…", value=pii.get('self_description', '')) }}
             {% endcall %}
 
             {% call form_group("What are your professional values?", hint="What matters to you in how you work and what you build.", optional=true) %}
+                <div class="voice-pills" data-target="values">
+                    {% for label, text in values_pills %}
+                    <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                    {% endfor %}
+                </div>
                 {{ text_area("values", rows=3, placeholder="e.g. Code quality, user-centric design, continuous learning, transparent communication…", value=pii.get('values', '')) }}
             {% endcall %}
         </section>
@@ -260,4 +291,5 @@
     </form>
     </div>{# /profile-content #}
 </div>
+<script src="/static/voice_pills.js" defer></script>
 {% endblock %}

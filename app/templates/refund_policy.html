@@ -1,0 +1,55 @@
+{% extends "blog_base.html" %}
+
+{% block title %}Refund Policy — QuillCV{% endblock %}
+{% block meta_description %}QuillCV refund policy — full refund within 30 days if you've used 3 credits or fewer; pro-rated otherwise.{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+    <div class="legal-wrap">
+        <h1>Refund Policy</h1>
+        <p class="legal-updated">Last updated: 4 May 2026</p>
+
+        <h2>1. The short version</h2>
+        <p>If you've used 3 credits or fewer, email us within 30 days of purchase and we'll refund the full amount, no questions. If you've used more than 3 credits, we'll pro-rate the refund based on what's left.</p>
+
+        <h2>2. How credits work</h2>
+        <ul>
+            <li>Credit packs are <strong>one-time purchases</strong> processed by Stripe.</li>
+            <li>Credits never expire — they sit in your account until you use them or close your account.</li>
+            <li>One credit = one CV generation. Refinements during alpha don't cost credits.</li>
+            <li>Templates are free. Credits only apply to AI-generated CVs.</li>
+        </ul>
+
+        <h2>3. Refund window</h2>
+        <ul>
+            <li><strong>Within 30 days, ≤ 3 credits used</strong> — full refund of the purchase, no questions asked.</li>
+            <li><strong>Within 30 days, &gt; 3 credits used</strong> — pro-rated refund based on credits remaining. We deduct the per-credit rate of your pack for each credit used and refund the balance.</li>
+            <li><strong>After 30 days</strong> — refunds are at our discretion. Reach out anyway if something went wrong; we'd rather sort it out than have an unhappy user.</li>
+        </ul>
+
+        <h2>4. How to request a refund</h2>
+        <p>Email <a href="mailto:daniel@2rk.co">daniel@2rk.co</a> from the address on your QuillCV account. Include:</p>
+        <ul>
+            <li>The email address tied to your account.</li>
+            <li>The approximate purchase date (or the Stripe receipt number if you have it).</li>
+            <li>A short note on why you're asking — optional, but it helps us improve the product.</li>
+        </ul>
+        <p>Refunds are issued back to the original payment method via Stripe and typically appear within 5–10 business days, depending on your bank.</p>
+
+        <h2>5. Failed or declined payments</h2>
+        <p>If your payment was declined or failed at checkout, you weren't charged — you don't need a refund. If your bank shows a pending authorization that didn't complete, it will drop off automatically (usually within a week).</p>
+
+        <h2>6. Chargebacks</h2>
+        <p>If you dispute a charge through your card issuer instead of contacting us, your account is flagged and any unused credits are debited while the dispute is investigated. We'd much rather hear from you directly — most issues are resolved by email in a day or two.</p>
+
+        <h2>7. Subscriptions</h2>
+        <p>QuillCV does not currently offer subscriptions — all plans are one-time credit packs. If we introduce subscriptions in future, refunds will be pro-rated for the current billing period only. We don't refund past periods. Annual plans (if offered) will be refundable on a pro-rated basis within the first 30 days.</p>
+
+        <h2>8. Changes to this policy</h2>
+        <p>We may update this policy. Existing purchases are governed by the policy in effect at the time of purchase.</p>
+
+        <h2>9. Contact</h2>
+        <p>Refund questions: <a href="mailto:daniel@2rk.co">daniel@2rk.co</a>.</p>
+    </div>
+</section>
+{% endblock %}

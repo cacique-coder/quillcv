@@ -2,17 +2,18 @@
 {% set step = 4 %}
 {% include "partials/wizard/progress.html" %}
 
-<form class="wizard-panel active" hx-post="/wizard/step/4/save" hx-target="#wizard-container" hx-swap="innerHTML">
+<div class="wiz-body">
+<form class="wizard-panel active wiz-main" hx-post="/wizard/step/4/save" hx-target="#wizard-container" hx-swap="innerHTML">
     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
     <div class="panel-header">
-        <h2>Choose a Template</h2>
+        <h2>Pick your template</h2>
         <p class="hint">All templates are ATS-optimized. <a href="/demo">Browse full demos by country</a></p>
     </div>
 
     {% if recommendation_reason %}
     <div class="ai-recommendation">
-        <span class="ai-rec-label">AI Recommendation</span>
+        <span class="ai-rec-label">✦ AI Recommendation</span>
         <p>{{ recommendation_reason }}</p>
     </div>
     {% endif %}
@@ -22,7 +23,7 @@
     <!-- Recommended section -->
     {% if recommended %}
     <div class="template-group" data-group="recommended">
-        <h3 class="template-group-heading">Recommended for You</h3>
+        <h3 class="template-group-heading">Recommended for {{ region_config.flag }} {{ region_config.name }}</h3>
         <div class="template-grid">
             {% for tpl in templates if tpl.id in recommended %}
             {% include "partials/wizard/_template_card.html" %}
@@ -31,20 +32,8 @@
     </div>
     {% endif %}
 
-    <!-- Region-specific section -->
-    {% if grouped_templates.get('region') %}
-    <div class="template-group" data-group="region">
-        <h3 class="template-group-heading">For {{ region_config.name }}</h3>
-        <div class="template-grid">
-            {% for tpl in grouped_templates['region'] %}
-            {% include "partials/wizard/_template_card.html" %}
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
     <!-- All Templates grouped by category -->
-    {% set category_labels = {"universal": "Universal Templates", "industry": "Industry-Specific", "specialty": "Specialty Templates"} %}
+    {% set category_labels = {"universal": "All templates", "industry": "Industry-Specific", "specialty": "Specialty"} %}
     {% for cat, label in category_labels.items() %}
     {% if grouped_templates.get(cat) %}
     <div class="template-group" data-group="{{ cat }}">
@@ -61,8 +50,23 @@
     {% endif %}
     {% endfor %}
 
-    {{ wizard_nav(back_step=3, next_label="Continue") }}
+    {{ wizard_nav(back_step=3, next_label="Continue →", step=4, total_steps=5) }}
 </form>
+
+<aside class="wiz-aside">
+    <h4>Why templates matter</h4>
+    <p class="aside-tip">Template choice affects how ATS systems parse your CV. All templates here are ATS-safe — no tables, no text boxes, no images in the content area.</p>
+    {% if attempt.get('job_description') %}
+    <h4>Your job target</h4>
+    <div class="job-mini">
+        <div class="co">{{ region_config.flag }} {{ region_config.name }}</div>
+        <div class="title" style="font-size:14px;">{{ attempt.get('job_description', '')[:60] | truncate(60, killwords=true, end='…') }}</div>
+    </div>
+    {% endif %}
+    <h4>Tip</h4>
+    <p class="aside-tip">For most industries, <strong>Modern</strong> or <strong>Classic</strong> perform best. Executive suits finance and law. Tech suits engineering and product roles.</p>
+</aside>
+</div>
 
 <script>
 function toggleGroup(heading) {

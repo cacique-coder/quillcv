@@ -59,6 +59,32 @@
 
 {% block content %}
 
+{# ── Cancel / error notices ────────────────────────────────────────────
+   Rendered above the hero so they're the first thing the user sees on
+   bounce-back from a cancelled or misrouted checkout. Strings come from
+   the route handler (see _PRICING_ERROR_MESSAGES) so they're easy to
+   tweak without round-tripping through Jinja.
+#}
+{% if checkout_status == 'cancelled' %}
+  <div class="pricing-notice" role="status">
+    <div class="pricing-notice__body">
+      <strong>Checkout cancelled.</strong> Your card was not charged — no
+      payment went through. Want to try again?
+    </div>
+    {% if cancel_retry_url and request.state.user %}
+      <form method="post" action="{{ cancel_retry_url }}" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <button type="submit" class="btn btn-primary btn-sm">Retry checkout →</button>
+      </form>
+    {% endif %}
+  </div>
+{% endif %}
+{% if error_message %}
+  <div class="pricing-notice pricing-notice--error" role="alert">
+    <div class="pricing-notice__body">{{ error_message }}</div>
+  </div>
+{% endif %}
+
 {# ── Hero ─────────────────────────────────────────────────────────────── #}
 {% include "partials/components/hero.html" with context %}
 {% set hero = None %}
