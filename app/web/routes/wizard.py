@@ -10,7 +10,8 @@ from app.consent.use_cases.record_consent import (
     record_age_confirmation,
     record_consent,
 )
-from app.cv_export.adapters.template_registry import REGIONS, list_regions, list_templates, list_templates_by_category
+from app.cv_export.adapters.template_registry import REGIONS, list_regions, list_templates
+from app.cv_generation.use_cases.region_warnings import region_warnings_dicts
 from app.identity.adapters.fastapi_deps import get_current_user
 from app.infrastructure.persistence.attempt_store import (
     create_attempt,
@@ -26,6 +27,40 @@ from app.web.templates import templates
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/wizard")
+
+
+def _is_htmx(request: Request) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+async def _ensure_session_pii(request: Request) -> dict | None:
+    """Return the user's PII map, re-unlocking the vault from the DB when the
+    session cache has been pruned. Writes the result back into the session so
+    later steps don't repeat the unlock."""
+    user = await get_current_user(request)
+    if not user:
+        return None
+    from app.pii.adapters.vault import unlock_vault, unlock_vault_server_key
+
+    pii: dict | None = None
+    is_oauth = bool(getattr(user, "provider", None)) and not getattr(user, "password_hash", None)
+    async with async_session() as db:
+        if is_oauth:
+            pii = await unlock_vault_server_key(db, user_id=user.id)
+        else:
+            password = request.state.session.get("_pii_password")
+            if password:
+                pii = await unlock_vault(db, user_id=user.id, password=password)
+    if pii:
+        request.state.session["pii"] = pii
+    return pii
+
+
+def _wizard_shell(request: Request, step: int):
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "initial_step": step,
+    })
 
 
 def _region_fields(code: str) -> dict:
@@ -101,17 +136,49 @@ def _get_or_create_attempt(request: Request) -> dict:
 
 
 # ------------------------------------------------------------------
+# Wizard shell — serves the full page; step routes serve partials
+# ------------------------------------------------------------------
+
+@router.get("")
+@router.get("/")
+async def wizard_shell(request: Request):
+    attempt = _get_or_create_attempt(request)
+    step = max(1, min(5, attempt.get("step", 1)))
+    return _wizard_shell(request, step)
+
+
+# ------------------------------------------------------------------
 # Step 1: Country
 # ------------------------------------------------------------------
 
 @router.get("/step/1")
 async def step1(request: Request):
+    if not _is_htmx(request):
+        return _wizard_shell(request, 1)
     attempt = _get_or_create_attempt(request)
-    # Pre-select from PII vault country when the attempt has no region yet.
-    # Vault country codes match REGIONS keys (e.g. "AU", "US").
+
+    # Resolve the vault country. Prefer session PII; fall back to unlocking the
+    # vault from the DB when the session cache is empty (e.g. trimmed sessions
+    # or fresh tab) so the user's default country still wins on first paint.
     pii = request.state.session.get("pii") or {}
-    vault_country = pii.get("country", "")
-    selected = attempt.get("region") or (vault_country if vault_country in REGIONS else "AU")
+    if not pii.get("country"):
+        pii = await _ensure_session_pii(request) or pii
+    vault_country = (pii.get("country") or "").strip()
+    vault_country = vault_country if vault_country in REGIONS else ""
+
+    # Preserve the user's explicit choice once they've advanced past step 1
+    # (Back button on step 2 returns here). Otherwise prefer the vault country
+    # so a stale attempt left behind before the vault was set never wins.
+    attempt_region = (attempt.get("region") or "").strip()
+    has_explicit_choice = attempt_region in REGIONS and attempt.get("step", 1) >= 2
+
+    if has_explicit_choice:
+        selected = attempt_region
+    elif vault_country:
+        selected = vault_country
+    else:
+        selected = "AU"
+
     return templates.TemplateResponse("partials/wizard/step1_country.html", {
         "request": request,
         "regions": list_regions(),
@@ -135,7 +202,8 @@ async def step1_save(request: Request, region: str = Form("AU")):
 
 @router.get("/step/2")
 async def step2_get(request: Request):
-    """Navigate back to step 2 — re-fill from stored attempt."""
+    if not _is_htmx(request):
+        return _wizard_shell(request, 2)
     return await step2(request)
 
 
@@ -326,6 +394,18 @@ async def step2_save(
         return _render_error("Please enter a valid email address.")
 
     # ------------------------------------------------------------------
+    # Reference contact validation
+    # Each reference with a name must have at least one contact method
+    # (email or phone) so the employer can actually reach them.
+    # ------------------------------------------------------------------
+    for idx, ref in enumerate(references, start=1):
+        if not ((ref.get("email") or "").strip() or (ref.get("phone") or "").strip()):
+            return _render_error(
+                f"Reference {idx} ({ref.get('name')}) needs at least one contact method — add an email or phone number.",
+                {"reference_error_index": idx},
+            )
+
+    # ------------------------------------------------------------------
     # Persist consent records for authenticated users
     # ------------------------------------------------------------------
     if current_user:
@@ -427,16 +507,24 @@ async def scrape_job(request: Request, job_url: str = Form("")):
 
 @router.get("/step/3")
 async def step3_get(request: Request):
+    if not _is_htmx(request):
+        return _wizard_shell(request, 3)
     return await step3(request)
 
 
 async def step3(request: Request):
     attempt = _get_or_create_attempt(request)
     cv_filename = get_document_filename(attempt["id"], "cv_file")
+    region = attempt.get("region", "AU")
+    region_config = REGIONS.get(region, REGIONS["AU"])
+    pii = request.state.session.get("pii") or {}
+    warnings = region_warnings_dicts(attempt, pii, region)
     return templates.TemplateResponse("partials/wizard/step3_documents.html", {
         "request": request,
         "attempt": attempt,
         "cv_filename": cv_filename,
+        "region_config": region_config,
+        "warnings": warnings,
     })
 
 
@@ -448,7 +536,7 @@ async def step3_save(
     cv_text: str = Form(""),
     extra_docs: list[UploadFile] = File(None),
 ):
-    """Save step 3 (documents + job description) and move to step 4."""
+    """Save step 3 (documents + job description) and move to step 4 (template picker)."""
     attempt = _get_or_create_attempt(request)
 
     # Save CV file if provided, or fall back to pasted text
@@ -464,10 +552,16 @@ async def step3_save(
         cv_file_saved = True
 
     if not cv_file_saved and not get_document_filename(attempt["id"], "cv_file"):
+        region = attempt.get("region", "AU")
+        region_config = REGIONS.get(region, REGIONS["AU"])
+        pii = request.state.session.get("pii") or {}
+        warnings = region_warnings_dicts(attempt, pii, region)
         return templates.TemplateResponse("partials/wizard/step3_documents.html", {
             "request": request,
             "attempt": attempt,
             "cv_filename": None,
+            "region_config": region_config,
+            "warnings": warnings,
             "error": "Please upload a CV file or describe your experience before continuing.",
         })
 
@@ -479,31 +573,71 @@ async def step3_save(
                 if doc_bytes:
                     save_document(attempt["id"], f"extra_doc_{i}", doc.filename, doc_bytes)
 
-    # Auto-select template: use cached AI recommendation or region default.
     job_description = job_description or attempt.get("job_description", "")
-    region = attempt.get("region", "AU")
-    cached_rec = attempt.get("template_recommendation")
-    if cached_rec and cached_rec.get("job_hash") == _hash(job_description) and cached_rec.get("templates"):
-        template_id = cached_rec["templates"][0]
-    else:
-        region_templates = list_templates(region=region)
-        template_id = region_templates[0].id if region_templates else "modern"
-
-    update_attempt(attempt["id"], job_description=job_description, template_id=template_id, step=4)
+    update_attempt(attempt["id"], job_description=job_description, step=4)
 
     return await step4(request)
 
 
 # ------------------------------------------------------------------
-# Step 4: Review & Generate  (was step 5 — template step removed)
+# Step 4: Template picker
 # ------------------------------------------------------------------
 
 @router.get("/step/4")
 async def step4_get(request: Request):
+    if not _is_htmx(request):
+        return _wizard_shell(request, 4)
     return await step4(request)
 
 
 async def step4(request: Request):
+    attempt = _get_or_create_attempt(request)
+    region = attempt.get("region", "AU")
+    region_config = REGIONS.get(region, REGIONS["AU"])
+
+    templates_list = list_templates(region=region)
+    grouped: dict[str, list] = {}
+    for tpl in templates_list:
+        grouped.setdefault(tpl.category, []).append(tpl)
+
+    cached_rec = attempt.get("template_recommendation")
+    if cached_rec and cached_rec.get("templates"):
+        recommended = cached_rec["templates"][:3]
+        recommendation_reason = cached_rec.get("reason", "")
+    else:
+        recommended = [t.id for t in templates_list[:3]]
+        recommendation_reason = ""
+
+    return templates.TemplateResponse("partials/wizard/step4_template.html", {
+        "request": request,
+        "attempt": attempt,
+        "region_config": region_config,
+        "templates": templates_list,
+        "grouped_templates": grouped,
+        "recommended": recommended,
+        "recommendation_reason": recommendation_reason,
+    })
+
+
+@router.post("/step/4/save")
+async def step4_save(request: Request, template_id: str = Form("modern")):
+    attempt = _get_or_create_attempt(request)
+    update_attempt(attempt["id"], template_id=template_id, step=5)
+    return await step5(request)
+
+
+# ------------------------------------------------------------------
+# Step 5: Review & Generate
+# ------------------------------------------------------------------
+
+@router.get("/step/5")
+async def step5_get(request: Request):
+    if not _is_htmx(request):
+        return _wizard_shell(request, 5)
+    return await step5(request)
+
+
+async def step5(request: Request):
     attempt = _get_or_create_attempt(request)
     region = attempt.get("region", "AU")
     region_config = REGIONS.get(region, REGIONS["AU"])
@@ -513,6 +647,8 @@ async def step4(request: Request):
     pii = request.state.session.get("pii") or {}
     pii_complete, pii_missing = _check_pii_completeness(attempt, pii, region)
     pii_incomplete = not pii_complete
+    warnings = region_warnings_dicts(attempt, pii, region)
+    job_keywords = _extract_keywords(attempt.get("job_description", ""))
 
     return templates.TemplateResponse("partials/wizard/step5_review.html", {
         "request": request,
@@ -521,6 +657,8 @@ async def step4(request: Request):
         "cv_filename": cv_filename,
         "pii_incomplete": pii_incomplete,
         "pii_missing": pii_missing,
+        "warnings": warnings,
+        "job_keywords": job_keywords,
     })
 
 
@@ -542,6 +680,25 @@ async def region_summary(request: Request, code: str):
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
+
+def _extract_keywords(job_description: str, limit: int = 16) -> list[str]:
+    """Extract likely keywords/skills from a job description."""
+    import re
+    text = job_description[:3000]
+    patterns = [
+        r'\b[A-Z][a-zA-Z]+(?:\.[a-zA-Z]+)+\b',  # dotted names: Node.js
+        r'\b(?:Python|Ruby|Rails|JavaScript|TypeScript|React|Vue|Angular|Go|Rust|Java|Kotlin|Swift|PHP|C\+\+|C#|AWS|GCP|Azure|Docker|Kubernetes|PostgreSQL|MySQL|Redis|MongoDB|GraphQL|REST|API|CI/CD|TDD|Agile|Scrum|Git|Linux|DevOps|ML|AI|LLM|SaaS|B2B)\b',
+    ]
+    found: set[str] = set()
+    for p in patterns:
+        found.update(re.findall(p, text))
+    word_freq: dict[str, int] = {}
+    for w in re.findall(r'\b\w{4,}\b', text.lower()):
+        word_freq[w] = word_freq.get(w, 0) + 1
+    common = [w for w, c in sorted(word_freq.items(), key=lambda x: -x[1]) if c >= 2 and len(w) > 4][:8]
+    result = list(found)[:limit // 2] + common[:limit // 2]
+    return list(dict.fromkeys(result))[:limit]
+
 
 def _hash(text: str) -> str:
     """Quick hash for cache invalidation."""

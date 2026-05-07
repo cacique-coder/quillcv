@@ -159,6 +159,70 @@
     line-height: 1.5;
 }
 
+/* Collapsed identity & contact panel — shown when full_name, email and phone
+   are all already prefilled from the vault. The user can expand to edit. */
+.identity-collapse {
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--paper) 60%, transparent);
+    padding: 0;
+    margin-bottom: 0.5rem;
+}
+.identity-collapse[open] {
+    background: transparent;
+    border-style: solid;
+    padding-bottom: 0.25rem;
+}
+.identity-collapse-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    border-radius: var(--radius);
+}
+.identity-collapse-summary::-webkit-details-marker { display: none; }
+.identity-collapse-summary:hover { background: rgba(108, 99, 255, 0.04); }
+.identity-collapse-summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.identity-collapse-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+.identity-collapse-preview strong {
+    font-size: 0.95rem;
+    color: var(--text);
+}
+.identity-collapse-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.identity-collapse-cue {
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.identity-collapse-cue::after {
+    content: " +";
+}
+.identity-collapse[open] .identity-collapse-cue::after {
+    content: " −";
+}
+.identity-collapse-body {
+    padding: 0.5rem 1.1rem 0.25rem;
+}
+
 /* Vault pre-fill notice badge */
 .vault-prefill-notice {
     display: inline-flex;
@@ -1321,6 +1385,75 @@
 
 /* ─── Letterpress Atelier wizard layout ─────────────────────────────────────── */
 
+/* Wizard page header — shown above the step bar when job info is available */
+.wiz-head {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule, var(--border));
+}
+.wiz-head h1 {
+    font-size: 32px;
+    font-weight: 360;
+    line-height: 1.2;
+}
+.wiz-head h1 em {
+    color: var(--accent);
+    font-style: italic;
+}
+.wiz-head-meta {
+    margin-left: auto;
+    text-align: right;
+    color: var(--ink-3, var(--text-muted));
+    font-size: 13px;
+    flex-shrink: 0;
+}
+.wiz-head-meta .based-on {
+    font-family: var(--display, "Fraunces", Georgia, serif);
+    font-size: 16px;
+    color: var(--ink, var(--text));
+    margin-top: 4px;
+    font-weight: 440;
+}
+@media (max-width: 640px) {
+    .wiz-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .wiz-head h1 { font-size: 22px; }
+    .wiz-head-meta { margin-left: 0; text-align: left; }
+}
+
+/* Cover letter upsell card */
+.cl-upsell {
+    padding: 18px 20px;
+    background: var(--accent-wash, rgba(108,99,255,.08));
+    border: 1px dashed var(--accent);
+    border-radius: var(--r-3);
+    margin-top: 20px;
+}
+.cl-upsell .cl-upsell-label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+.cl-upsell h4 {
+    font-family: var(--display, "Fraunces", Georgia, serif);
+    font-size: 20px;
+    font-weight: 440;
+    margin-bottom: 6px;
+    color: var(--ink, var(--text));
+}
+.cl-upsell p {
+    font-size: 14px;
+    color: var(--ink-2, var(--text));
+    font-family: var(--serif, Georgia, serif);
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
 /* Overline utility */
 .overline {
     font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -1551,3 +1684,93 @@
     font-size: 14px;
 }
 
+/* ── Professional Voice — starter pills ─────────────────────── */
+.voice-emphasis {
+    background: rgba(212, 175, 55, .08);
+    border-left: 3px solid #d4af37;
+    padding: 8px 12px;
+    margin: 0 0 20px;
+    font-size: 13px;
+    color: var(--ink-2);
+    border-radius: 0 var(--r-2) var(--r-2) 0;
+}
+.voice-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 8px;
+}
+.voice-pill {
+    font: inherit;
+    font-size: 12px;
+    font-family: var(--mono);
+    padding: 4px 10px;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-pill);
+    color: var(--ink-3);
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.voice-pill:hover {
+    background: var(--accent-wash);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+}
+.voice-pill:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.voice-pill.is-active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+/* ── Profile page — Professional Voice section prominence ─────── */
+.profile-section--voice {
+    position: relative;
+    background: linear-gradient(180deg, var(--accent-wash) 0%, transparent 80%);
+    border-radius: var(--r-3);
+    padding: 24px 28px;
+    margin: 16px 0;
+    border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.profile-section--voice::before {
+    content: '★';
+    position: absolute;
+    top: -10px;
+    right: 16px;
+    font-size: 22px;
+    color: var(--accent);
+    background: var(--paper);
+    padding: 0 8px;
+    border-radius: var(--r-pill);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.voice-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    color: var(--accent-ink);
+    font-weight: 600;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+.voice-kicker-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+    animation: voice-pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+}
+@keyframes voice-pulse {
+    0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
+    50%       { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 12%, transparent); }
+}
