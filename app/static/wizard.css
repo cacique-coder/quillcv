@@ -1086,6 +1086,53 @@
 @media (max-width: 600px) {
     .ats-keyword-detail { grid-template-columns: 1fr; }
 }
+
+/* Stageable missing-keyword tag — clickable to add to the CV's Skills */
+.tag-stageable {
+    cursor: pointer;
+    background: transparent;
+    font: inherit;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tag-stageable:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.tag-stageable:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.tag-stageable.tag-staged {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+}
+.tag-stageable.tag-staged::after {
+    content: " ✓";
+    margin-left: 0.2rem;
+}
+
+/* Regenerate / Add-skills control row */
+.ats-regenerate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+}
+.ats-regenerate .ai-loading-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+.regenerate-loader-text {
+    color: var(--text-muted);
+}
 .ats-kw-col h3 {
     font-size: 0.82rem;
     font-weight: 700;

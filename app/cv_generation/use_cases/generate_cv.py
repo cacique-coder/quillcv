@@ -186,6 +186,22 @@ async def run_generation_pipeline(
             attempt_id, placeholder_issues,
         )
 
+    # Structural sanity log — surfaces "no education / no skills / wrong title"
+    # bug reports without needing to dump the full cv_data blob.
+    logger.info(
+        "Pipeline[%s] cv_data_shape title=%r summary_chars=%d experience=%d "
+        "skills=%d skills_grouped=%d education=%d certifications=%d projects=%d",
+        attempt_id,
+        (cv_data.get("title") or "")[:80],
+        len((cv_data.get("summary") or "")),
+        len(cv_data.get("experience") or []),
+        len(cv_data.get("skills") or []),
+        len(cv_data.get("skills_grouped") or []),
+        len(cv_data.get("education") or []),
+        len(cv_data.get("certifications") or []),
+        len(cv_data.get("projects") or []),
+    )
+
     # 5. Render template
     await on_progress("Rendering the template", "Laying out your final design")
     llm_usage = cv_data.pop("_llm_usage", {})

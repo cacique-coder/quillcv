@@ -316,6 +316,110 @@ async def apply_fixes(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Append user-selected skills to the existing CV (no LLM call)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/add-skills")
+async def add_skills(request: Request):
+    """Append the keywords the user staged from the ATS comparison panel
+    directly to ``cv_data.skills`` and re-render the template.
+
+    No LLM call — this is a pure data merge + template re-render. Cheaper and
+    faster than a full /analyze rerun, and avoids the AI rewriting passages
+    the user is happy with.
+    """
+    attempt_id = request.state.session.get("attempt_id")
+    if not attempt_id:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "error": "No active session."},
+        )
+
+    attempt = get_attempt(attempt_id)
+    if not attempt or not attempt.get("cv_data"):
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "error": "No generated CV found. Please generate first."},
+        )
+
+    form = await request.form()
+    new_skills = [str(v).strip() for v in form.getlist("staged_keywords") if str(v).strip()]
+    if not new_skills:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "error": "No skills selected."},
+        )
+
+    cv_data = dict(attempt["cv_data"])
+    template_id = attempt.get("template_id", "modern")
+    region_code = attempt.get("region", "US")
+    job_description = attempt.get("job_description", "")
+
+    existing = cv_data.get("skills") or []
+    seen = {s.strip().lower() for s in existing if isinstance(s, str)}
+    for kw in new_skills:
+        key = kw.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        existing.append(kw)
+    cv_data["skills"] = existing
+
+    llm_usage = cv_data.pop("_llm_usage", {})
+    rendered_cv = templates.get_template(f"cv_templates/{template_id}.html").render(**cv_data)
+    cv_data["_llm_usage"] = llm_usage
+
+    generated_text = re.sub(r"<style[^>]*>.*?</style>", "", rendered_cv, flags=re.DOTALL)
+    generated_text = re.sub(r"<[^>]+>", " ", generated_text)
+    generated_text = re.sub(r"\s+", " ", generated_text).strip()
+
+    keyword_data = attempt.get("extracted_keywords")
+    job_keywords = keyword_data["all_keywords"] if keyword_data else None
+    ats_generated = analyze_ats(generated_text, job_description, keywords_override=job_keywords)
+
+    update_attempt(attempt_id, cv_data=cv_data, rendered_cv=rendered_cv)
+
+    selected_template = get_template(template_id) or get_template("modern")
+    region_rules = REGION_RULES.get(region_code, REGION_RULES["US"])
+
+    cv_text = attempt.get("cv_text_preview", "")
+    cv_bytes = get_document_bytes(attempt_id, "cv_file")
+    cv_filename = get_document_filename(attempt_id, "cv_file")
+    if cv_bytes and cv_filename:
+        try:
+            full_cv_text = parse_cv(cv_filename, cv_bytes)
+        except ValueError:
+            full_cv_text = cv_text
+    else:
+        full_cv_text = cv_text
+    ats_original = analyze_ats(full_cv_text, job_description, keywords_override=job_keywords)
+
+    logger.info(
+        "AddSkills[%s] appended=%d total_skills=%d ats_score=%d",
+        attempt_id, len(new_skills), len(cv_data["skills"]), ats_generated.score,
+    )
+
+    return templates.TemplateResponse(
+        "partials/results.html",
+        {
+            "request": request,
+            "ats_original": ats_original,
+            "ats_generated": ats_generated,
+            "generated_cv": rendered_cv,
+            "cover_letter": attempt.get("cover_letter_html"),
+            "cover_letter_data": attempt.get("cover_letter_data"),
+            "cv_text": full_cv_text[:500],
+            "template": selected_template,
+            "region": region_code,
+            "region_rules": region_rules,
+            "quality_review": None,
+            "skills_added": len(new_skills),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # PDF download (unchanged)
 # ---------------------------------------------------------------------------
 
