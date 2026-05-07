@@ -5,15 +5,32 @@ services:
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - .:/workspace:cached
+      # Bind-mount the host's Claude Code binary + auth so the container
+      # can shell out to `claude` and reuse the developer's subscription
+      # (LLM_PROVIDER=claude-code in .env). Defaults match the official
+      # Linux installer (~/.local/bin/claude as a symlink to a self-
+      # contained ELF binary, config in ~/.claude). Override these in
+      # .env if your install lives elsewhere — e.g. an npm-global path.
+      - ${CLAUDE_HOST_BIN:-${HOME}/.local/bin/claude}:/usr/local/bin/claude:ro
+      - ${CLAUDE_HOST_CONFIG:-${HOME}/.claude}:/root/.claude
     environment:
       APP_ENV: development
       RUN_MIGRATIONS: "0"
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/quillcv_dev
+      # The Claude CLI looks for ~/.claude relative to $HOME; we mount it
+      # at /root/.claude so root inside the container resolves correctly.
+      HOME: /root
     ports:
       - "8000:8000"
     env_file:
       - path: ./.env
         required: false
+    extra_hosts:
+      # Lets the container reach the host (e.g. for a future HTTP proxy
+      # variant of the claude bridge). Linux needs the explicit mapping;
+      # Docker Desktop / OrbStack provide it automatically but adding it
+      # here is harmless on those.
+      - "host.docker.internal:host-gateway"
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     depends_on:
       db:
