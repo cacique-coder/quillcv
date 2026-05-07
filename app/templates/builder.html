@@ -27,10 +27,28 @@
         hx-include="#builder-form, #save-label-input, #save-job-title-input"
         hx-target="#save-result"
         hx-swap="innerHTML">Save</button>
-<button type="submit" form="builder-form"
-        formaction="/builder/download-pdf"
-        formmethod="post"
-        class="btn btn-sm btn-accent">Download PDF</button>
+<div class="dl-menu" id="dl-menu">
+  <button type="button" class="btn btn-sm btn-accent dl-menu-trigger"
+          onclick="toggleDownloadMenu()"
+          aria-haspopup="menu" aria-expanded="false" aria-controls="dl-menu-pop">
+    Download
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="dl-menu-pop" id="dl-menu-pop" hidden role="menu" aria-label="Download format">
+    <a class="dl-menu-item" role="menuitem" href="/builder/download-pdf" onclick="closeDownloadMenu()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      <span class="dl-menu-label">PDF
+        <small>Recommended for ATS</small>
+      </span>
+    </a>
+    <a class="dl-menu-item" role="menuitem" href="/builder/download-docx" onclick="closeDownloadMenu()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+      <span class="dl-menu-label">Word (.docx)
+        <small>Editable in Word/Pages</small>
+      </span>
+    </a>
+  </div>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -801,6 +819,40 @@ function setTemplatePage(delta) {
     if (nxt)  nxt.disabled  = cur === pages;
   });
 })();
+
+/* ── Download dropdown ─────────────────────────────────────────
+ * Toggles the PDF / DOCX menu next to the Download button.
+ * Closes on outside click and Escape. */
+function toggleDownloadMenu() {
+  var menu = document.getElementById('dl-menu-pop');
+  var trigger = document.querySelector('.dl-menu-trigger');
+  if (!menu || !trigger) return;
+  var open = menu.hidden;
+  menu.hidden = !open;
+  trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) {
+    setTimeout(function() {
+      document.addEventListener('click', _dlOutside, true);
+      document.addEventListener('keydown', _dlKey);
+    }, 0);
+  } else {
+    document.removeEventListener('click', _dlOutside, true);
+    document.removeEventListener('keydown', _dlKey);
+  }
+}
+function closeDownloadMenu() {
+  var menu = document.getElementById('dl-menu-pop');
+  var trigger = document.querySelector('.dl-menu-trigger');
+  if (menu) menu.hidden = true;
+  if (trigger) trigger.setAttribute('aria-expanded', 'false');
+  document.removeEventListener('click', _dlOutside, true);
+  document.removeEventListener('keydown', _dlKey);
+}
+function _dlOutside(e) {
+  var wrap = document.getElementById('dl-menu');
+  if (wrap && !wrap.contains(e.target)) closeDownloadMenu();
+}
+function _dlKey(e) { if (e.key === 'Escape') closeDownloadMenu(); }
 
 /* ── Template picker ── */
 function selectTemplate(tid) {
