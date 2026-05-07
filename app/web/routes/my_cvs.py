@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
@@ -15,6 +16,57 @@ from app.web.templates import templates
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Tokens that survive into rendered HTML when the PII vault is missing values.
+# Matches both fixed (e.g. <<DOB>>) and indexed (e.g. <<EMAIL_1>>) placeholders.
+_PII_TOKEN_RE = re.compile(r"<<[A-Z][A-Z0-9_]*>>")
+
+_TOKEN_LABELS = {
+    "CANDIDATE_NAME": "name",
+    "CANDIDATE_SLUG": "name",
+    "EMAIL": "email",
+    "PHONE": "phone",
+    "DOB": "date of birth",
+    "DOCUMENT_ID": "document ID",
+    "LINKEDIN_URL": "LinkedIn URL",
+    "GITHUB_URL": "GitHub URL",
+    "PORTFOLIO_URL": "portfolio URL",
+    "REF_NAME": "reference name",
+    "REF_EMAIL": "reference email",
+    "REF_PHONE": "reference phone",
+}
+
+
+def _missing_token_banner(rendered: str) -> str:
+    """Return an HTML banner if any PII placeholders are unresolved.
+
+    Empty string when the CV is fully populated.
+    """
+    matches = _PII_TOKEN_RE.findall(rendered)
+    if not matches:
+        return ""
+
+    seen: list[str] = []
+    for token in matches:
+        # Strip "<<", ">>" and trailing index ("EMAIL_1" -> "EMAIL")
+        key = token[2:-2].rsplit("_", 1)[0] if token[2:-2].rsplit("_", 1)[-1].isdigit() else token[2:-2]
+        label = _TOKEN_LABELS.get(key, key.replace("_", " ").lower())
+        if label not in seen:
+            seen.append(label)
+
+    fields = ", ".join(seen)
+    return (
+        '<div style="max-width:800px;margin:1rem auto;padding:0.85rem 1rem;'
+        "background:#fff7ed;border:1px solid #fdba74;border-radius:6px;"
+        "color:#7c2d12;font-family:system-ui,-apple-system,Segoe UI,sans-serif;"
+        'font-size:0.9rem;line-height:1.5;">'
+        "<strong>Some values are missing.</strong> "
+        f"The placeholders below are unresolved: <em>{fields}</em>. "
+        'Update your <a href="/account/pii" style="color:#7c2d12;'
+        'text-decoration:underline;font-weight:600;">profile vault</a> '
+        "and reopen this preview to fill them in."
+        "</div>"
+    )
 
 
 @router.get("/my-cvs")
@@ -87,7 +139,8 @@ async def my_cv_preview(request: Request, cv_id: str):
 
     rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
 
-    return Response(rendered, media_type="text/html")
+    banner = _missing_token_banner(rendered)
+    return Response(banner + rendered, media_type="text/html")
 
 
 @router.get("/my-cvs/{cv_id}/download")
