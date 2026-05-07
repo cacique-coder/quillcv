@@ -347,6 +347,8 @@ async def builder_save(request: Request):
     try:
         async with async_session() as db:
             user_id = user.id if user else None
+            saved = None
+            action_word = "Saved"
             if editing_cv_id:
                 saved = await update_cv(
                     db,
@@ -358,13 +360,19 @@ async def builder_save(request: Request):
                     label=label,
                     job_title=job_title,
                 )
-                if not saved:
-                    return Response(
-                        '<div class="save-error">CV not found. It may have been deleted.</div>',
-                        media_type="text/html",
+                if saved:
+                    action_word = "Updated"
+                else:
+                    # Row is gone (deleted, wrong tenant, or stale attempt
+                    # carrying an orphan id). Drop editing_cv_id and persist
+                    # as a new CV so the user's work isn't lost.
+                    logger.warning(
+                        "Save fell back to insert: editing_cv_id=%s missing (attempt=%s)",
+                        editing_cv_id,
+                        attempt_id,
                     )
-                action_word = "Updated"
-            else:
+                    update_attempt(attempt_id, editing_cv_id=None)
+            if not saved:
                 saved = await save_cv(
                     db,
                     attempt_id=attempt_id,
@@ -377,7 +385,6 @@ async def builder_save(request: Request):
                     label=label,
                     job_title=job_title,
                 )
-                action_word = "Saved"
         return Response(
             f'<div class="save-success">{action_word} as "<strong>{label}</strong>"'
             f"{' for ' + job_title if job_title else ''}"
