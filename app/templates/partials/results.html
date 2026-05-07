@@ -151,13 +151,18 @@
                 </div>
                 <div class="ats-kw-col">
                     <h3>Still missing</h3>
-                    <p class="hint" style="font-size: 0.8rem;">Click a keyword to stage it, then regenerate to mandate it as a skill.</p>
-                    <div class="keyword-tags" id="staged-keywords-tags">
+                    <p class="hint" style="font-size: 0.8rem;">Click a keyword to add it directly to the Skills section — no AI call.</p>
+                    <div class="keyword-tags" id="missing-keywords-tags">
                         {% for kw in ats_generated.missing_keywords[:15] %}
-                        <button type="button" class="tag tag-missing tag-stageable"
-                                data-keyword="{{ kw }}"
-                                aria-pressed="false"
-                                onclick="toggleStagedKeyword(this)">{{ kw }}</button>
+                        <button type="button" class="tag tag-missing tag-clickable"
+                                hx-post="/add-skills"
+                                hx-vals='{"staged_keywords": {{ kw | tojson }} }'
+                                hx-target="#generate-area"
+                                hx-swap="outerHTML"
+                                hx-indicator="#regenerate-loader"
+                                title="Add to Skills">
+                            <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
+                        </button>
                         {% endfor %}
                         {% if ats_generated.missing_keywords | length > 15 %}
                         {{ badge("+" ~ (ats_generated.missing_keywords | length - 15) ~ " more", "more") }}
@@ -166,29 +171,15 @@
                 </div>
             </div>
 
-            <!-- Add-skills (no LLM) and Regenerate (LLM rerun) controls -->
+            <!-- Regenerate (LLM rerun) control — useful while iterating in dev -->
             <div class="ats-regenerate">
-                <!-- Plain regenerate — full LLM rerun, useful while iterating in dev -->
                 <form hx-post="/analyze" hx-target="#generate-area" hx-swap="outerHTML"
                       hx-indicator="#regenerate-loader" style="display:inline;">
-                    <button type="submit" class="btn btn-ghost btn-sm" id="regenerate-plain-btn"
+                    <button type="submit" class="btn btn-ghost btn-sm"
                             title="Re-run the AI generation from scratch">
                         <span aria-hidden="true">&#x21bb;</span> Regenerate
                     </button>
                 </form>
-
-                <!-- Add staged skills directly to the Skills section — no LLM call -->
-                <form hx-post="/add-skills" hx-target="#generate-area" hx-swap="outerHTML"
-                      hx-indicator="#regenerate-loader" id="add-skills-form" style="display:inline;">
-                    <div id="staged-keywords-inputs"></div>
-                    <button type="submit" class="btn btn-accent" id="add-skills-btn"
-                            style="display:none;"
-                            title="Append the staged keywords to your CV's Skills section without calling the AI">
-                        <span aria-hidden="true">&#x2b;</span>
-                        <span id="add-skills-count">Add 0 skills to CV</span>
-                    </button>
-                </form>
-
                 <div class="ai-loading-hint htmx-indicator" id="regenerate-loader">
                     <div class="spinner"></div>
                     <span class="regenerate-loader-text">Updating your CV…</span>
@@ -328,41 +319,4 @@ function switchResultsTab(tabId, btn) {
     if (btn) { btn.classList.add('results-tab--active'); }
 }
 
-// Click a missing keyword to stage it. Staged keywords feed the
-// "Add N skills to CV" button which appends them to the Skills section
-// directly — no LLM call.
-function toggleStagedKeyword(btn) {
-    var keyword = btn.getAttribute('data-keyword');
-    if (!keyword) return;
-    var pressed = btn.getAttribute('aria-pressed') === 'true';
-    btn.setAttribute('aria-pressed', pressed ? 'false' : 'true');
-    btn.classList.toggle('tag-staged', !pressed);
-    refreshAddSkillsBtn();
-}
-
-function refreshAddSkillsBtn() {
-    var staged = Array.prototype.slice.call(
-        document.querySelectorAll('#staged-keywords-tags .tag-stageable[aria-pressed="true"]')
-    ).map(function (el) { return el.getAttribute('data-keyword'); });
-
-    var inputsHost = document.getElementById('staged-keywords-inputs');
-    var addBtn = document.getElementById('add-skills-btn');
-    var addCount = document.getElementById('add-skills-count');
-    if (!inputsHost || !addBtn || !addCount) return;
-
-    inputsHost.innerHTML = staged.map(function (kw) {
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'staged_keywords';
-        input.value = kw;
-        return input.outerHTML;
-    }).join('');
-
-    if (staged.length === 0) {
-        addBtn.style.display = 'none';
-    } else {
-        addBtn.style.display = '';
-        addCount.textContent = 'Add ' + staged.length + ' skill' + (staged.length === 1 ? '' : 's') + ' to CV';
-    }
-}
 </script>

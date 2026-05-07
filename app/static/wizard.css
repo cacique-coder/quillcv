@@ -1087,30 +1087,37 @@
     .ats-keyword-detail { grid-template-columns: 1fr; }
 }
 
-/* Stageable missing-keyword tag — clickable to add to the CV's Skills */
-.tag-stageable {
+/* Clickable missing-keyword tag — single-click adds it to the CV's
+   Skills section via /add-skills (no LLM round trip). */
+.tag-clickable {
     cursor: pointer;
     background: transparent;
     font: inherit;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
-.tag-stageable:hover {
+.tag-clickable:hover {
     border-color: var(--accent);
     color: var(--accent);
+    transform: translateY(-1px);
 }
-.tag-stageable:focus-visible {
+.tag-clickable:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
-.tag-stageable.tag-staged {
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
-    border-color: var(--accent);
-    color: var(--accent);
-    font-weight: 600;
+.tag-clickable:active {
+    transform: translateY(0);
 }
-.tag-stageable.tag-staged::after {
-    content: " ✓";
-    margin-left: 0.2rem;
+.tag-clickable.htmx-request {
+    opacity: 0.6;
+    pointer-events: none;
+}
+.tag-clickable-plus {
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent);
 }
 
 /* Regenerate / Add-skills control row */
