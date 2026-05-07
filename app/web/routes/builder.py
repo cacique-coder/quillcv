@@ -31,6 +31,43 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/builder")
 
+
+def _suggest_templates(
+    cv_data: dict,
+    region: str,
+    selected: str | None,
+    n: int = 4,
+) -> list[str]:
+    """Return ~n template ids most likely to fit this user.
+
+    Heuristic only — region match + role-text industry hits + universal bias.
+    The selected template is always included so it stays visible in the rail.
+    """
+    role_text = " ".join(
+        str(cv_data.get(k) or "")
+        for k in ("title", "label", "job_title", "summary")
+    ).lower()
+
+    scored: list[tuple[float, object]] = []
+    for t in list_templates():
+        score = 0.0
+        if region and region in t.regions:
+            score += 1.0
+        if t.category == "universal":
+            score += 0.6
+        for ind in t.industries:
+            if ind and ind in role_text:
+                score += 4.0
+        # Light tiebreaker so the popular four still float up when nothing matches.
+        score += {"modern": 0.4, "classic": 0.3, "minimal": 0.2, "tech": 0.1}.get(t.id, 0.0)
+        scored.append((score, t))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    ids = [t.id for _, t in scored[:n]]
+    if selected and selected not in ids:
+        ids = [selected, *ids[: n - 1]]
+    return ids
+
 # ---------------------------------------------------------------------------
 # Starter CV — seeded once on first visit so the canvas is never empty
 # ---------------------------------------------------------------------------
@@ -121,7 +158,17 @@ async def builder_page(request: Request):
     region = attempt.get("builder_data", {}).get("region", "US")
     template_id = attempt.get("builder_data", {}).get("template_id", "modern")
 
-    template_options = [(t.id, t.name, t.category) for t in list_templates()]
+    template_options = [
+        {
+            "id": t.id,
+            "name": t.name,
+            "description": t.description,
+            "best_for": t.best_for,
+            "category": t.category,
+        }
+        for t in list_templates()
+    ]
+    suggested_template_ids = _suggest_templates(cv_data, region, template_id)
     region_options = [(r.code, f"{r.flag} {r.name}") for r in list_regions()]
     region_fields = region_fields_map()
 
@@ -131,6 +178,7 @@ async def builder_page(request: Request):
             "request": request,
             "cv_data": cv_data,
             "template_options": template_options,
+            "suggested_template_ids": suggested_template_ids,
             "region_options": region_options,
             "selected_region": region,
             "selected_template": template_id,
@@ -195,7 +243,17 @@ async def builder_edit(cv_id: str, request: Request):
     region = saved.region
     template_id = saved.template_id
 
-    template_options = [(t.id, t.name, t.category) for t in list_templates()]
+    template_options = [
+        {
+            "id": t.id,
+            "name": t.name,
+            "description": t.description,
+            "best_for": t.best_for,
+            "category": t.category,
+        }
+        for t in list_templates()
+    ]
+    suggested_template_ids = _suggest_templates(cv_data, region, template_id)
     region_options = [(r.code, f"{r.flag} {r.name}") for r in list_regions()]
     region_fields = region_fields_map()
 
@@ -205,6 +263,7 @@ async def builder_edit(cv_id: str, request: Request):
             "request": request,
             "cv_data": cv_data,
             "template_options": template_options,
+            "suggested_template_ids": suggested_template_ids,
             "region_options": region_options,
             "selected_region": region,
             "selected_template": template_id,

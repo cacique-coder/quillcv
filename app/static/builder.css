@@ -53,68 +53,12 @@
 .left-rail .grp .row.on { background: var(--paper); color: var(--ink); }
 .left-rail .grp .row .drag { color: var(--ink-4); margin-left: auto; cursor: grab; }
 
-/* Template category filter chips — sit above the picker grid. */
-.tmpl-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 0 0 8px;
-}
-.tmpl-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .03em;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background .12s, color .12s, border-color .12s;
-}
-.tmpl-chip:hover { color: var(--ink-1); border-color: var(--ink-3); }
-.tmpl-chip.on {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-.tmpl-chip-count {
-  font-size: 9px;
-  opacity: .7;
-}
-.tmpl-chip.on .tmpl-chip-count { opacity: .85; }
-
-.tmpl-empty {
-  grid-column: 1 / -1;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink-3);
-  text-align: center;
-  padding: 16px 8px;
-}
-
-/* Template picker */
+/* Template picker — only the suggested handful appears here; the
+ * full set of 17 lives in the Browse drawer below. */
 .tmpl-pick {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  /* Cap the visible area so a long template list doesn't push the rest
-   * of the rail out of reach; user scrolls within the picker. */
-  max-height: 360px;
-  overflow-y: auto;
-  /* Soft fade at the bottom edge to hint there's more below. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
-          mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
-  padding-bottom: 12px;
-  scrollbar-width: thin;
-}
-.tmpl-pick::-webkit-scrollbar { width: 6px; }
-.tmpl-pick::-webkit-scrollbar-thumb {
-  background: var(--rule);
-  border-radius: 3px;
 }
 .tmpl-pick .t {
   aspect-ratio: 210/297;
@@ -147,6 +91,224 @@
   text-decoration: none;
 }
 .left-rail .see-all:hover { text-decoration: underline; }
+
+/* "Browse all 17 templates →" trigger that opens the catalogue drawer. */
+.tmpl-browse-all {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-1);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: var(--r-1, 6px);
+  cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.tmpl-browse-all:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-wash, rgba(0,0,0,.02));
+}
+.tmpl-browse-all span { font-size: 14px; line-height: 1; }
+
+/* ── Template browser drawer ────────────────────────────────────
+ * Right-side slide-in. Contains all 17 templates grouped by
+ * category, with a live search box. Selection routes through
+ * selectTemplate() so the rail thumbnail + sheet stay in sync. */
+.tmpl-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+.tmpl-drawer[hidden] { display: none; }
+.tmpl-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 26, 23, 0.45);
+  backdrop-filter: blur(2px);
+  animation: drawer-fade .18s ease;
+}
+.tmpl-drawer-panel {
+  position: relative;
+  width: min(640px, 100%);
+  height: 100%;
+  background: var(--paper, #fbf7ee);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -20px 0 60px rgba(0,0,0,.18);
+  animation: drawer-slide .22s cubic-bezier(.2,.7,.2,1);
+  outline: none;
+}
+@keyframes drawer-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drawer-slide { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.tmpl-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+.tmpl-drawer-head h2 {
+  margin: 0 0 2px;
+  font-family: var(--display, var(--serif));
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.tmpl-drawer-sub {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: .04em;
+}
+.tmpl-drawer-close {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--ink-3);
+  line-height: 0;
+}
+.tmpl-drawer-close:hover { color: var(--ink-1); border-color: var(--rule); }
+
+.tmpl-drawer-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-3);
+}
+.tmpl-drawer-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  padding: 4px 0;
+  color: var(--ink-1);
+}
+.tmpl-drawer-search input::placeholder { color: var(--ink-3); }
+
+.tmpl-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 28px 32px;
+}
+.tmpl-drawer-group { margin-top: 16px; }
+.tmpl-drawer-group:first-child { margin-top: 4px; }
+.tmpl-drawer-group h3 {
+  margin: 0 0 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.tmpl-drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tmpl-card {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  background: var(--paper-sunk, #f5efe2);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: border-color .12s, transform .12s, box-shadow .12s;
+}
+.tmpl-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
+}
+.tmpl-card.on {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.tmpl-card-thumb {
+  flex: 0 0 60px;
+  aspect-ratio: 210/297;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 5px;
+  position: relative;
+}
+.tmpl-card-thumb-name {
+  font-family: var(--display, var(--serif));
+  font-size: 5px;
+  font-weight: 500;
+}
+.tmpl-card-thumb-rule {
+  height: .5px;
+  background: #1c1a17;
+  opacity: .3;
+  margin: 3px 0;
+}
+.tmpl-card-thumb .t-line {
+  height: 1px;
+  background: #d9cfb9;
+  margin: 1px 0;
+}
+.tmpl-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tmpl-card-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-1);
+}
+.tmpl-card-desc {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+.tmpl-card-best {
+  margin-top: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .03em;
+  color: var(--ink-3);
+}
+
+.tmpl-drawer-empty {
+  margin: 32px 0;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+@media (max-width: 720px) {
+  .tmpl-drawer-grid { grid-template-columns: 1fr; }
+  .tmpl-drawer-panel { width: 100%; }
+}
 
 /* Vault card */
 .vault-card {
