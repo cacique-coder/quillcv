@@ -111,7 +111,7 @@
     {% set ns = namespace(start_page=1) %}
     {% for tid, _tname in template_options %}
       {% if tid == selected_template %}
-        {% set _ = ns.update({'start_page': loop.index0 // tmpl_per_page + 1}) %}
+        {% set ns.start_page = loop.index0 // tmpl_per_page + 1 %}
       {% endif %}
     {% endfor %}
     <div class="tmpl-pick" id="tmpl-pick" data-per-page="{{ tmpl_per_page }}" data-page="{{ ns.start_page }}" data-pages="{{ tmpl_pages }}">
