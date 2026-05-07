@@ -42,6 +42,11 @@ services:
       POSTGRES_DB: quillcv_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    # Exposed to the host so a host-mode uvicorn (Procfile.dev / `mise run
+    # dev`) can connect at localhost:5432. Harmless for in-compose mode —
+    # the app service still talks via the internal `db` hostname.
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

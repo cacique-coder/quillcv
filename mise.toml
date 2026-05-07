@@ -1,9 +1,30 @@
 [tools]
-python = "latest"
+# Pin to match the production/dev container Dockerfile (`python:3.14-slim`).
+python = "3.14"
+
+# Env applied whenever you're inside this project (mise auto-activates).
+# Points the host-mode app at the docker-exposed Postgres on localhost; the
+# in-compose app service overrides this via its own `environment:` block, so
+# `docker compose up app` is unaffected.
+[env]
+DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/quillcv_dev"
+PYTHONUNBUFFERED = "1"
 
 [tasks.dev]
-description = "Start development server"
-run = "python -m uvicorn app.main:app --reload --port 8000"
+description = "Run db (docker) + web (uvicorn on host) via honcho"
+run = "honcho start -f Procfile.dev"
+
+[tasks."dev:db"]
+description = "Run only the Postgres container (foreground, ctrl-C to stop)"
+run = "docker compose up db"
+
+[tasks."dev:web"]
+description = "Run only uvicorn on the host (assumes db is already up)"
+run = "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+[tasks."dev:docker"]
+description = "Full docker-compose dev stack (db + app together)"
+run = "docker compose up"
 
 [tasks.install]
 description = "Install Python dependencies"

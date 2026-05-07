@@ -38,3 +38,5 @@ ruff>=0.15.10
 bandit>=1.9.4
 pip-audit>=2.10.0
 pytest-cov>=7.1.0
+# Dev process orchestration — Procfile.dev runner, foreman-style
+honcho>=2.0.0
