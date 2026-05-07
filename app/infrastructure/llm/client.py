@@ -588,9 +588,13 @@ class GeminiClient(LLMClient):
 
 # Maps provider name -> model tier -> model string
 PROVIDER_MODELS: dict[str, dict[str, str]] = {
-    "anthropic": {"heavy": "claude-sonnet-4-20250514", "light": "claude-haiku-4-5-20251001"},
-    "openai":    {"heavy": "gpt-5",                    "light": "gpt-4o-mini"},
-    "gemini":    {"heavy": "gemini-2.5-pro",            "light": "gemini-2.5-flash-lite"},
+    "anthropic":   {"heavy": "claude-sonnet-4-20250514", "light": "claude-haiku-4-5-20251001"},
+    "openai":      {"heavy": "gpt-5",                    "light": "gpt-4o-mini"},
+    "gemini":      {"heavy": "gemini-2.5-pro",           "light": "gemini-2.5-flash-lite"},
+    # Claude Code routes through the local `claude` CLI — no API key required,
+    # billed against the developer's Claude subscription. Useful for dev to
+    # avoid burning API credit while iterating on prompts/templates.
+    "claude-code": {"heavy": "sonnet",                   "light": "haiku"},
 }
 
 
@@ -620,5 +624,7 @@ def create_llm_client(provider: str, tier: str) -> LLMClient:
         return OpenAIClient(model=model)
     elif provider == "gemini":
         return GeminiClient(model=model)
+    elif provider == "claude-code":
+        return ClaudeCodeClient(model=model)
 
     raise ValueError(f"No client implementation for provider: {provider!r}")

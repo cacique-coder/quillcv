@@ -158,16 +158,20 @@ app.add_middleware(CSRFMiddleware)
 app.add_middleware(SQLiteSessionMiddleware)
 
 # LLM clients: primary (heavy) for CV generation, fast (light) for lightweight tasks.
-# Set LLM_PROVIDER=anthropic|openai|gemini to switch provider; defaults to "anthropic".
-# Dev mode (no API key present) falls back to ClaudeCodeClient via the Claude CLI.
+# Set LLM_PROVIDER=anthropic|openai|gemini|claude-code to switch provider.
+# - claude-code routes through the local `claude` CLI (uses your Claude
+#   subscription, no API credit) — explicit opt-in, useful in dev.
+# - When LLM_PROVIDER is unset and no API key is in the environment, we
+#   also fall back to claude-code so a fresh dev container Just Works.
 _has_api_key = any(os.environ.get(k) for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY"))
-if _has_api_key:
-    _provider = os.environ.get("LLM_PROVIDER", "anthropic")
-    app.state.llm = create_llm_client(_provider, "heavy")
-    app.state.llm_fast = create_llm_client(_provider, "light")
-else:
+_explicit_provider = os.environ.get("LLM_PROVIDER", "").strip()
+if _explicit_provider == "claude-code" or (not _has_api_key and not _explicit_provider):
     app.state.llm = ClaudeCodeClient(model="sonnet")
     app.state.llm_fast = ClaudeCodeClient(model="haiku")
+else:
+    _provider = _explicit_provider or "anthropic"
+    app.state.llm = create_llm_client(_provider, "heavy")
+    app.state.llm_fast = create_llm_client(_provider, "light")
 
 app.mount(
     "/static",
