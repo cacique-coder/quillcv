@@ -30,8 +30,10 @@
             </div>
             {% if missing %}
             <div class="cv-card-warning" role="status">
-                <strong>Some values are missing.</strong>
-                <span>Unfilled or placeholder fields: <em>{{ missing | join(", ") }}</em>.</span>
+                <span class="cv-card-warning-text">
+                    <strong>Some values are missing.</strong>
+                    Unfilled fields: <em>{{ missing | join(", ") }}</em>.
+                </span>
                 <span class="cv-card-warning-actions">
                     <a href="/account/pii">Update vault</a>
                     <span aria-hidden="true">·</span>

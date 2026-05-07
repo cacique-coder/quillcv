@@ -379,37 +379,69 @@ select.input-field {
     letter-spacing: 0.03em;
 }
 .cv-card--incomplete {
-    border-color: #f59e0b;
+    border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
 }
 .cv-card--incomplete:hover {
-    border-color: #d97706;
+    border-color: var(--warning);
 }
 .cv-card-warning {
-    background: #fff7ed;
-    border: 1px solid #fdba74;
-    border-radius: 6px;
-    padding: 0.6rem 0.8rem;
-    margin-bottom: 0.8rem;
-    font-size: 0.82rem;
-    color: #7c2d12;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.8rem;
+    background: var(--warn-wash);
+    border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--border));
+    border-radius: 8px 5px 7px 6px;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.9rem;
+    font-size: 0.85rem;
+    color: var(--text);
     line-height: 1.5;
 }
+.cv-card-warning::before {
+    content: "";
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    background-color: var(--warning);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z'/><line x1='12' y1='9' x2='12' y2='13'/><line x1='12' y1='17' x2='12.01' y2='17'/></svg>") no-repeat center / contain;
+    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z'/><line x1='12' y1='9' x2='12' y2='13'/><line x1='12' y1='17' x2='12.01' y2='17'/></svg>") no-repeat center / contain;
+}
 .cv-card-warning strong {
-    margin-right: 0.3rem;
+    color: var(--warning);
+    font-weight: 700;
 }
 .cv-card-warning em {
     font-style: normal;
     font-weight: 600;
+    color: var(--text);
+}
+.cv-card-warning-text {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 .cv-card-warning-actions {
     display: inline-flex;
+    align-items: center;
     gap: 0.5rem;
-    margin-left: 0.4rem;
+    margin-left: auto;
+    font-size: 0.8rem;
 }
 .cv-card-warning-actions a {
-    color: #7c2d12;
-    text-decoration: underline;
+    color: var(--warning);
+    text-decoration: none;
     font-weight: 600;
+    border-bottom: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+    padding-bottom: 1px;
+    transition: border-color 0.15s, color 0.15s;
+}
+.cv-card-warning-actions a:hover {
+    color: var(--accent-ink);
+    border-bottom-color: var(--accent-ink);
+}
+.cv-card-warning-actions span[aria-hidden] {
+    color: var(--text-muted);
+    opacity: 0.6;
 }
 .cv-card-actions {
     display: flex;
