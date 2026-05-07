@@ -103,32 +103,52 @@
       'federal':    {'bg': '#eef0f6', 'center': false},
       'minimal':    {'bg': '#fbf7ee', 'center': false},
     } %}
-    {% set tmpl_by_id = {} %}
-    {% for t in template_options %}{% set _ = tmpl_by_id.update({t.id: t}) %}{% endfor %}
-    <div class="tmpl-pick" id="tmpl-pick">
-      {% for tid in suggested_template_ids %}
-      {% set t = tmpl_by_id.get(tid) %}
-      {% if t %}
+    {# Paginate the rail: 4 thumbnails per page. Compute the page that holds
+     * the current selection so the picker opens on the right page. #}
+    {% set tmpl_per_page = 4 %}
+    {% set tmpl_total = template_options|length %}
+    {% set tmpl_pages = ((tmpl_total + tmpl_per_page - 1) // tmpl_per_page) if tmpl_total else 1 %}
+    {% set ns = namespace(start_page=1) %}
+    {% for tid, _tname in template_options %}
+      {% if tid == selected_template %}
+        {% set _ = ns.update({'start_page': loop.index0 // tmpl_per_page + 1}) %}
+      {% endif %}
+    {% endfor %}
+    <div class="tmpl-pick" id="tmpl-pick" data-per-page="{{ tmpl_per_page }}" data-page="{{ ns.start_page }}" data-pages="{{ tmpl_pages }}">
+      {% for tid, tname in template_options %}
       {% set v = tmpl_visuals.get(tid, {'bg': '#fbf7ee', 'center': false}) %}
+      {% set page_num = loop.index0 // tmpl_per_page + 1 %}
       <div class="t {% if tid == selected_template %}on{% endif %}"
            data-tmpl="{{ tid }}"
+           data-page="{{ page_num }}"
+           {% if page_num != ns.start_page %}hidden{% endif %}
            style="background:{{ v.bg }}"
            onclick="selectTemplate('{{ tid }}')"
-           title="{{ t.name }} — {{ t.best_for }}">
-        <div style="font-family:var(--display);font-size:6px;font-weight:500;{% if v.center %}text-align:center;{% endif %}">{{ t.name }}</div>
+           title="{{ tname }}">
+        <div style="font-family:var(--display);font-size:6px;font-weight:500;{% if v.center %}text-align:center;{% endif %}">{{ tname }}</div>
         <div style="height:.5px;background:#1c1a17;opacity:.3;margin:3px 0;"></div>
         <div class="t-line" style="width:85%;"></div>
         <div class="t-line" style="width:65%;"></div>
         <div class="t-line" style="width:75%;"></div>
-        <span class="lbl">{{ t.name }}</span>
+        <span class="lbl">{{ tname }}</span>
       </div>
-      {% endif %}
       {% endfor %}
     </div>
-    <button type="button" class="tmpl-browse-all" onclick="openTemplateDrawer()">
-      Browse all {{ template_options|length }} templates
-      <span aria-hidden="true">→</span>
-    </button>
+    {% if tmpl_pages > 1 %}
+    <div class="tmpl-pager" role="group" aria-label="Template pages">
+      <button type="button" class="tmpl-pager-arrow" id="tmpl-prev"
+              onclick="setTemplatePage(-1)" aria-label="Previous templates">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="tmpl-pager-label" id="tmpl-pager-label" aria-live="polite">
+        {{ ns.start_page }} / {{ tmpl_pages }}
+      </span>
+      <button type="button" class="tmpl-pager-arrow" id="tmpl-next"
+              onclick="setTemplatePage(1)" aria-label="More templates">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+    {% endif %}
 
     <h4>Sections</h4>
     <div class="grp" id="sections-list">
@@ -641,63 +661,6 @@
 {# ── Toast ── #}
 <div id="builder-toast" class="bld-toast" role="status" aria-live="polite"></div>
 
-{# ── Template browser drawer — full template catalogue with search + groups ── #}
-{% set cat_labels = {'universal': 'Universal', 'industry': 'By industry', 'specialty': 'Specialty', 'region': 'Regional'} %}
-{% set cat_order = ['universal', 'industry', 'specialty', 'region'] %}
-<div id="tmpl-drawer" class="tmpl-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="tmpl-drawer-title">
-  <div class="tmpl-drawer-backdrop" onclick="closeTemplateDrawer()"></div>
-  <aside class="tmpl-drawer-panel" tabindex="-1">
-    <header class="tmpl-drawer-head">
-      <div>
-        <h2 id="tmpl-drawer-title">Choose a template</h2>
-        <p class="tmpl-drawer-sub">All {{ template_options|length }} are free for everyone.</p>
-      </div>
-      <button type="button" class="tmpl-drawer-close" onclick="closeTemplateDrawer()" aria-label="Close template browser">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6l-12 12"/></svg>
-      </button>
-    </header>
-    <div class="tmpl-drawer-search">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input type="search" id="tmpl-drawer-q" placeholder="Search templates by name or industry…" oninput="filterDrawerTemplates(this.value)" aria-label="Search templates">
-    </div>
-    <div class="tmpl-drawer-body" id="tmpl-drawer-body">
-      {% for cat in cat_order %}
-      {% set cat_items = template_options | selectattr('category', 'equalto', cat) | list %}
-      {% if cat_items %}
-      <section class="tmpl-drawer-group" data-cat="{{ cat }}">
-        <h3>{{ cat_labels[cat] }}</h3>
-        <div class="tmpl-drawer-grid">
-          {% for t in cat_items %}
-          {% set v = tmpl_visuals.get(t.id, {'bg': '#fbf7ee', 'center': false}) %}
-          <button type="button"
-                  class="tmpl-card {% if t.id == selected_template %}on{% endif %}"
-                  data-tmpl="{{ t.id }}"
-                  data-search="{{ (t.name ~ ' ' ~ t.description ~ ' ' ~ t.best_for) | lower }}"
-                  onclick="selectTemplate('{{ t.id }}'); closeTemplateDrawer();">
-            <div class="tmpl-card-thumb" style="background:{{ v.bg }}">
-              <div class="tmpl-card-thumb-name" style="{% if v.center %}text-align:center;{% endif %}">{{ t.name }}</div>
-              <div class="tmpl-card-thumb-rule"></div>
-              <div class="t-line" style="width:85%;"></div>
-              <div class="t-line" style="width:65%;"></div>
-              <div class="t-line" style="width:75%;"></div>
-              <div class="t-line" style="width:55%;"></div>
-            </div>
-            <div class="tmpl-card-body">
-              <div class="tmpl-card-name">{{ t.name }}</div>
-              <div class="tmpl-card-desc">{{ t.description }}</div>
-              <div class="tmpl-card-best">Best for: {{ t.best_for }}</div>
-            </div>
-          </button>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
-      {% endfor %}
-      <div class="tmpl-drawer-empty" id="tmpl-drawer-empty" hidden>No templates match that search.</div>
-    </div>
-  </aside>
-</div>
-
 <script>
 /* ═══════════════════════════════════════════════════════════════
    Builder v6 — inline-edit canvas
@@ -803,90 +766,48 @@ function syncDateHidden(i) {
   }
 }
 
-/* ── Template browser drawer ───────────────────────────────────
- * Full catalogue lives in #tmpl-drawer; rail only shows suggestions.
- * Selecting a card calls selectTemplate() then closes the drawer. */
-function openTemplateDrawer() {
-  var drawer = document.getElementById('tmpl-drawer');
-  if (!drawer) return;
-  drawer.hidden = false;
-  document.body.style.overflow = 'hidden';
-  // Focus the search input so the user can type immediately.
-  setTimeout(function() {
-    var q = document.getElementById('tmpl-drawer-q');
-    if (q) q.focus();
-  }, 50);
-  document.addEventListener('keydown', _drawerKey);
-}
-
-function closeTemplateDrawer() {
-  var drawer = document.getElementById('tmpl-drawer');
-  if (!drawer) return;
-  drawer.hidden = true;
-  document.body.style.overflow = '';
-  document.removeEventListener('keydown', _drawerKey);
-}
-
-function _drawerKey(e) {
-  if (e.key === 'Escape') closeTemplateDrawer();
-}
-
-function filterDrawerTemplates(query) {
-  var q = (query || '').trim().toLowerCase();
-  var visible = 0;
-  document.querySelectorAll('#tmpl-drawer-body .tmpl-card').forEach(function(card) {
-    var hay = card.dataset.search || '';
-    var match = !q || hay.indexOf(q) !== -1;
-    card.hidden = !match;
-    if (match) visible++;
+/* ── Template picker pagination ────────────────────────────────
+ * The rail renders all templates with data-page attributes; only
+ * the active page's thumbnails are visible at any time. */
+function setTemplatePage(delta) {
+  var rail = document.getElementById('tmpl-pick');
+  if (!rail) return;
+  var cur = parseInt(rail.dataset.page || '1', 10);
+  var pages = parseInt(rail.dataset.pages || '1', 10);
+  var next = Math.min(pages, Math.max(1, cur + delta));
+  if (next === cur) return;
+  rail.dataset.page = next;
+  rail.querySelectorAll('.t').forEach(function(t) {
+    t.hidden = parseInt(t.dataset.page, 10) !== next;
   });
-  // Hide empty group sections.
-  document.querySelectorAll('#tmpl-drawer-body .tmpl-drawer-group').forEach(function(grp) {
-    var any = grp.querySelectorAll('.tmpl-card:not([hidden])').length > 0;
-    grp.hidden = !any;
-  });
-  var empty = document.getElementById('tmpl-drawer-empty');
-  if (empty) empty.hidden = visible !== 0;
+  var label = document.getElementById('tmpl-pager-label');
+  if (label) label.textContent = next + ' / ' + pages;
+  var prev = document.getElementById('tmpl-prev');
+  var nxt  = document.getElementById('tmpl-next');
+  if (prev) prev.disabled = next === 1;
+  if (nxt)  nxt.disabled  = next === pages;
 }
+
+/* Disable the prev/next buttons that don't apply at the starting page. */
+(function initTemplatePagerState() {
+  document.addEventListener('DOMContentLoaded', function() {
+    var rail = document.getElementById('tmpl-pick');
+    if (!rail) return;
+    var cur = parseInt(rail.dataset.page || '1', 10);
+    var pages = parseInt(rail.dataset.pages || '1', 10);
+    var prev = document.getElementById('tmpl-prev');
+    var nxt  = document.getElementById('tmpl-next');
+    if (prev) prev.disabled = cur === 1;
+    if (nxt)  nxt.disabled  = cur === pages;
+  });
+})();
 
 /* ── Template picker ── */
 function selectTemplate(tid) {
   document.getElementById('template-id-field').value = tid;
-
-  // Toggle .on across both the rail picker and the drawer cards.
-  var rail = document.getElementById('tmpl-pick');
-  var existing = rail ? rail.querySelector('.t[data-tmpl="' + tid + '"]') : null;
-  if (rail && !existing) {
-    // The chosen template wasn't in the suggested rail set — clone its
-    // drawer card thumbnail into the rail so the user always has the
-    // active template visible without re-opening the drawer.
-    var card = document.querySelector('#tmpl-drawer .tmpl-card[data-tmpl="' + tid + '"]');
-    if (card) {
-      var thumb = card.querySelector('.tmpl-card-thumb');
-      var name = (card.querySelector('.tmpl-card-name') || {}).textContent || tid;
-      var newT = document.createElement('div');
-      newT.className = 't';
-      newT.dataset.tmpl = tid;
-      newT.setAttribute('onclick', "selectTemplate('" + tid + "')");
-      newT.title = name;
-      newT.style.background = thumb ? thumb.style.background : '#fbf7ee';
-      newT.innerHTML =
-        '<div style="font-family:var(--display);font-size:6px;font-weight:500;">' + name + '</div>' +
-        '<div style="height:.5px;background:#1c1a17;opacity:.3;margin:3px 0;"></div>' +
-        '<div class="t-line" style="width:85%;"></div>' +
-        '<div class="t-line" style="width:65%;"></div>' +
-        '<div class="t-line" style="width:75%;"></div>' +
-        '<span class="lbl">' + name + '</span>';
-      rail.appendChild(newT);
-    }
-  }
   document.querySelectorAll('.tmpl-pick .t').forEach(function(t) {
     t.classList.toggle('on', t.dataset.tmpl === tid);
   });
-  document.querySelectorAll('#tmpl-drawer .tmpl-card').forEach(function(c) {
-    c.classList.toggle('on', c.dataset.tmpl === tid);
-  });
-
   var sheet = document.getElementById('builder-sheet');
   if (sheet) {
     sheet.setAttribute('data-template', tid);
