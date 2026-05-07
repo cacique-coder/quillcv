@@ -14,63 +14,77 @@ Supports region-specific formats for AU, US, UK, CA, NZ, DE, FR, NL, IN, BR, AE,
 
 ## Tech stack
 
-- **Backend**: Python, FastAPI, Jinja2
+- **Backend**: Python 3.14, FastAPI, Jinja2
 - **Frontend**: HTMX + server-rendered HTML
-- **AI**: Multi-provider LLM abstraction (Anthropic, OpenAI, Gemini)
+- **AI**: Multi-provider LLM abstraction (Anthropic, OpenAI, Gemini, Claude Code CLI)
 - **CV parsing**: pdfplumber (PDF), python-docx (DOCX)
 - **Photo storage**: Local + Cloudflare R2
 - **PDF generation**: Puppeteer
-- **Database**: SQLAlchemy + aiosqlite
+- **Database**: PostgreSQL (Docker) + SQLAlchemy async
 - **Payments**: Stripe
+- **Dev orchestration**: mise + honcho (Procfile.dev)
 
 ## Setup
 
 ### Prerequisites
 
-- Python 3.12+
-- Node.js (for PDF generation)
-- [mise](https://mise.jdx.dev/) (optional, for task runner)
+- [mise](https://mise.jdx.dev/) — pins Python 3.14, runs the dev tasks
+- Docker + Docker Compose — runs Postgres for dev
+- Node.js — only needed for PDF generation (Puppeteer); usually picked up by your system or installed via mise
+- (Optional) [`claude` CLI](https://github.com/anthropics/claude-code) on `$PATH` if you want `LLM_PROVIDER=claude-code` (no API spend in dev)
 
-### Install
+### One-time install
 
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Install Node dependencies (for PDF generation)
-npm install
+mise install              # provisions Python 3.14 from mise.toml
+mise run install          # pip install -r requirements.txt (incl. honcho)
+npm install               # Node deps for PDF generation
+cp .env.example .env      # then edit .env — see below
 ```
 
 ### Environment variables
 
+`.env.example` is the source of truth; copy it to `.env` and fill in
+what you need. The key knob is `LLM_PROVIDER`:
+
+| `LLM_PROVIDER` | Heavy model | Light model | Requires |
+|---|---|---|---|
+| `anthropic` | claude-sonnet-4 | claude-haiku-4-5 | `ANTHROPIC_API_KEY` |
+| `openai`    | gpt-5           | gpt-4o-mini      | `OPENAI_API_KEY` |
+| `gemini`    | gemini-2.5-pro  | gemini-2.5-flash-lite | `GOOGLE_API_KEY` |
+| `claude-code` | sonnet (CLI)  | haiku (CLI)      | `claude` on PATH (uses your Claude subscription) |
+
+If `LLM_PROVIDER` is unset and no `*_API_KEY` is in the environment,
+the app auto-falls-back to `claude-code`. The startup log prints the
+final selection: `LLM[heavy]: provider=… model=… | LLM_PROVIDER=…`.
+You can also `curl localhost:8000/up` to see what's wired.
+
+Other variables (Cloudflare R2 for photo persistence, Stripe keys for
+payments) are optional and documented in `.env.example`.
+
+### Run — development
+
+The day-to-day flow is foreman-style: Postgres in Docker, uvicorn on
+the host (so the host's `claude` CLI, debuggers, and reload all work
+natively).
+
 ```bash
-ANTHROPIC_API_KEY=...          # Or OPENAI_API_KEY / GOOGLE_API_KEY
-LLM_PROVIDER=anthropic         # anthropic | openai | gemini
-SESSION_SECRET=...             # Session encryption key
-
-# Optional — Cloudflare R2 for photo persistence
-R2_ENDPOINT_URL=...
-R2_ACCESS_KEY_ID=...
-R2_SECRET_ACCESS_KEY=...
-R2_BUCKET=...
-
-# Optional — Stripe for payments
-STRIPE_SECRET_KEY=...
-STRIPE_WEBHOOK_SECRET=...
+mise run dev              # honcho boots: db (docker) + web (uvicorn). Ctrl-C stops both.
 ```
 
-In dev mode (no API key set), the app falls back to Claude Code CLI for LLM calls.
-
-### Run
+Useful sub-tasks:
 
 ```bash
-# Development
-uvicorn app.main:app --reload --port 8000
+mise run dev:db           # only Postgres (foreground)
+mise run dev:web          # only uvicorn (assumes db up)
+mise run dev:docker       # full in-container stack (legacy mode)
+```
 
-# Or with mise
-mise run dev
+After `mise run dev`, the app is at <http://localhost:8000>.
 
-# Production
+### Run — production
+
+```bash
 gunicorn app.main:app -c gunicorn.conf.py
 ```
 
