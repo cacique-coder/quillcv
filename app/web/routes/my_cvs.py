@@ -9,6 +9,7 @@ from fastapi.responses import Response
 
 from app.cv_export.adapters.docx_export import generate_docx
 from app.cv_export.adapters.puppeteer_pdf import generate_pdf
+from app.cv_export.adapters.template_registry import get_region
 from app.infrastructure.persistence.cv_repo import get_saved_cv, list_saved_cvs
 from app.infrastructure.persistence.database import async_session
 from app.web.templates import templates
@@ -21,19 +22,25 @@ router = APIRouter()
 # Matches both fixed (e.g. <<DOB>>) and indexed (e.g. <<EMAIL_1>>) placeholders.
 _PII_TOKEN_RE = re.compile(r"<<[A-Z][A-Z0-9_]*>>")
 
-_TOKEN_LABELS = {
+# Tokens whose underlying field is *always optional* across regions. If the
+# vault has no value, the token is stripped to "" before render so it never
+# appears literally on the CV, and it never triggers the "missing values"
+# warning. URLs are user-supplied — non-tech roles often omit GitHub entirely.
+_ALWAYS_OPTIONAL_TOKENS = {
+    "<<LINKEDIN_URL>>",
+    "<<GITHUB_URL>>",
+    "<<PORTFOLIO_URL>>",
+    "<<CANDIDATE_SLUG>>",
+}
+
+# Token base-key (after stripping numeric suffix) -> human label, restricted
+# to keys we may flag. Optional URL tokens are intentionally absent.
+_REQUIRED_TOKEN_LABELS = {
     "CANDIDATE_NAME": "name",
-    "CANDIDATE_SLUG": "name",
     "EMAIL": "email",
     "PHONE": "phone",
     "DOB": "date of birth",
     "DOCUMENT_ID": "document ID",
-    "LINKEDIN_URL": "LinkedIn URL",
-    "GITHUB_URL": "GitHub URL",
-    "PORTFOLIO_URL": "portfolio URL",
-    "REF_NAME": "reference name",
-    "REF_EMAIL": "reference email",
-    "REF_PHONE": "reference phone",
 }
 
 # Sentinel strings seeded by STARTER_BUILDER_DATA (see app/web/routes/builder.py).
@@ -48,37 +55,88 @@ _STARTER_SENTINELS = {
 }
 
 
-def _detect_missing_fields(rendered: str, cv_data: dict | None = None) -> list[str]:
-    """Collect human-readable labels for unresolved tokens, starter sentinels,
-    and empty contact fields. Empty list means the CV looks fully personalised."""
+def _required_fields(region_code: str) -> list[tuple[str, str]]:
+    """Return [(cv_data_key, human_label), ...] of fields a CV in this region
+    must have to read as complete. Optional things (LinkedIn, GitHub, projects,
+    certifications, languages, references) are intentionally excluded."""
+    fields: list[tuple[str, str]] = [
+        ("name", "name"),
+        ("email", "email"),
+        ("phone", "phone"),
+        ("title", "job title"),
+        ("summary", "professional summary"),
+    ]
+    cfg = get_region(region_code) if region_code else None
+    if cfg:
+        if cfg.include_photo == "required":
+            fields.append(("photo_url", "photo"))
+        if cfg.include_dob:
+            fields.append(("dob", "date of birth"))
+        if cfg.include_nationality:
+            fields.append(("nationality", "nationality"))
+        if cfg.include_visa_status:
+            fields.append(("visa_status", "visa status"))
+        if cfg.include_marital_status:
+            fields.append(("marital_status", "marital status"))
+    return fields
+
+
+def _strip_optional_tokens(cv_data: dict) -> dict:
+    """Replace any surviving always-optional <<TOKEN>>s with empty strings so
+    they don't render literally on the CV. Mutates a shallow copy and returns it."""
+    if not cv_data:
+        return cv_data
+    raw = json.dumps(cv_data)
+    changed = False
+    for token in _ALWAYS_OPTIONAL_TOKENS:
+        if token in raw:
+            raw = raw.replace(token, "")
+            changed = True
+    return json.loads(raw) if changed else cv_data
+
+
+def _detect_missing_fields(rendered: str, cv_data: dict | None = None, region_code: str = "") -> list[str]:
+    """Collect human-readable labels for fields that are required for this
+    region but unresolved/empty. Empty list means the CV looks complete."""
     seen: list[str] = []
 
+    # Surviving tokens for *required* keys only (optional URL tokens are stripped
+    # before rendering, so they shouldn't reach here, but be defensive).
     for token in _PII_TOKEN_RE.findall(rendered):
-        # Strip "<<", ">>" and trailing index ("EMAIL_1" -> "EMAIL")
+        if token in _ALWAYS_OPTIONAL_TOKENS:
+            continue
         inner = token[2:-2]
         key = inner.rsplit("_", 1)[0] if inner.rsplit("_", 1)[-1].isdigit() else inner
-        label = _TOKEN_LABELS.get(key, key.replace("_", " ").lower())
-        if label not in seen:
+        label = _REQUIRED_TOKEN_LABELS.get(key)
+        if label and label not in seen:
             seen.append(label)
 
     for needle, label in _STARTER_SENTINELS.items():
         if needle in rendered and label not in seen:
             seen.append(label)
 
-    if cv_data:
-        for key, label in (("name", "name"), ("email", "email"), ("phone", "phone")):
-            if not (cv_data.get(key) or "").strip() and label not in seen:
+    if cv_data is not None:
+        for key, label in _required_fields(region_code):
+            value = cv_data.get(key)
+            if isinstance(value, str):
+                empty = not value.strip()
+            else:
+                empty = not value
+            if empty and label not in seen:
                 seen.append(label)
+        # Experience is universally expected — flag if the list is empty.
+        if not cv_data.get("experience") and "work experience" not in seen:
+            seen.append("work experience")
 
     return seen
 
 
-def _missing_token_banner(rendered: str, cv_data: dict | None = None, cv_id: str = "") -> str:
-    """Return an HTML banner if any PII placeholders or starter sentinels survive.
+def _missing_token_banner(rendered: str, cv_data: dict | None = None, cv_id: str = "", region_code: str = "") -> str:
+    """Return an HTML banner if any required field is missing for this region.
 
-    Empty string when the CV looks fully personalised.
+    Empty string when the CV looks complete.
     """
-    seen = _detect_missing_fields(rendered, cv_data)
+    seen = _detect_missing_fields(rendered, cv_data, region_code)
     if not seen:
         return ""
 
@@ -133,8 +191,7 @@ async def my_cvs_page(request: Request):
         # Sort by created_at descending
         cvs.sort(key=lambda c: c.created_at, reverse=True)
 
-    # Flag any CV that still carries unresolved tokens, starter sentinels,
-    # or an empty contact triple — surfaced as a card badge in the template.
+    # Flag any CV missing region-required fields — surfaced as a card badge.
     cv_status: dict[str, list[str]] = {}
     for cv in cvs:
         try:
@@ -145,7 +202,7 @@ async def my_cvs_page(request: Request):
         # same starter strings and tokens we want to detect, without paying
         # for a full template render per card.
         haystack = cv.cv_data_json or ""
-        missing = _detect_missing_fields(haystack, data)
+        missing = _detect_missing_fields(haystack, data, cv.region or "")
         if missing:
             cv_status[cv.id] = missing
 
@@ -190,9 +247,10 @@ async def my_cv_preview(request: Request, cv_id: str):
                 raw = raw.replace(token, real_val)
         cv_data = json.loads(raw)
 
+    cv_data = _strip_optional_tokens(cv_data)
     rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
 
-    banner = _missing_token_banner(rendered, cv_data=cv_data, cv_id=cv_id)
+    banner = _missing_token_banner(rendered, cv_data=cv_data, cv_id=cv_id, region_code=saved.region or "")
     return Response(banner + rendered, media_type="text/html")
 
 
@@ -227,6 +285,7 @@ async def my_cv_download(request: Request, cv_id: str):
                 raw = raw.replace(token, real_val)
         cv_data = json.loads(raw)
 
+    cv_data = _strip_optional_tokens(cv_data)
     rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
 
     cv_name = cv_data.get("name", "CV") or "CV"
@@ -277,6 +336,7 @@ async def my_cv_download_docx(request: Request, cv_id: str):
                 raw = raw.replace(token, real_val)
         cv_data = json.loads(raw)
 
+    cv_data = _strip_optional_tokens(cv_data)
     region_code = saved.region or "AU"
     template_id = saved.template_id or "classic"
     cv_name = cv_data.get("name", "CV") or "CV"
