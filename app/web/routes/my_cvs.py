@@ -36,35 +36,65 @@ _TOKEN_LABELS = {
     "REF_PHONE": "reference phone",
 }
 
+# Sentinel strings seeded by STARTER_BUILDER_DATA (see app/web/routes/builder.py).
+# Their presence in a saved CV means the user kept the demo copy without
+# personalising it — same UX problem as an unfilled vault.
+_STARTER_SENTINELS = {
+    "Your job title": "job title",
+    "City, Country": "location",
+    "Company name": "employer",
+    "University name": "school",
+    "Two to four sentences highlighting": "summary",
+}
 
-def _missing_token_banner(rendered: str) -> str:
-    """Return an HTML banner if any PII placeholders are unresolved.
 
-    Empty string when the CV is fully populated.
+def _missing_token_banner(rendered: str, cv_data: dict | None = None, cv_id: str = "") -> str:
+    """Return an HTML banner if any PII placeholders or starter sentinels survive.
+
+    Empty string when the CV looks fully personalised.
     """
-    matches = _PII_TOKEN_RE.findall(rendered)
-    if not matches:
-        return ""
-
     seen: list[str] = []
-    for token in matches:
+
+    for token in _PII_TOKEN_RE.findall(rendered):
         # Strip "<<", ">>" and trailing index ("EMAIL_1" -> "EMAIL")
-        key = token[2:-2].rsplit("_", 1)[0] if token[2:-2].rsplit("_", 1)[-1].isdigit() else token[2:-2]
+        inner = token[2:-2]
+        key = inner.rsplit("_", 1)[0] if inner.rsplit("_", 1)[-1].isdigit() else inner
         label = _TOKEN_LABELS.get(key, key.replace("_", " ").lower())
         if label not in seen:
             seen.append(label)
 
+    for needle, label in _STARTER_SENTINELS.items():
+        if needle in rendered and label not in seen:
+            seen.append(label)
+
+    if cv_data:
+        # Empty top-of-CV fields render as blank gaps that read as "missing"
+        # even though no token survives.
+        for key, label in (("name", "name"), ("email", "email"), ("phone", "phone")):
+            if not (cv_data.get(key) or "").strip() and label not in seen:
+                seen.append(label)
+
+    if not seen:
+        return ""
+
     fields = ", ".join(seen)
+    edit_link = (
+        f'or <a href="/builder/edit/{cv_id}" style="color:#7c2d12;'
+        'text-decoration:underline;font-weight:600;">re-edit the CV</a> '
+        if cv_id
+        else ""
+    )
     return (
         '<div style="max-width:800px;margin:1rem auto;padding:0.85rem 1rem;'
         "background:#fff7ed;border:1px solid #fdba74;border-radius:6px;"
         "color:#7c2d12;font-family:system-ui,-apple-system,Segoe UI,sans-serif;"
         'font-size:0.9rem;line-height:1.5;">'
         "<strong>Some values are missing.</strong> "
-        f"The placeholders below are unresolved: <em>{fields}</em>. "
+        f"Unfilled or placeholder fields: <em>{fields}</em>. "
         'Update your <a href="/account/pii" style="color:#7c2d12;'
         'text-decoration:underline;font-weight:600;">profile vault</a> '
-        "and reopen this preview to fill them in."
+        f"{edit_link}"
+        "to fill them in."
         "</div>"
     )
 
@@ -139,7 +169,7 @@ async def my_cv_preview(request: Request, cv_id: str):
 
     rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
 
-    banner = _missing_token_banner(rendered)
+    banner = _missing_token_banner(rendered, cv_data=cv_data, cv_id=cv_id)
     return Response(banner + rendered, media_type="text/html")
 
 
