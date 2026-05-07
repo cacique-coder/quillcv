@@ -58,6 +58,20 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+  /* Cap the visible area so a long template list doesn't push the rest
+   * of the rail out of reach; user scrolls within the picker. */
+  max-height: 360px;
+  overflow-y: auto;
+  /* Soft fade at the bottom edge to hint there's more below. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+          mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+}
+.tmpl-pick::-webkit-scrollbar { width: 6px; }
+.tmpl-pick::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 3px;
 }
 .tmpl-pick .t {
   aspect-ratio: 210/297;

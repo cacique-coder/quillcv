@@ -93,30 +93,34 @@
 
     <h4>Template</h4>
     <input type="hidden" name="template_id" id="template-id-field" value="{{ selected_template }}">
+    {# Per-id visual hints for the picker thumbnail. New templates fall back to defaults. #}
+    {% set tmpl_visuals = {
+      'classic':    {'bg': '#fbf7ee', 'center': true},
+      'executive':  {'bg': '#f1d6c4', 'center': false},
+      'creative':   {'bg': '#f3e8d8', 'center': false},
+      'tech':       {'bg': '#eef3f0', 'center': false},
+      'academic':   {'bg': '#fbf7ee', 'center': true},
+      'federal':    {'bg': '#eef0f6', 'center': false},
+      'minimal':    {'bg': '#fbf7ee', 'center': false},
+    } %}
     <div class="tmpl-pick" id="tmpl-pick">
-      {% set tmpl_defs = [
-        ("modern",   "Modern",   "#fbf7ee", false, true),
-        ("classic",  "Classic",  "#fbf7ee", true,  true),
-        ("minimal",  "Minimal",  "#fbf7ee", false, true),
-        ("executive","Executive","#fbf7ee", false, true),
-      ] %}
-      {% for tid, tname, tbg, tcenter, tline in tmpl_defs %}
+      {% for tid, tname in template_options %}
+      {% set v = tmpl_visuals.get(tid, {'bg': '#fbf7ee', 'center': false}) %}
       <div class="t {% if tid == selected_template %}on{% endif %}"
            data-tmpl="{{ tid }}"
-           style="background:{{ '#f1d6c4' if tid == 'executive' else tbg }}"
-           onclick="selectTemplate('{{ tid }}')">
-        <div style="font-family:var(--display);font-size:6px;font-weight:500;{% if tcenter %}text-align:center;{% endif %}">{{ tname }}</div>
+           style="background:{{ v.bg }}"
+           onclick="selectTemplate('{{ tid }}')"
+           title="{{ tname }}">
+        <div style="font-family:var(--display);font-size:6px;font-weight:500;{% if v.center %}text-align:center;{% endif %}">{{ tname }}</div>
         <div style="height:.5px;background:#1c1a17;opacity:.3;margin:3px 0;"></div>
-        {% if tline %}
         <div class="t-line" style="width:85%;"></div>
         <div class="t-line" style="width:65%;"></div>
         <div class="t-line" style="width:75%;"></div>
-        {% endif %}
         <span class="lbl">{{ tname }}</span>
       </div>
       {% endfor %}
     </div>
-    <a href="/demo" class="see-all">See all templates →</a>
+    <a href="/demo" class="see-all">Preview full size →</a>
 
     <h4>Sections</h4>
     <div class="grp" id="sections-list">
