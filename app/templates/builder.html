@@ -176,6 +176,9 @@
     <div class="sheet" id="builder-sheet">
       {% set cv = cv_data %}
 
+      {# Dashed page-break overlay; populated by JS based on sheet height vs A4. #}
+      <div class="sheet-page-guides" id="sheet-page-guides" aria-hidden="true"></div>
+
       {# ── On-sheet photo — region-conditional, positioned per template ── #}
       <div id="sheet-photo" class="sheet-photo" {% if not cv.photo_url %}data-empty="1"{% endif %}>
         {% if cv.photo_url %}
@@ -604,7 +607,7 @@
 
     </div>{# /.sheet #}
 
-    <div class="page-indicator">Page 1 of 1 · A4 · 720 × 1018 px</div>
+    <div class="page-indicator" id="page-indicator">1 page · A4</div>
     <div class="current-template-note" id="current-template-note">
       Currently showing {{ selected_template|capitalize }} · Download will use the selected template.
     </div>
@@ -665,7 +668,61 @@ document.addEventListener('DOMContentLoaded', function() {
       if (sheet) sheet.setAttribute('data-template', tid);
     }
   })();
+  initPageGuides();
 });
+
+/* ── Page-break guides on the preview sheet ────────────────────
+ * Draws a dashed line every A4 height so the user sees where the
+ * PDF will paginate. Pure visual signal — content does not reflow. */
+function updatePageGuides() {
+  var sheet = document.getElementById('builder-sheet');
+  var guides = document.getElementById('sheet-page-guides');
+  var indicator = document.getElementById('page-indicator');
+  if (!sheet || !guides) return;
+  var pageHeight = sheet.clientWidth * (297 / 210); // A4 portrait ratio
+  if (!pageHeight) return;
+  var pages = Math.max(1, Math.ceil(sheet.scrollHeight / pageHeight));
+  var existing = guides.children.length;
+  // Rebuild only when count changes; otherwise re-position cheaply.
+  if (existing !== pages - 1) {
+    guides.innerHTML = '';
+    for (var i = 1; i < pages; i++) {
+      var line = document.createElement('div');
+      line.className = 'sheet-page-break';
+      line.dataset.next = (i + 1);
+      guides.appendChild(line);
+    }
+  }
+  Array.prototype.forEach.call(guides.children, function(line, idx) {
+    line.style.top = ((idx + 1) * pageHeight) + 'px';
+  });
+  if (indicator) {
+    indicator.textContent = pages + (pages === 1 ? ' page' : ' pages') + ' · A4';
+  }
+}
+
+function initPageGuides() {
+  var sheet = document.getElementById('builder-sheet');
+  if (!sheet) return;
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(updatePageGuides).observe(sheet);
+  }
+  // Coalesce frequent input/change bursts into one paint.
+  var pending = false;
+  var schedule = function() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function() { pending = false; updatePageGuides(); });
+  };
+  sheet.addEventListener('input', schedule);
+  sheet.addEventListener('change', schedule);
+  // After fonts settle, recompute once more.
+  setTimeout(updatePageGuides, 200);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(updatePageGuides);
+  }
+  updatePageGuides();
+}
 
 /* ── Sync combined date hidden field ── */
 function syncDateHidden(i) {

@@ -601,6 +601,35 @@
   color: var(--ink-3);
 }
 
+/* On-sheet page-break guides — JS injects one .sheet-page-break per
+ * boundary at multiples of A4 height. Pointer-events:none so editing
+ * is unaffected; sits above content so the dashed line shows through. */
+.sheet-page-guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.sheet-page-break {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px dashed rgba(28, 26, 23, 0.28);
+}
+.sheet-page-break::after {
+  content: "page " attr(data-next);
+  position: absolute;
+  right: 12px;
+  top: -8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: rgba(28, 26, 23, 0.55);
+  background: #fbf7ee;
+  padding: 0 6px;
+}
+
 .current-template-note {
   margin-top: 6px;
   font-family: var(--mono);
