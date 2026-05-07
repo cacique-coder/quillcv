@@ -199,22 +199,36 @@
 
         <!-- CV Actions -->
         <div class="results-actions">
-            <button type="button" class="btn-back"
+            <button type="button" class="btn btn-ghost btn-sm results-action-back"
                     hx-get="/wizard/step/3" hx-target="#wizard-container" hx-swap="innerHTML"
                     onclick="document.getElementById('generate-area').remove();">
-                Change template & regenerate
+                <span aria-hidden="true">←</span> Change template
             </button>
-            <a href="/download-pdf" class="btn-generate" download>
-                <span class="download-icon">&#8681;</span> Download CV PDF
-            </a>
-            <a href="/download-docx" class="btn-secondary" download>
-                <span class="download-icon">&#8681;</span> Download CV DOCX
-            </a>
-            {% if cover_letter %}
-            <a href="/download-cover-letter-pdf" class="btn-secondary" download>
-                <span class="download-icon">&#8681;</span> Cover Letter PDF
-            </a>
-            {% endif %}
+            <div class="results-action-downloads">
+                <a href="/download-pdf" class="btn btn-accent" download>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M8 2 L8 11 M4 7 L8 11 L12 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 13 L13 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    Download PDF
+                </a>
+                <a href="/download-docx" class="btn" download>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M8 2 L8 11 M4 7 L8 11 L12 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 13 L13 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    DOCX
+                </a>
+                {% if cover_letter %}
+                <a href="/download-cover-letter-pdf" class="btn" download>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <rect x="3" y="2" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                        <path d="M5 6 L11 6 M5 9 L11 9 M5 12 L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                    </svg>
+                    Cover letter
+                </a>
+                {% endif %}
+            </div>
         </div>
 
     </div><!-- /results-tab-cv -->
@@ -245,17 +259,27 @@
 
         <!-- Cover Letter Actions -->
         <div class="results-actions">
-            <button type="button" class="btn-back"
+            <button type="button" class="btn btn-ghost btn-sm results-action-back"
                     hx-get="/wizard/step/3" hx-target="#wizard-container" hx-swap="innerHTML"
                     onclick="document.getElementById('generate-area').remove();">
-                Change template & regenerate
+                <span aria-hidden="true">←</span> Change template
             </button>
-            <a href="/download-cover-letter-pdf" class="btn-generate" download>
-                <span class="download-icon">&#8681;</span> Download Cover Letter PDF
-            </a>
-            <a href="/download-cover-letter-docx" class="btn-secondary" download>
-                <span class="download-icon">&#8681;</span> Download Cover Letter DOCX
-            </a>
+            <div class="results-action-downloads">
+                <a href="/download-cover-letter-pdf" class="btn btn-accent" download>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M8 2 L8 11 M4 7 L8 11 L12 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 13 L13 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    Download PDF
+                </a>
+                <a href="/download-cover-letter-docx" class="btn" download>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M8 2 L8 11 M4 7 L8 11 L12 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 13 L13 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    DOCX
+                </a>
+            </div>
         </div>
     </div><!-- /results-tab-cl -->
     {% endif %}

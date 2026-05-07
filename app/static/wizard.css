@@ -1172,18 +1172,46 @@
     border-bottom-color: var(--accent);
 }
 
-/* Results actions */
+/* Results actions — split layout: ghost back-link on the left,
+   download group on the right. Wraps cleanly on narrow screens. */
 .results-actions {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     gap: 1rem;
     margin-top: 1.5rem;
     padding-top: 1.2rem;
     border-top: 1px solid var(--border);
+    flex-wrap: wrap;
 }
-.results-actions a {
+.results-actions a,
+.results-actions .btn {
     text-decoration: none;
+}
+.results-action-back {
+    color: var(--text-muted);
+}
+.results-action-back:hover {
+    color: var(--ink);
+}
+.results-action-downloads {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.results-action-downloads .btn svg {
+    flex-shrink: 0;
+}
+@media (max-width: 560px) {
+    .results-actions {
+        justify-content: center;
+    }
+    .results-action-downloads {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* Generate progress — hand-drawn style */
