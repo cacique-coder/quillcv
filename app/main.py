@@ -166,12 +166,28 @@ app.add_middleware(SQLiteSessionMiddleware)
 _has_api_key = any(os.environ.get(k) for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY"))
 _explicit_provider = os.environ.get("LLM_PROVIDER", "").strip()
 if _explicit_provider == "claude-code" or (not _has_api_key and not _explicit_provider):
+    _selected_provider = "claude-code"
     app.state.llm = ClaudeCodeClient(model="sonnet")
     app.state.llm_fast = ClaudeCodeClient(model="haiku")
 else:
-    _provider = _explicit_provider or "anthropic"
-    app.state.llm = create_llm_client(_provider, "heavy")
-    app.state.llm_fast = create_llm_client(_provider, "light")
+    _selected_provider = _explicit_provider or "anthropic"
+    app.state.llm = create_llm_client(_selected_provider, "heavy")
+    app.state.llm_fast = create_llm_client(_selected_provider, "light")
+
+# Expose for the /up healthcheck and emit a single startup line so it's
+# obvious from the boot logs which provider/model is actually in use.
+app.state.llm_info = {
+    "provider": _selected_provider,
+    "heavy": getattr(app.state.llm, "model", "?"),
+    "light": getattr(app.state.llm_fast, "model", "?"),
+    "explicit": bool(_explicit_provider),
+}
+logger.info(
+    "LLM[heavy]: provider=%s model=%s | LLM[light]: provider=%s model=%s | LLM_PROVIDER=%s",
+    _selected_provider, app.state.llm_info["heavy"],
+    _selected_provider, app.state.llm_info["light"],
+    _explicit_provider or "(unset → autodetected)",
+)
 
 app.mount(
     "/static",
@@ -180,10 +196,12 @@ app.mount(
 )
 
 
-# Health check — Kamal requires this to verify the app is running
+# Health check — Kamal requires this to verify the app is running.
+# Also reports the active LLM so you can verify which provider is wired
+# without grepping logs.
 @app.get("/up", include_in_schema=False)
 async def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "llm": getattr(app.state, "llm_info", {})}
 
 
 # SEO infrastructure (robots.txt, sitemap.xml)
