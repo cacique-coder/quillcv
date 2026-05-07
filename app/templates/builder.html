@@ -207,21 +207,6 @@
   {# ══ CANVAS ═════════════════════════════════════════════════ #}
   <div class="canvas-area" id="canvas-area">
 
-    {# ── ATS bubble (demo — hardcoded against first exp role) ── #}
-    <div class="ats-bubble" id="ats-bubble-0" data-target="exp-0">
-      <button class="ats-bubble-dot" type="button"
-              aria-label="ATS hint for first experience role"
-              onclick="toggleAtsBubble('ats-bubble-0')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      </button>
-      <div class="ats-bubble-popover" hidden role="dialog" aria-modal="false" aria-label="ATS suggestion">
-        <div class="ats-bubble-kicker">ATS hint · from job posting</div>
-        <p>Add <b>"observability"</b> — appears 3&times; in the job description.</p>
-        <button type="button" class="btn btn-sm btn-accent"
-                onclick="dismissAtsBubble('ats-bubble-0')">Apply suggestion</button>
-      </div>
-    </div>
-
     {# ── A4 sheet — the inline-edit canvas ── #}
     <div class="sheet" id="builder-sheet">
       {% set cv = cv_data %}
