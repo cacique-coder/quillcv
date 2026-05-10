@@ -362,6 +362,7 @@ async def builder_save(request: Request):
                     self_description=attempt.get("self_description", "") or "",
                     values_text=attempt.get("values", "") or "",
                     offer_appeal=attempt.get("offer_appeal", "") or "",
+                    references=(attempt.get("cv_data") or {}).get("references") or None,
                 )
                 if saved:
                     action_word = "Updated"
@@ -390,6 +391,7 @@ async def builder_save(request: Request):
                     self_description=attempt.get("self_description", "") or "",
                     values_text=attempt.get("values", "") or "",
                     offer_appeal=attempt.get("offer_appeal", "") or "",
+                    references=(attempt.get("cv_data") or {}).get("references") or None,
                 )
         return Response(
             f'<div class="save-success">{action_word} as "<strong>{label}</strong>"'

@@ -118,6 +118,11 @@ class SavedCV(Base):
     self_description: Mapped[str] = mapped_column(Text, default="")
     values_text: Mapped[str] = mapped_column(Text, default="")
     offer_appeal: Mapped[str] = mapped_column(Text, default="")
+    # Encrypted JSON list of {name, email, phone} reference dicts. When
+    # populated this is the source of truth for references (overrides whatever
+    # the PIIRedactor tokenised inside ``cv_data_json``). Encryption is handled
+    # at the cv_repo layer with the server Fernet key.
+    references_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 

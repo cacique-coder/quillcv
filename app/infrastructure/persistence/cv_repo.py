@@ -115,11 +115,13 @@ async def save_cv(
     rendered_html: str,
     cv_data: dict,
     user_id: str | None = None,
+    job_id: str | None = None,
     label: str = "",
     job_title: str = "",
     self_description: str = "",
     values_text: str = "",
     offer_appeal: str = "",
+    references: list[dict] | None = None,
 ) -> SavedCV:
     """Convert rendered HTML to markdown, redact PII, encrypt, and store."""
     markdown = html_to_markdown(rendered_html)
@@ -136,9 +138,16 @@ async def save_cv(
     encrypted_json = encrypt_data(json.dumps(data_copy, default=str))
     encrypted_markdown = encrypt_data(markdown)
 
+    # References — first-class encrypted column (overrides tokenised refs on load).
+    if references:
+        encrypted_refs: str | None = encrypt_data(json.dumps(references, default=str))
+    else:
+        encrypted_refs = None
+
     saved = SavedCV(
         user_id=user_id,
         attempt_id=attempt_id,
+        job_id=job_id,
         source=source,
         label=label,
         job_title=job_title,
@@ -149,6 +158,7 @@ async def save_cv(
         self_description=self_description or "",
         values_text=values_text or "",
         offer_appeal=offer_appeal or "",
+        references_json=encrypted_refs,
     )
     db.add(saved)
     await db.commit()
@@ -171,6 +181,7 @@ async def update_cv(
     self_description: str | None = None,
     values_text: str | None = None,
     offer_appeal: str | None = None,
+    references: list[dict] | None = None,
 ) -> SavedCV | None:
     """Update an existing saved CV — redacts PII and re-encrypts."""
     result = await db.execute(select(SavedCV).where(SavedCV.id == cv_id))
@@ -201,6 +212,12 @@ async def update_cv(
         saved.values_text = values_text
     if offer_appeal is not None:
         saved.offer_appeal = offer_appeal
+    # References — first-class column. Only overwrite when caller explicitly
+    # passes a non-None value. Empty list clears the column.
+    if references is not None:
+        saved.references_json = (
+            encrypt_data(json.dumps(references, default=str)) if references else None
+        )
 
     await db.commit()
     await db.refresh(saved)
@@ -225,6 +242,8 @@ def decrypt_saved_cv(saved: SavedCV) -> SavedCV:
 
     saved.cv_data_json = _safe_decrypt(saved.cv_data_json)
     saved.markdown = _safe_decrypt(saved.markdown)
+    if saved.references_json:
+        saved.references_json = _safe_decrypt(saved.references_json)
     return saved
 
 
@@ -234,36 +253,56 @@ def restore_cv_pii(saved: SavedCV, pii: dict) -> SavedCV:
     ``pii`` is the dict stored in ``request.session["pii"]``.
     Mutates the SavedCV object's fields in-place and returns it.
     Admin callers should NOT call this — they should see placeholders.
+
+    In addition to vault-driven restoration, this also applies the
+    ``references_json`` override for user callers: when the SavedCV row
+    carries persisted references, those values overwrite whatever the vault
+    redactor restored inside ``cv_data["references"]``. This override is
+    gated behind ``pii`` so admin / no-session callers continue to see
+    tokenised reference values.
     """
-    if not pii:
-        return saved
+    if pii:
+        redactor = PIIRedactor(
+            full_name=pii.get("full_name", ""),
+            dob=pii.get("dob", ""),
+            document_id=pii.get("document_id", ""),
+            references=pii.get("references", []),
+            linkedin_url=pii.get("linkedin", ""),
+            github_url=pii.get("github", ""),
+        )
+        # Prime email/phone lists from pii so restore map is populated
+        if pii.get("email"):
+            redactor._emails = [pii["email"]]
+        if pii.get("phone"):
+            redactor._phones = [pii["phone"]]
 
-    redactor = PIIRedactor(
-        full_name=pii.get("full_name", ""),
-        dob=pii.get("dob", ""),
-        document_id=pii.get("document_id", ""),
-        references=pii.get("references", []),
-        linkedin_url=pii.get("linkedin", ""),
-        github_url=pii.get("github", ""),
-    )
-    # Prime email/phone lists from pii so restore map is populated
-    if pii.get("email"):
-        redactor._emails = [pii["email"]]
-    if pii.get("phone"):
-        redactor._phones = [pii["phone"]]
+        # Restore cv_data_json
+        try:
+            cv_data = json.loads(saved.cv_data_json)
+            cv_data = redactor.restore(cv_data)
+            saved.cv_data_json = json.dumps(cv_data, default=str)
+        except (json.JSONDecodeError, Exception):
+            logger.debug("Failed to restore PII in cv_data_json for saved CV")
 
-    # Restore cv_data_json
-    try:
-        cv_data = json.loads(saved.cv_data_json)
-        cv_data = redactor.restore(cv_data)
-        saved.cv_data_json = json.dumps(cv_data, default=str)
-    except (json.JSONDecodeError, Exception):
-        logger.debug("Failed to restore PII in cv_data_json for saved CV")
+        # Restore markdown
+        replacement_map = redactor._build_replacement_map()
+        from app.pii.use_cases.redact_pii import _walk_restore
+        saved.markdown = _walk_restore(saved.markdown, replacement_map)
 
-    # Restore markdown
-    replacement_map = redactor._build_replacement_map()
-    from app.pii.use_cases.redact_pii import _walk_restore
-    saved.markdown = _walk_restore(saved.markdown, replacement_map)
+        # references_json override — explicit column wins for user callers.
+        # Gated behind `if pii:` so admin paths keep tokenised references.
+        if saved.references_json:
+            try:
+                refs_decoded = json.loads(saved.references_json)
+                try:
+                    cv_data = json.loads(saved.cv_data_json)
+                except (json.JSONDecodeError, TypeError):
+                    cv_data = None
+                if isinstance(cv_data, dict):
+                    cv_data["references"] = refs_decoded
+                    saved.cv_data_json = json.dumps(cv_data, default=str)
+            except (json.JSONDecodeError, Exception):
+                logger.debug("Failed to apply references_json override on saved CV")
 
     return saved
 

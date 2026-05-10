@@ -275,44 +275,31 @@
             </div>
         </div>
 
-        <!-- Region-Specific Notes -->
-        {% if region_rules %}
-        <div class="region-notes">
-            <h2>{{ region }} Region Guidelines</h2>
-            <ul>
-                {% for note in region_rules.notes %}
-                <li>{{ note }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
         <!-- Generated CV Preview -->
         <div class="generated-cv">
-            <div class="generated-cv-header">
-                <h2>Your Generated CV
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">
-                        — {{ template.name }} template ({{ region }})
-                    </span>
-                </h2>
-                <div class="download-actions">
-                    <a href="/download-pdf" class="btn-download" download>
-                        <span class="download-icon">&#8681;</span> Download PDF
-                    </a>
-                    <a href="/download-docx" class="btn-download btn-download--secondary" download>
-                        <span class="download-icon">&#8681;</span> Download DOCX
-                    </a>
-                    {% if cover_letter %}
-                    <a href="/download-all-pdf" class="btn-download btn-download--bundle" download
-                       title="Download CV + Cover Letter as a ZIP of two PDFs">
-                        <span class="download-icon">&#8681;</span> Both as PDF (.zip)
-                    </a>
-                    <a href="/download-all-docx" class="btn-download btn-download--bundle btn-download--secondary" download
-                       title="Download CV + Cover Letter as a ZIP of two DOCX files">
-                        <span class="download-icon">&#8681;</span> Both as DOCX (.zip)
-                    </a>
-                    {% endif %}
-                </div>
+            <div class="download-actions">
+                <a href="/download-pdf" class="btn-download" download>
+                    <span class="download-icon">&#8681;</span> Download PDF
+                </a>
+                <a href="/download-docx" class="btn-download btn-download--secondary" download>
+                    <span class="download-icon">&#8681;</span> Download DOCX
+                </a>
+                {% if cover_letter %}
+                <a href="/download-cover-letter-pdf" class="btn-download" download>
+                    <span class="download-icon">&#8681;</span> Cover letter PDF
+                </a>
+                <a href="/download-cover-letter-docx" class="btn-download btn-download--secondary" download>
+                    <span class="download-icon">&#8681;</span> Cover letter DOCX
+                </a>
+                <a href="/download-all-pdf" class="btn-download btn-download--bundle" download
+                   title="Download CV + Cover Letter as a ZIP of two PDFs">
+                    <span class="download-icon">&#8681;</span> Both as PDF (.zip)
+                </a>
+                <a href="/download-all-docx" class="btn-download btn-download--bundle btn-download--secondary" download
+                   title="Download CV + Cover Letter as a ZIP of two DOCX files">
+                    <span class="download-icon">&#8681;</span> Both as DOCX (.zip)
+                </a>
+                {% endif %}
             </div>
             <div class="cv-preview">
                 {{ generated_cv | safe }}

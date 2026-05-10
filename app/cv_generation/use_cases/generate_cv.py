@@ -8,6 +8,7 @@ Callers supply a ``ProgressCallback`` to receive step notifications.
 """
 
 import asyncio
+import json
 import logging
 import re
 import time
@@ -490,9 +491,58 @@ async def run_generation_pipeline(
             except Exception:
                 logger.exception("Pipeline[%s] Failed to backfill PII vault", attempt_id)
 
+    # Derive label/job_title once for both Job and SavedCV persistence
+    label, job_title = _derive_cv_label(attempt, cover_letter_data)
+
+    # Persist Job row (encrypted artefacts) for logged-in users so the
+    # cover letter survives session expiry and `/my-cvs` can link to it.
+    job_id: str | None = None
+    if user_id:
+        try:
+            from app.infrastructure.persistence.job_repo import create_job, update_job
+            company_name = ""
+            if cover_letter_data:
+                company_name = (cover_letter_data.get("company_name") or "").strip()
+            async with async_session() as db:
+                job = await create_job(
+                    db,
+                    user_id=user_id,
+                    job_description=job_description,
+                    region=region_code,
+                    job_url=attempt.get("job_url", "") or "",
+                    job_title=job_title,
+                    company_name=company_name,
+                    offer_appeal=attempt.get("offer_appeal", "") or "",
+                    template_id=template_id,
+                )
+                update_fields: dict = {
+                    "cv_data_json": json.dumps(
+                        {k: v for k, v in cv_data.items() if not k.startswith("_")},
+                        default=str,
+                    ),
+                    "cv_rendered_html": rendered_cv,
+                    "status": "complete",
+                }
+                if cover_letter_data:
+                    update_fields["cover_letter_json"] = json.dumps(
+                        {k: v for k, v in cover_letter_data.items() if not k.startswith("_")},
+                        default=str,
+                    )
+                if cover_letter_html:
+                    update_fields["cover_letter_html"] = cover_letter_html
+                if quality_review:
+                    update_fields["quality_review_json"] = json.dumps(quality_review, default=str)
+                await update_job(db, job.id, **update_fields)
+                job_id = job.id
+                logger.info("Pipeline[%s] persisted Job %s", attempt_id, job_id)
+        except Exception:
+            logger.exception(
+                "Pipeline[%s] Job persistence failed — continuing without job link",
+                attempt_id,
+            )
+
     # Persist CV as sanitized markdown for reuse
     try:
-        label, job_title = _derive_cv_label(attempt, cover_letter_data)
         async with async_session() as db:
             await save_cv(
                 db,
@@ -503,11 +553,13 @@ async def run_generation_pipeline(
                 rendered_html=rendered_cv,
                 cv_data=cv_data,
                 user_id=user_id,
+                job_id=job_id,
                 label=label,
                 job_title=job_title,
                 self_description=attempt.get("self_description", "") or "",
                 values_text=attempt.get("values", "") or "",
                 offer_appeal=attempt.get("offer_appeal", "") or "",
+                references=cv_data.get("references") or attempt.get("references") or None,
             )
     except Exception:
         logger.exception("Failed to save CV to database (attempt=%s)", attempt_id)
