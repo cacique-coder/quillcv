@@ -48,3 +48,20 @@ def database_config() -> dict:
         "echo": False,
         "pool_size": _POOL_SIZE.get(APP_ENV, 5),
     }
+
+
+def open_signups_enabled() -> bool:
+    """Whether the public /signup form may create new accounts.
+
+    When False, the open-signup branch (no invite code) records an
+    Expression of Interest instead of creating an account, and OAuth
+    callbacks reject new users (existing users can still sign in).
+    Invited signups always work regardless of this flag.
+
+    Default: True in development/test, False in production unless the
+    operator explicitly sets ``OPEN_SIGNUPS_ENABLED=true``.
+    """
+    raw = os.environ.get("OPEN_SIGNUPS_ENABLED")
+    if raw is not None:
+        return raw.lower() in {"1", "true", "yes", "on"}
+    return APP_ENV != "production"

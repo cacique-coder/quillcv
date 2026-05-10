@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}You're on the list — QuillCV{% endblock %}
+{% block app_nav %}{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, follow">{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="auth-card">
+    <svg class="eoi-doodle" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path d="M16 2 L18 12 L28 14 L18 16 L16 26 L14 16 L4 14 L14 12 Z" stroke="var(--accent)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+    </svg>
+
+    <h2>{% if name %}Thanks, {{ name }}!{% else %}You're on the list.{% endif %}</h2>
+    <p class="auth-subtitle">
+      We've recorded your interest against <strong>{{ email }}</strong>. QuillCV is in private alpha right now — we'll email you when accounts open to the next cohort.
+    </p>
+    <p class="auth-subtitle">
+      In the meantime, browse the <a href="/demo">template gallery</a> to see what your CV could look like across 12 country formats.
+    </p>
+    <p class="auth-footer">
+      Already have an invite code? <a href="/signup">Use it here</a>
+      &middot; Already have an account? <a href="/login">Sign in</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

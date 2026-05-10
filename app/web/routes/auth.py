@@ -36,6 +36,7 @@ from app.pii.adapters.vault import (
     upsert_vault,
 )
 from app.web.templates import templates
+from config.settings import open_signups_enabled
 
 PASSWORD_RESET_TTL_MINUTES = 60
 
@@ -79,6 +80,7 @@ async def signup_page(request: Request, invite: str | None = None):
             "invite_error": invite_error,
             "google_enabled": bool(GOOGLE_CLIENT_ID),
             "github_enabled": bool(GITHUB_CLIENT_ID),
+            "signups_enabled": open_signups_enabled() or bool(invitation),
         },
     )
 
@@ -240,9 +242,55 @@ async def signup_submit(
 
         return RedirectResponse("/onboarding", status_code=303)
 
-    # ── Open signup (no invite code) — real account creation ─────────────
-    errors = []
+    # ── Open signup (no invite code) ─────────────────────────────────────
+    # When OPEN_SIGNUPS_ENABLED is off (e.g. in production until launch),
+    # the open path records an Expression of Interest only — no account
+    # is created, no password handled. Invited signups (handled above)
+    # remain unaffected.
     normalized_email = email.lower().strip()
+
+    if not open_signups_enabled():
+        from sqlalchemy.exc import IntegrityError
+
+        if not normalized_email or "@" not in normalized_email:
+            return templates.TemplateResponse(
+                "auth/signup.html",
+                {
+                    "request": request,
+                    "errors": ["Please enter a valid email address."],
+                    "invitation": None,
+                    "email_value": email,
+                    "name_value": name,
+                    "signups_enabled": False,
+                },
+            )
+
+        async with async_session() as db:
+            existing_eoi = await db.execute(
+                select(ExpressionOfInterest).where(
+                    ExpressionOfInterest.email == normalized_email
+                )
+            )
+            if existing_eoi.scalar_one_or_none() is None:
+                db.add(
+                    ExpressionOfInterest(
+                        email=normalized_email,
+                        name=name.strip(),
+                        source="signup",
+                    )
+                )
+                try:
+                    await db.commit()
+                except IntegrityError:
+                    await db.rollback()  # raced — treat as already recorded
+
+        logger.info("Recorded EOI for %s (signups disabled)", normalized_email)
+        return templates.TemplateResponse(
+            "auth/eoi_thanks.html",
+            {"request": request, "email": normalized_email, "name": name.strip()},
+        )
+
+    errors = []
 
     if not age_confirmed:
         errors.append("You must confirm that you are 18 years of age or older.")
@@ -267,6 +315,7 @@ async def signup_submit(
                 "invitation": None,
                 "email_value": email,
                 "name_value": name,
+                "signups_enabled": True,
             },
         )
 
@@ -484,6 +533,9 @@ async def google_callback(request: Request):
         if not user:
             user = await get_user_by_email(db, email)
         if not user:
+            if not open_signups_enabled():
+                logger.info("Google OAuth blocked for new user %s — signups disabled", email)
+                return RedirectResponse("/signup?eoi=1&email=" + email, status_code=303)
             user = await create_user(db, email=email, name=name, provider="google", provider_id=sub)
         else:
             await update_last_login(db, user)
@@ -583,6 +635,9 @@ async def github_callback(request: Request):
         if not user:
             user = await get_user_by_email(db, email)
         if not user:
+            if not open_signups_enabled():
+                logger.info("GitHub OAuth blocked for new user %s — signups disabled", email)
+                return RedirectResponse("/signup?eoi=1&email=" + email, status_code=303)
             user = await create_user(db, email=email, name=name, provider="github", provider_id=github_id)
         else:
             await update_last_login(db, user)
