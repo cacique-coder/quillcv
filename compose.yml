@@ -16,10 +16,19 @@ services:
     environment:
       APP_ENV: development
       RUN_MIGRATIONS: "0"
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/quillcv_dev
+      # Assemble the DB URL from parts (see config/settings.py). Only DB_HOST
+      # differs from host-mode dev — the rest defaults match the `db` service
+      # below. Set DATABASE_URL in .env if you need to point at a managed
+      # Postgres instead.
+      DB_HOST: db
       # The Claude CLI looks for ~/.claude relative to $HOME; we mount it
       # at /root/.claude so root inside the container resolves correctly.
       HOME: /root
+      # Keep the SQLite session store on a container-only volume so a host
+      # uvicorn (running as the dev user) and the container uvicorn (root)
+      # never share the same file. Without this, container writes leave the
+      # file root-owned and the next host run hits "readonly database".
+      SESSION_DB_PATH: /var/lib/quillcv/sessions.db
     ports:
       - "8000:8000"
     env_file:

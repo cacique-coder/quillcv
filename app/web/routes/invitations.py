@@ -75,8 +75,9 @@ async def invite_redeem(request: Request, code: str, user: User = Depends(requir
         invitation.redeemed_at = datetime.now(UTC)
         await db.commit()
 
-        # Grant credits using the credit service
-        await add_credits(db, user.id, invitation.credits)
+        # Grant credits using the credit service (invitation redemption is a
+        # gift, not a purchase — bumps total_granted, not total_purchased).
+        await add_credits(db, user.id, invitation.credits, as_grant=True)
 
         from app.infrastructure.instrumentation import record_custom_event
 

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block body_layout %}app{% endblock %}
+{% block title %}Admin — Prompts | QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+  .admin-heading { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text); }
+  .admin-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .admin-nav { display: flex; gap: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; }
+  .admin-nav a {
+    color: var(--text-muted); text-decoration: none; padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .admin-nav a:hover, .admin-nav a.active { color: var(--accent); border-color: var(--accent); }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .data-table th {
+    text-align: left; padding: 0.5rem 0.75rem; color: var(--text-muted);
+    font-weight: 500; border-bottom: 1px solid var(--border);
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .data-table td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--text); }
+  .data-table tr:hover td { background: rgba(108, 99, 255, 0.05); }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: auto; }
+  .kind-pill {
+    display: inline-block; padding: 0.1rem 0.45rem; border-radius: 4px;
+    background: rgba(108, 99, 255, 0.15); color: var(--accent);
+    font-size: 0.72rem; font-weight: 500;
+  }
+</style>
+
+<div class="admin-wrap">
+  {% set active = "prompts" %}
+  {% include "partials/admin_nav.html" %}
+
+  <h1 class="admin-heading">Captured prompts</h1>
+  <p class="admin-sub">
+    Showing the latest {{ shown_count }} log entries from consenting users
+    {%- if shown_count >= display_limit %} (capped at {{ display_limit }}; older entries remain in the database){%- endif %}.
+  </p>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>User</th>
+          <th>Kind</th>
+          <th>Service</th>
+          <th>Model</th>
+          <th>Tokens (in / out)</th>
+          <th>Cost</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="white-space:nowrap;font-size:0.8rem">{{ log.created_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+          <td style="font-family:monospace;font-size:0.8rem">
+            {% if log.user_id %}
+              <a href="/admin/users/{{ log.user_id }}">{{ email_map.get(log.user_id, log.user_id[:10] ~ "…") }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="kind-pill">{{ log.kind }}</span></td>
+          <td>{{ log.service }}</td>
+          <td style="font-family:monospace;font-size:0.78rem">{{ log.model.split(":")[-1][:24] }}</td>
+          <td>{{ "{:,}".format(log.input_tokens) }} / {{ "{:,}".format(log.output_tokens) }}</td>
+          <td>${{ "%.4f" | format(log.cost_usd) }}</td>
+          <td><a href="/admin/prompts/{{ log.id }}" class="btn-ghost btn-sm">Open</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="color:var(--text-muted)">
+          No prompts captured yet. Mark a user as eligible at <a href="/admin/users">/admin/users</a>,
+          then they need to opt in from their account settings.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

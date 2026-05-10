@@ -42,30 +42,8 @@ def _profile_dir(user_id: str) -> Path:
 @router.get("")
 @router.get("/")
 async def profile_page(request: Request):
-    """Render the user profile page pre-filled from the PII vault."""
-    current_user = await get_current_user(request)
-    if not current_user:
-        return RedirectResponse("/login", status_code=302)
-
-    pii = request.state.session.get("pii") or {}
-
-    # Detect whether a base CV has already been uploaded for this profile.
-    cv_filename: str | None = None
-    profile_dir = _profile_dir(current_user.id)
-    for candidate in profile_dir.iterdir() if profile_dir.exists() else []:
-        if candidate.name.startswith("cv_file"):
-            cv_filename = candidate.stem  # strip ".enc"
-            break
-
-    return templates.TemplateResponse("profile.html", {
-        "request": request,
-        "user": current_user,
-        "pii": pii,
-        "cv_filename": cv_filename,
-        "regions": list(REGIONS.values()),
-        "region_fields": _region_fields(pii.get("region", "")),
-        "dev_mode": request.app.state.dev_mode,
-    })
+    """Career profile lives at /account#career-profile now. Permanent redirect."""
+    return RedirectResponse("/account#career-profile", status_code=301)
 
 
 # ---------------------------------------------------------------------------

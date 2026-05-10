@@ -252,6 +252,7 @@ def restore_pii_tokens(stored_data: dict, pii: dict) -> dict:
         "<<LINKEDIN_URL>>": pii.get("linkedin", ""),
         "<<GITHUB_URL>>": pii.get("github", ""),
         "<<PORTFOLIO_URL>>": pii.get("portfolio", ""),
+        "<<LOCATION>>": pii.get("location", ""),
         "<<CANDIDATE_SLUG>>": candidate_slug,
     }
     raw = json.dumps(stored_data)

@@ -91,14 +91,17 @@ async def dashboard(request: Request, user: User = Depends(require_auth)):
     attempt_id = request.state.session.get("attempt_id")
     if attempt_id:
         attempt = get_attempt(attempt_id)
-        if attempt and 2 <= attempt.get("step", 0) <= 5 and attempt.get("job_description"):
-            jd_snippet = (attempt["job_description"][:60]).strip()
-            step = attempt["step"]
-            resume = {
-                "step": step,
-                "title": jd_snippet,
-                "url": f"/wizard/step/{step}",
-            }
+        if attempt and 2 <= attempt.get("step", 0) <= 5:
+            has_details = any(attempt.get(k) for k in ("job_description", "full_name", "email", "cv_text"))
+            if has_details:
+                jd = (attempt.get("job_description") or "").strip()
+                step = attempt["step"]
+                title = jd[:60] if jd else f"Untitled tailoring · step {step}"
+                resume = {
+                    "step": step,
+                    "title": title,
+                    "url": f"/wizard/step/{step}",
+                }
 
     async with async_session() as db:
         # --- Recent CVs (top 4, newest first) ---

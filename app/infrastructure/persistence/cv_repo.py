@@ -117,6 +117,9 @@ async def save_cv(
     user_id: str | None = None,
     label: str = "",
     job_title: str = "",
+    self_description: str = "",
+    values_text: str = "",
+    offer_appeal: str = "",
 ) -> SavedCV:
     """Convert rendered HTML to markdown, redact PII, encrypt, and store."""
     markdown = html_to_markdown(rendered_html)
@@ -143,6 +146,9 @@ async def save_cv(
         template_id=template_id,
         markdown=encrypted_markdown,
         cv_data_json=encrypted_json,
+        self_description=self_description or "",
+        values_text=values_text or "",
+        offer_appeal=offer_appeal or "",
     )
     db.add(saved)
     await db.commit()
@@ -162,6 +168,9 @@ async def update_cv(
     cv_data: dict,
     label: str = "",
     job_title: str = "",
+    self_description: str | None = None,
+    values_text: str | None = None,
+    offer_appeal: str | None = None,
 ) -> SavedCV | None:
     """Update an existing saved CV — redacts PII and re-encrypts."""
     result = await db.execute(select(SavedCV).where(SavedCV.id == cv_id))
@@ -185,6 +194,13 @@ async def update_cv(
         saved.label = label
     if job_title:
         saved.job_title = job_title
+    # Voice fields: only overwrite when the caller explicitly passed a value.
+    if self_description is not None:
+        saved.self_description = self_description
+    if values_text is not None:
+        saved.values_text = values_text
+    if offer_appeal is not None:
+        saved.offer_appeal = offer_appeal
 
     await db.commit()
     await db.refresh(saved)

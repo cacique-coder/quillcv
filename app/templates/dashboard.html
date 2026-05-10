@@ -179,7 +179,7 @@
 {# ── Quick actions ── #}
 <div class="qa-label">Quick actions</div>
 <div class="quick-actions">
-  <a class="qa" href="/wizard">
+  <a class="qa" href="/wizard/new">
     <div class="ico">
       {# Target icon #}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -231,6 +231,11 @@
           <div class="meta">{{ region_flag(cv.region) }} {{ cv.region }} &middot; {{ cv.template | title }} &middot; updated {{ cv.updated_human }}</div>
         </div>
         {% if cv.score is not none %}<div class="score{% if cv.score >= 85 %}{% elif cv.score >= 60 %} mid{% else %} low{% endif %}">{{ cv.score }}%</div>{% endif %}
+        <a href="/wizard/new?from_cv={{ cv.id }}" class="icon-btn" title="Tailor a new application from this CV" aria-label="Tailor a new application from this CV">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </a>
         <a href="/builder/edit/{{ cv.id }}" class="icon-btn" title="Open CV" aria-label="Open {{ cv.title }}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="9,18 15,12 9,6"/>
@@ -240,7 +245,7 @@
       {% endfor %}
     {% else %}
       <div class="panel-empty">
-        No CVs yet &mdash; <a href="/wizard">Build your first one &rarr;</a>
+        No CVs yet &mdash; <a href="/wizard/new">Build your first one &rarr;</a>
       </div>
     {% endif %}
   </div>

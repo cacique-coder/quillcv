@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block body_layout %}app{% endblock %}
+{% block title %}Admin — Prompt {{ log.id[:8] }} | QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+  .admin-heading { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text); }
+  .admin-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .admin-nav { display: flex; gap: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; }
+  .admin-nav a {
+    color: var(--text-muted); text-decoration: none; padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .admin-nav a:hover, .admin-nav a.active { color: var(--accent); border-color: var(--accent); }
+  .meta-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem; margin-bottom: 1.5rem;
+  }
+  .meta-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.85rem 1rem;
+  }
+  .meta-label {
+    font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 0.3rem;
+  }
+  .meta-value { font-family: monospace; font-size: 0.85rem; color: var(--text); word-break: break-all; }
+  .panel-title { font-size: 1rem; font-weight: 600; color: var(--text); margin: 1.25rem 0 0.5rem; }
+  pre.text-block {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem; font-size: 0.8rem;
+    line-height: 1.5; max-height: 32rem; overflow: auto;
+    white-space: pre-wrap; word-break: break-word; color: var(--text);
+  }
+</style>
+
+<div class="admin-wrap">
+  {% set active = "prompts" %}
+  {% include "partials/admin_nav.html" %}
+
+  <h1 class="admin-heading">Prompt log entry</h1>
+  <p class="admin-sub">
+    <a href="/admin/prompts">&larr; Back to prompts</a>
+    &nbsp;&middot;&nbsp; <code>{{ log.id }}</code>
+  </p>
+
+  <div class="meta-grid">
+    <div class="meta-card"><div class="meta-label">When</div><div class="meta-value">{{ log.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</div></div>
+    <div class="meta-card"><div class="meta-label">User</div>
+      <div class="meta-value">
+        {% if log.user_id %}
+          <a href="/admin/users/{{ log.user_id }}">{{ target_email or log.user_id }}</a>
+        {% else %}—{% endif %}
+      </div>
+    </div>
+    <div class="meta-card"><div class="meta-label">Kind</div><div class="meta-value">{{ log.kind }}</div></div>
+    <div class="meta-card"><div class="meta-label">Service</div><div class="meta-value">{{ log.service }}</div></div>
+    <div class="meta-card"><div class="meta-label">Model</div><div class="meta-value">{{ log.model }}</div></div>
+    <div class="meta-card"><div class="meta-label">Tokens (in / out)</div><div class="meta-value">{{ "{:,}".format(log.input_tokens) }} / {{ "{:,}".format(log.output_tokens) }}</div></div>
+    <div class="meta-card"><div class="meta-label">Cost</div><div class="meta-value">${{ "%.4f" | format(log.cost_usd) }}</div></div>
+    <div class="meta-card"><div class="meta-label">Transaction</div>
+      <div class="meta-value"><a href="/admin/requests/{{ log.transaction_id }}">{{ log.transaction_id[:18] }}…</a></div>
+    </div>
+  </div>
+
+  <div class="panel-title">Prompt</div>
+  <pre class="text-block">{{ log.prompt_text }}</pre>
+
+  <div class="panel-title">Response</div>
+  <pre class="text-block">{{ log.response_text or "(no response captured)" }}</pre>
+</div>
+{% endblock %}

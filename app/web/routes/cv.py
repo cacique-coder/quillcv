@@ -119,7 +119,19 @@ async def ws_analyze(websocket: WebSocket):
             )
 
         # Render the final HTML
-        html = templates.get_template("partials/results.html").render(request=websocket, **result)
+        missing_keyword_groups = result.get("missing_keyword_groups") or {}
+        _cv_data_for_order = (attempt_data.get("cv_data") or {})
+        missing_keyword_categories_order = [
+            g.get("category") for g in (_cv_data_for_order.get("skills_grouped") or [])
+            if g.get("category")
+        ]
+        # `result` already includes `missing_keyword_groups` from the pipeline,
+        # so we only add the order list here (not in the pipeline output).
+        html = templates.get_template("partials/results.html").render(
+            request=websocket,
+            **result,
+            missing_keyword_categories_order=missing_keyword_categories_order,
+        )
         await websocket.send_json({"type": "complete", "html": html})
 
     except WebSocketDisconnect:
@@ -192,9 +204,20 @@ async def analyze(request: Request):
             {"request": request, "error": str(e)},
         )
 
+    missing_keyword_groups = result.get("missing_keyword_groups") or {}
+    _attempt_for_order = get_attempt(attempt_id) or {}
+    missing_keyword_categories_order = [
+        g.get("category") for g in ((_attempt_for_order.get("cv_data") or {}).get("skills_grouped") or [])
+        if g.get("category")
+    ]
     return templates.TemplateResponse(
         "partials/results.html",
-        {"request": request, **result},
+        {
+            "request": request,
+            **result,
+            "missing_keyword_groups": missing_keyword_groups,
+            "missing_keyword_categories_order": missing_keyword_categories_order,
+        },
     )
 
 
@@ -298,6 +321,12 @@ async def apply_fixes(request: Request):
 
     ats_original = analyze_ats(full_cv_text, job_description, keywords_override=job_keywords)
 
+    missing_keyword_groups = attempt.get("missing_keyword_groups") or {}
+    missing_keyword_categories_order = [
+        g.get("category") for g in (updated_data.get("skills_grouped") or [])
+        if g.get("category")
+    ]
+
     return templates.TemplateResponse(
         "partials/results.html",
         {
@@ -305,12 +334,16 @@ async def apply_fixes(request: Request):
             "ats_original": ats_original,
             "ats_generated": ats_generated,
             "generated_cv": rendered_cv,
+            "cover_letter": attempt.get("cover_letter_html"),
+            "cover_letter_data": attempt.get("cover_letter_data"),
             "cv_text": full_cv_text[:500],
             "template": selected_template,
             "region": region_code,
             "region_rules": region_rules,
             "quality_review": None,
             "fixes_applied": len(flags),
+            "missing_keyword_groups": missing_keyword_groups,
+            "missing_keyword_categories_order": missing_keyword_categories_order,
         },
     )
 
@@ -355,16 +388,61 @@ async def add_skills(request: Request):
     template_id = attempt.get("template_id", "modern")
     region_code = attempt.get("region", "US")
     job_description = attempt.get("job_description", "")
+    missing_keyword_groups: dict[str, str] = attempt.get("missing_keyword_groups") or {}
 
     existing = cv_data.get("skills") or []
     seen = {s.strip().lower() for s in existing if isinstance(s, str)}
+
+    # Extend seen with every skill already in skills_grouped so we don't
+    # add the same keyword twice across the flat list and grouped structure.
+    grouped = list(cv_data.get("skills_grouped") or [])
+    for group in grouped:
+        for s in group.get("items", []):
+            if isinstance(s, str):
+                seen.add(s.strip().lower())
+
+    added_kws: list[str] = []
     for kw in new_skills:
         key = kw.lower()
         if key in seen:
             continue
         seen.add(key)
         existing.append(kw)
+        added_kws.append(kw)
     cv_data["skills"] = existing
+
+    # Mirror additions into skills_grouped — category-aware placement.
+    if grouped and added_kws:
+        _ADDITIONAL_NAMES = {"additional skills", "additional", "other skills", "other"}
+        # Build a case-insensitive lookup of existing group names → group object
+        group_by_cat = {g.get("category", "").strip().lower(): g for g in grouped}
+
+        for kw in added_kws:
+            category = missing_keyword_groups.get(kw, "")
+            cat_key = category.strip().lower()
+            if category and cat_key in group_by_cat:
+                # Append to the matching existing group
+                target = group_by_cat[cat_key]
+                target["items"] = [*list(target.get("items") or []), kw]
+            elif category:
+                # Category from categorizer but no matching group yet — create it
+                new_group: dict = {"category": category, "items": [kw]}
+                grouped.append(new_group)
+                group_by_cat[cat_key] = new_group
+            else:
+                # No mapping (older attempt / categorizer failed) — fall back to Additional Skills
+                fallback = next(
+                    (g for g in grouped if g.get("category", "").strip().lower() in _ADDITIONAL_NAMES),
+                    None,
+                )
+                if fallback is not None:
+                    fallback["items"] = [*list(fallback.get("items") or []), kw]
+                else:
+                    fallback_group: dict = {"category": "Additional Skills", "items": [kw]}
+                    grouped.append(fallback_group)
+                    group_by_cat["additional skills"] = fallback_group
+
+        cv_data["skills_grouped"] = grouped
 
     llm_usage = cv_data.pop("_llm_usage", {})
     rendered_cv = templates.get_template(f"cv_templates/{template_id}.html").render(**cv_data)
@@ -400,6 +478,9 @@ async def add_skills(request: Request):
         attempt_id, len(new_skills), len(cv_data["skills"]), ats_generated.score,
     )
 
+    missing_keyword_categories_order = [
+        g.get("category") for g in (cv_data.get("skills_grouped") or []) if g.get("category")
+    ]
     return templates.TemplateResponse(
         "partials/results.html",
         {
@@ -413,8 +494,10 @@ async def add_skills(request: Request):
             "template": selected_template,
             "region": region_code,
             "region_rules": region_rules,
-            "quality_review": None,
+            "quality_review": attempt.get("quality_review"),
             "skills_added": len(new_skills),
+            "missing_keyword_groups": missing_keyword_groups,
+            "missing_keyword_categories_order": missing_keyword_categories_order,
         },
     )
 
@@ -480,5 +563,98 @@ async def download_docx(request: Request):
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={
             "Content-Disposition": f'attachment; filename="{safe_name} - QuillCV.docx"',
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cover letter downloads
+# ---------------------------------------------------------------------------
+
+
+@router.get("/download-cover-letter-pdf")
+async def download_cover_letter_pdf(request: Request):
+    """Generate and download the cover letter as PDF."""
+    attempt_id = request.state.session.get("attempt_id")
+    if not attempt_id:
+        return Response("No active session", status_code=400)
+    attempt = get_attempt(attempt_id)
+    if not attempt or not attempt.get("cover_letter_html"):
+        return Response("No cover letter found. Please generate first.", status_code=400)
+
+    cover_letter_html = attempt["cover_letter_html"]
+    cv_name = attempt.get("cv_data", {}).get("name", "Cover Letter") or "Cover Letter"
+    safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "Cover Letter"
+
+    pdf_bytes = await generate_pdf(cover_letter_html)
+    if pdf_bytes is None:
+        return Response("PDF generation failed. Please try again.", status_code=500)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name} - Cover Letter - QuillCV.pdf"',
+        },
+    )
+
+
+@router.get("/download-cover-letter-docx")
+async def download_cover_letter_docx(request: Request):
+    """Generate and download the cover letter as DOCX."""
+    attempt_id = request.state.session.get("attempt_id")
+    if not attempt_id:
+        return Response("No active session", status_code=400)
+    attempt = get_attempt(attempt_id)
+    cl = attempt.get("cover_letter_data") if attempt else None
+    if not cl:
+        return Response("No cover letter found. Please generate first.", status_code=400)
+
+    cv_name = attempt.get("cv_data", {}).get("name", "Cover Letter") or "Cover Letter"
+    safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "Cover Letter"
+
+    from io import BytesIO
+
+    from docx import Document
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt
+
+    doc = Document()
+    style = doc.styles["Normal"]
+    style.font.size = Pt(11)
+
+    def add(text, align=None):
+        if not text:
+            return
+        p = doc.add_paragraph(text)
+        if align:
+            p.alignment = align
+        return p
+
+    add(cl.get("date", ""), align=WD_ALIGN_PARAGRAPH.RIGHT)
+    recipient = cl.get("recipient", "")
+    company = cl.get("company_name", "")
+    if recipient or company:
+        add(", ".join(filter(None, [recipient, company])))
+    doc.add_paragraph()
+    add(cl.get("salutation", ""))
+    add(cl.get("opening", ""))
+    for para in cl.get("body_paragraphs") or []:
+        add(para)
+    add(cl.get("contribution", ""))
+    add(cl.get("closing", ""))
+    doc.add_paragraph()
+    add(cl.get("sign_off", ""))
+    add(cl.get("name", ""))
+
+    buf = BytesIO()
+    doc.save(buf)
+    docx_bytes = buf.getvalue()
+
+    return Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name} - Cover Letter - QuillCV.docx"',
         },
     )

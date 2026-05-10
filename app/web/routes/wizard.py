@@ -2,6 +2,7 @@ import json
 import logging
 
 from fastapi import APIRouter, File, Form, Request, UploadFile
+from starlette.responses import RedirectResponse
 
 from app.consent.use_cases.record_consent import (
     CURRENT_POLICY_VERSION,
@@ -147,6 +148,89 @@ async def wizard_shell(request: Request):
     return _wizard_shell(request, step)
 
 
+@router.get("/new")
+async def wizard_new(request: Request, from_cv: str | None = None):
+    """Start a brand-new wizard attempt, optionally seeded from a saved CV."""
+    old_attempt_id = request.state.session.get("attempt_id")
+    new_attempt_id = create_attempt()
+    request.state.session["attempt_id"] = new_attempt_id
+
+    if from_cv:
+        await _seed_from_saved_cv(request, new_attempt_id, from_cv, old_attempt_id)
+
+    return RedirectResponse(url="/wizard/step/1", status_code=303)
+
+
+async def _seed_from_saved_cv(
+    request: Request,
+    new_attempt_id: str,
+    cv_id: str,
+    old_attempt_id: str | None,
+) -> None:
+    """Seed a new attempt from a saved CV row if the caller is authorised to access it."""
+    from sqlalchemy import select
+
+    from app.infrastructure.persistence.cv_repo import decrypt_saved_cv
+    from app.infrastructure.persistence.orm_models import SavedCV
+
+    current_user = await get_current_user(request)
+
+    async with async_session() as db:
+        result = await db.execute(select(SavedCV).where(SavedCV.id == cv_id))
+        cv = result.scalar_one_or_none()
+
+    if not cv:
+        logger.info("WizardSeed[%s] cv_id=%s not found — skipping seed", new_attempt_id, cv_id)
+        return
+
+    # Ownership check: authenticated users must own the row; anonymous users
+    # may access it only if it belongs to their previous session attempt.
+    if current_user:
+        authorised = cv.user_id == current_user.id
+    else:
+        authorised = bool(old_attempt_id and cv.attempt_id == old_attempt_id)
+
+    if not authorised:
+        logger.info(
+            "WizardSeed[%s] cv_id=%s ownership check failed — skipping seed",
+            new_attempt_id, cv_id,
+        )
+        return
+
+    cv = decrypt_saved_cv(cv)
+
+    try:
+        cv_data = json.loads(cv.cv_data_json) if cv.cv_data_json else {}
+    except (json.JSONDecodeError, TypeError):
+        cv_data = {}
+
+    seed: dict = {"step": 1}
+    if cv.region:
+        seed["region"] = cv.region
+    if cv.template_id:
+        seed["template_id"] = cv.template_id
+    if cv.markdown:
+        seed["cv_text"] = cv.markdown
+
+    # Identity fields (full_name/email/phone) and references are NOT seeded
+    # from the saved CV — they always come from the PII vault on render in
+    # step2(). The saved cv_data_json contains redacted placeholder tokens
+    # (e.g. ``<<FULL_NAME>>``), so seeding from it would leak placeholders.
+
+    # Per-CV professional voice: preserve the voice that was used the first
+    # time this CV was tailored, so re-running the wizard from a saved CV
+    # keeps the same self_description / values / offer_appeal as defaults.
+    if getattr(cv, "self_description", None):
+        seed["self_description"] = cv.self_description
+    if getattr(cv, "values_text", None):
+        seed["values"] = cv.values_text
+    if getattr(cv, "offer_appeal", None):
+        seed["offer_appeal"] = cv.offer_appeal
+
+    update_attempt(new_attempt_id, **seed)
+    logger.info("WizardSeed[%s] seeded from cv_id=%s", new_attempt_id, cv.id)
+
+
 # ------------------------------------------------------------------
 # Step 1: Country
 # ------------------------------------------------------------------
@@ -215,16 +299,33 @@ async def step2(request: Request):
     current_user = await get_current_user(request)
     age_already_confirmed = bool(current_user and current_user.age_confirmed_at)
 
-    # Merge PII vault values as defaults — attempt values always take priority
+    # Merge PII vault values into the attempt for rendering.
+    #
+    # Identity fields (full_name/email/phone/dob/document_id/nationality/
+    # marital_status) and references are vault-authoritative: PII edits in
+    # the wizard are written back to the vault on submit (see step 2 save
+    # below), so the vault is the source of truth. Forcing the vault to
+    # win on render also avoids leaking redacted placeholder tokens from
+    # `_seed_from_saved_cv` (where cv_data_json contains tokens like
+    # ``<<FULL_NAME>>``).
+    #
+    # Voice fields (self_description, values) fall back vault → empty only
+    # when the attempt has no value, so a per-CV voice seeded by
+    # `_seed_from_saved_cv` is preserved.
     pii = request.state.session.get("pii") or {}
     pii_prefilled = bool(pii)
-    for key in ("full_name", "email", "phone", "dob", "document_id", "nationality", "marital_status",
-                "self_description", "values"):
+    for key in ("full_name", "email", "phone", "dob", "document_id",
+                "nationality", "marital_status"):
+        if pii.get(key):
+            attempt[key] = pii[key]
+
+    for key in ("self_description", "values"):
         if not attempt.get(key) and pii.get(key):
             attempt[key] = pii[key]
 
-    # Merge vault references as defaults when the attempt has none yet
-    if not attempt.get("references") and pii.get("references"):
+    # References: vault wins when populated (vault-authoritative, like the
+    # identity fields above).
+    if pii.get("references"):
         attempt["references"] = pii["references"]
 
     # Check PII completeness based on region requirements

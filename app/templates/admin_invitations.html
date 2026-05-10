@@ -179,11 +179,8 @@
 </style>
 
 <div class="admin-wrap">
-  <div class="admin-nav">
-    <a href="/admin">Dashboard</a>
-    <a href="/admin/requests">All Requests</a>
-    <a href="/admin/invitations" class="active">Invitations</a>
-  </div>
+  {% set active = "invitations" %}
+  {% include "partials/admin_nav.html" %}
 
   <h1 class="admin-heading">Admin — Invitations</h1>
   <p class="admin-sub">Logged as {{ user.email }}</p>

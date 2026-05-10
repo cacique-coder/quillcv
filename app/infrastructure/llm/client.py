@@ -2,11 +2,69 @@ import asyncio
 import contextvars
 import logging
 import os
+import re
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Outbound PII tripwire — best-effort detector for plain-text PII that escapes
+# upstream redaction. Logs by default; raises if LLM_PII_TRIPWIRE=raise.
+# ---------------------------------------------------------------------------
+
+# Email regex with @ context guard — won't match dates / version strings.
+_PII_EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
+# LinkedIn / GitHub URL patterns — require the /in/ or /<user> path so we don't
+# match the bare domain "github.com" mentioned in skills sections.
+_PII_LINKEDIN_RE = re.compile(r"(?:https?://)?(?:www\.)?linkedin\.com/in/[\w\-\.]+", re.IGNORECASE)
+_PII_GITHUB_RE = re.compile(
+    r"(?:https?://)?(?:www\.)?github\.com/(?!orgs/|features/|about/|pricing|enterprise|sponsors)[\w\-\.]{2,}",
+    re.IGNORECASE,
+)
+# Phone regex — anchored on a leading + or a parenthesised area code, plus at
+# least 7 digits total. This avoids matching dates like "2020-2024" or
+# version strings like "v1.2.3.4".
+_PII_PHONE_RE = re.compile(
+    r"(?<!\w)"
+    r"(?:\+\d[\d\s\-.()]{7,}\d|\(\d{2,4}\)[\s\-.]?\d[\d\s\-.]{5,}\d)"
+    r"(?!\w)"
+)
+
+
+def _check_prompt_for_pii(prompt: str) -> list[str]:
+    """Return a list of PII categories detected in *prompt*.
+
+    Best-effort — patterns are deliberately strict to avoid false positives on
+    CV-shaped content (date ranges, version numbers, GitHub repo URLs).
+    """
+    detected: list[str] = []
+    if _PII_EMAIL_RE.search(prompt):
+        detected.append("email")
+    if _PII_LINKEDIN_RE.search(prompt):
+        detected.append("linkedin_url")
+    if _PII_GITHUB_RE.search(prompt):
+        detected.append("github_url")
+    if _PII_PHONE_RE.search(prompt):
+        detected.append("phone")
+    return detected
+
+
+def _enforce_pii_tripwire(prompt: str, model: str) -> None:
+    """Run the PII tripwire and either log or raise based on env config."""
+    categories = _check_prompt_for_pii(prompt)
+    if not categories:
+        return
+    logger.error(
+        "PII tripwire: outgoing prompt to model=%s contains %s",
+        model, categories,
+    )
+    if os.environ.get("LLM_PII_TRIPWIRE", "").strip().lower() == "raise":
+        raise ValueError(
+            f"PII tripwire blocked outgoing prompt — detected: {categories}"
+        )
 
 
 # Pricing per million tokens (USD) — update when model changes
@@ -100,6 +158,42 @@ def _split_prompt(prompt: str) -> tuple[str, str]:
     return "", prompt
 
 
+_SERVICE_KIND_MAP = {
+    "ai_generator": "cv",
+    "cover_letter_generator": "cover_letter",
+    "cv_reviewer": "review",
+    "cv_refiner": "refine",
+    "keyword_extractor": "keywords",
+}
+
+
+async def _user_consents_to_prompt_logging(db, user_id: str) -> bool:
+    """Return True iff the user is admin-flagged eligible AND has the most-recent
+    prompt_logging consent record set to granted=True."""
+    from sqlalchemy import select
+
+    from app.infrastructure.persistence.orm_models import ConsentRecord, User
+
+    user_row = await db.execute(
+        select(User.prompt_logging_eligible).where(User.id == user_id)
+    )
+    eligible = user_row.scalar_one_or_none()
+    if not eligible:
+        return False
+
+    consent_row = await db.execute(
+        select(ConsentRecord.granted)
+        .where(
+            ConsentRecord.user_id == user_id,
+            ConsentRecord.consent_type == "prompt_logging",
+        )
+        .order_by(ConsentRecord.created_at.desc())
+        .limit(1)
+    )
+    last = consent_row.scalar_one_or_none()
+    return bool(last)
+
+
 async def _log_to_db(
     transaction_id: str,
     attempt_id: str | None,
@@ -115,11 +209,21 @@ async def _log_to_db(
     duration_ms: int,
     status: str,
     error_message: str | None = None,
+    prompt_text: str = "",
+    response_text: str = "",
 ) -> None:
-    """Fire-and-forget DB log."""
+    """Fire-and-forget DB log.
+
+    Always writes to ``api_request_logs`` (cost tracking).
+    Additionally writes the full prompt + response to ``prompt_logs`` for every
+    consented call (success AND failure) when the user has been admin-flagged
+    ``prompt_logging_eligible`` AND has granted the ``prompt_logging`` consent.
+    Each row captures ``status`` and ``error_message`` so failed prompts (timeouts,
+    API errors) remain visible for debugging.
+    """
     try:
         from app.infrastructure.persistence.database import async_session
-        from app.infrastructure.persistence.orm_models import APIRequestLog
+        from app.infrastructure.persistence.orm_models import APIRequestLog, PromptLog
         async with async_session() as db:
             db.add(APIRequestLog(
                 transaction_id=transaction_id,
@@ -138,6 +242,29 @@ async def _log_to_db(
                 error_message=error_message,
             ))
             await db.commit()
+
+            if (
+                user_id
+                and prompt_text
+                and await _user_consents_to_prompt_logging(db, user_id)
+            ):
+                kind = _SERVICE_KIND_MAP.get(service, service or "unknown")
+                db.add(PromptLog(
+                    transaction_id=transaction_id,
+                    attempt_id=attempt_id,
+                    user_id=user_id,
+                    service=service,
+                    kind=kind,
+                    model=model,
+                    prompt_text=prompt_text,
+                    response_text=response_text or "",
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    cost_usd=cost_usd,
+                    status=status,
+                    error_message=error_message,
+                ))
+                await db.commit()
     except Exception:
         logger.warning("Failed to log API request to DB", exc_info=True)
 
@@ -175,6 +302,9 @@ class AnthropicAPIClient(LLMClient):
 
     async def generate(self, prompt: str) -> LLMResult:
         import time
+
+        # PII tripwire BEFORE the prompt is split or sent to the API.
+        _enforce_pii_tripwire(prompt, self.model)
 
         system_text, user_text = _split_prompt(prompt)
 
@@ -248,6 +378,8 @@ class AnthropicAPIClient(LLMClient):
                 duration_ms=round(duration_s * 1000),
                 status=status,
                 error_message=error_message,
+                prompt_text=prompt,
+                response_text=result_text,
             ))
 
         return LLMResult(
@@ -262,13 +394,15 @@ class AnthropicAPIClient(LLMClient):
 
 
 class ClaudeCodeClient(LLMClient):
-    def __init__(self, model: str = "sonnet", timeout: int = 120):
+    def __init__(self, model: str = "sonnet", timeout: int | None = None):
         self.model = model
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None else int(os.environ.get("CLAUDE_CODE_TIMEOUT", "600"))
 
     async def generate(self, prompt: str) -> LLMResult:
         import json
         import time
+
+        _enforce_pii_tripwire(prompt, f"claude-code:{self.model}")
 
         # Remove CLAUDECODE env var so the CLI doesn't think it's nested
         env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
@@ -372,6 +506,8 @@ class ClaudeCodeClient(LLMClient):
                 duration_ms=round(duration_s * 1000),
                 status=status,
                 error_message=error_message,
+                prompt_text=prompt,
+                response_text=result_text,
             ))
 
         return LLMResult(
@@ -397,6 +533,8 @@ class OpenAIClient(LLMClient):
 
     async def generate(self, prompt: str) -> LLMResult:
         import time
+
+        _enforce_pii_tripwire(prompt, self.model)
 
         system_text, user_text = _split_prompt(prompt)
 
@@ -467,6 +605,8 @@ class OpenAIClient(LLMClient):
                 duration_ms=round(duration_s * 1000),
                 status=status,
                 error_message=error_message,
+                prompt_text=prompt,
+                response_text=result_text,
             ))
 
         return LLMResult(
@@ -493,6 +633,8 @@ class GeminiClient(LLMClient):
 
         import google.genai
         from google.genai.types import GenerateContentConfig
+
+        _enforce_pii_tripwire(prompt, self.model)
 
         system_text, user_text = _split_prompt(prompt)
 
@@ -571,6 +713,8 @@ class GeminiClient(LLMClient):
                 duration_ms=round(duration_s * 1000),
                 status=status,
                 error_message=error_message,
+                prompt_text=prompt,
+                response_text=result_text,
             ))
 
         return LLMResult(

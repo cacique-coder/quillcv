@@ -10,16 +10,25 @@
   <nav class="nav">
     <a href="/dashboard" {% if request.url.path == '/dashboard' or request.url.path == '/app' %}class="active"{% endif %}>Dashboard</a>
     <a href="/my-cvs"    {% if '/my-cvs' in request.url.path %}class="active"{% endif %}>My CVs</a>
-    <a href="/wizard"    {% if '/wizard' in request.url.path %}class="active"{% endif %}>Tailor to a job</a>
+    <a href="/wizard/new" {% if '/wizard' in request.url.path %}class="active"{% endif %}>Tailor to a job</a>
     <a href="/builder"   {% if '/builder' in request.url.path %}class="active"{% endif %}>Builder</a>
   </nav>
 
   <div class="nav-section">Personal</div>
   <nav class="nav">
-    <a href="/profile" {% if '/profile' in request.url.path %}class="active"{% endif %}>Profile</a>
-    <a href="/account" {% if '/account' in request.url.path %}class="active"{% endif %}>Account</a>
+    <a href="/account" {% if request.url.path == '/account' or request.url.path.startswith('/account/topup') %}class="active"{% endif %}>Account</a>
     <a href="/account/pii" {% if '/account/pii' in request.url.path %}class="active"{% endif %}>Vault</a>
   </nav>
+
+  {% if request.state.user and request.state.user.role == 'admin' %}
+  <div class="nav-section">Admin</div>
+  <nav class="nav">
+    <a href="/admin" {% if request.url.path == '/admin' %}class="active"{% endif %}>Dashboard</a>
+    <a href="/admin/users" {% if '/admin/users' in request.url.path %}class="active"{% endif %}>Users</a>
+    <a href="/admin/prompts" {% if '/admin/prompts' in request.url.path %}class="active"{% endif %}>Prompts</a>
+    <a href="/admin/invitations" {% if '/admin/invitations' in request.url.path %}class="active"{% endif %}>Invitations</a>
+  </nav>
+  {% endif %}
 
   <div class="sidebar-foot">
     {% if request.state.user %}
@@ -28,7 +37,7 @@
           <div class="credits-num">{{ request.state.balance|default(0) }}</div>
           <div class="credits-lbl">credits</div>
         </div>
-        <a href="/pricing" class="btn btn-sm btn-ghost" style="margin-left:auto;">Top up</a>
+        <a href="/account/topup" class="btn btn-sm btn-ghost" style="margin-left:auto;">Top up</a>
       </div>
       <a href="/logout" class="user-card" style="text-decoration:none;color:inherit;">
         <span class="avatar">{{ (request.state.user.email or '?')[0]|upper }}</span>

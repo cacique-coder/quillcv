@@ -23,7 +23,7 @@
                 {% endif %}
             </div>
             <div class="cv-card-meta">
-                <span class="cv-card-source">{{ "AI Generated" if cv.source == "ai" else "Manual" }}</span>
+                <span class="cv-card-source">{{ "Tailored" if cv.source == "ai" else "Manual" }}</span>
                 <span class="cv-card-template">{{ cv.template_id | title }}</span>
                 <span class="cv-card-region">{{ cv.region }}</span>
                 <span class="cv-card-date">{{ cv.created_at.strftime("%d %b %Y") }}</span>
@@ -42,11 +42,27 @@
             </div>
             {% endif %}
             <div class="cv-card-actions">
-                <a href="/builder/edit/{{ cv.id }}" class="btn-secondary">Edit</a>
+                <a href="/wizard/new?from_cv={{ cv.id }}" class="btn-primary cv-card-action" title="Re-run the AI wizard, seeded from this CV. Consumes 1 credit.">
+                    Regenerate with AI
+                    <span class="cost">1 credit</span>
+                </a>
+                <a href="/builder/edit/{{ cv.id }}" class="btn-secondary cv-card-action" title="Edit this CV manually in the builder. Free.">
+                    Edit manually
+                    <span class="cost">free</span>
+                </a>
                 <a href="/my-cvs/{{ cv.id }}/preview" class="btn-secondary" target="_blank">Preview</a>
                 <a href="/my-cvs/{{ cv.id }}/download" class="btn-primary">Download PDF</a>
                 <a href="/my-cvs/{{ cv.id }}/download-docx" class="btn-secondary">Download DOCX</a>
             </div>
+            {% set cl = (cover_letters or {}).get(cv.id) %}
+            {% if cl %}
+            <details class="cv-card-cover-letter">
+                <summary>Cover letter</summary>
+                <div class="cv-card-cover-letter-body">
+                    {{ cl.html | safe }}
+                </div>
+            </details>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
@@ -55,7 +71,7 @@
         <p>You haven't saved any CVs yet.</p>
         <div class="my-cvs-empty-actions">
             <a href="/builder" class="btn-primary">Build a CV</a>
-            <a href="/wizard/step/1" class="btn-secondary">Tailor to a job</a>
+            <a href="/wizard/new" class="btn-secondary">Tailor to a job</a>
         </div>
     </div>
     {% endif %}

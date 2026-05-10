@@ -101,10 +101,8 @@
 </style>
 
 <div class="admin-wrap">
-  <div class="admin-nav">
-    <a href="/admin">Dashboard</a>
-    <a href="/admin/requests">All Requests</a>
-  </div>
+  {% set active = "requests" %}
+  {% include "partials/admin_nav.html" %}
 
   <h1 class="admin-heading">Transaction Detail</h1>
   <p class="admin-sub">{{ transaction_id }}</p>

@@ -6,17 +6,96 @@ the FastAPI app instance.
 
 import logging
 import logging.config
+import logging.handlers
+import sys
 from datetime import UTC
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Logfmt formatter (key=value, used for both dev and prod)
+# Shared helpers
 # ---------------------------------------------------------------------------
 
 _STANDARD_ATTRS = logging.LogRecord("", 0, "", 0, "", (), None).__dict__.keys()
 
+# ---------------------------------------------------------------------------
+# Pretty dev formatter (colorized, human-readable)
+# ---------------------------------------------------------------------------
+
+_LEVEL_COLORS = {
+    "DEBUG":    "\033[36m",       # cyan
+    "INFO":     "\033[32m",       # green
+    "WARNING":  "\033[33m",       # yellow
+    "ERROR":    "\033[31m",       # red
+    "CRITICAL": "\033[1;31m",     # red bold
+}
+_DIM   = "\033[2m"
+_RESET = "\033[0m"
+
+
+class _PrettyDevFormatter(logging.Formatter):
+    """Colorized, human-readable formatter for local development."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._tty = sys.stdout.isatty()
+
+    def _c(self, code: str, text: str) -> str:
+        return f"{code}{text}{_RESET}" if self._tty else text
+
+    def format(self, record: logging.LogRecord) -> str:
+        from datetime import datetime
+
+        from app.infrastructure.middleware.main import (
+            client_ip_var,
+            request_id_var,
+            session_id_var,
+            user_id_var,
+        )
+
+        ts = datetime.fromtimestamp(record.created, tz=UTC).strftime("%H:%M:%S.") + \
+            f"{record.msecs:03.0f}"
+        level_color = _LEVEL_COLORS.get(record.levelname, "")
+        level_str   = self._c(level_color, f"{record.levelname:<8}")
+        ts_str      = self._c(_DIM, ts)
+        name_str    = self._c(_DIM, record.name.removeprefix("app."))
+
+        msg = record.getMessage()
+        is_request_sentinel = msg == "request"
+
+        # Collect caller-supplied extras
+        extra: dict = {}
+        for key, value in record.__dict__.items():
+            if key not in _STANDARD_ATTRS and not key.startswith("_"):
+                extra[key] = value
+
+        # Context vars
+        ctx: dict = {}
+        for var, key in (
+            (request_id_var, "request_id"),
+            (session_id_var, "session_id"),
+            (user_id_var,    "user_id"),
+            (client_ip_var,  "ip"),
+        ):
+            val = var.get("-")
+            if val != "-":
+                ctx[key] = val
+
+        kv_parts = [f"{k}={v}" for k, v in {**extra, **ctx}.items()]
+        kv_str   = self._c(_DIM, "  " + "  ".join(kv_parts)) if kv_parts else ""
+
+        if is_request_sentinel:
+            line = f"{ts_str}  {level_str}  {name_str}{kv_str}"
+        else:
+            line = f"{ts_str}  {level_str}  {name_str}  {msg}{kv_str}"
+
+        if record.exc_info:
+            line += "\n" + self.formatException(record.exc_info)
+
+        return line
+
 
 class _LogfmtFormatter(logging.Formatter):
-    """Single logfmt (key=value) formatter for both dev and prod."""
+    """Logfmt (key=value) formatter for prod log ingestion."""
 
     def format(self, record: logging.LogRecord) -> str:
         from datetime import datetime
@@ -97,63 +176,87 @@ def setup_logging(dev_mode: bool) -> None:
 
     stream = "ext://sys.stdout" if dev_mode else "ext://sys.stderr"
 
-    logging.config.dictConfig({
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "main": {
-                "()": "app.infrastructure.logging._LogfmtFormatter",
-            },
-        },
-        "handlers": {
+    if dev_mode:
+        Path("tmp").mkdir(parents=True, exist_ok=True)
+        formatters = {
+            "pretty": {"()": "app.infrastructure.logging._PrettyDevFormatter"},
+            "logfmt": {"()": "app.infrastructure.logging._LogfmtFormatter"},
+        }
+        handlers: dict = {
             "console": {
                 "class": "logging.StreamHandler",
                 "stream": stream,
-                "formatter": "main",
+                "formatter": "pretty",
             },
-        },
+            "file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": "tmp/dev.log",
+                "maxBytes": 10_000_000,
+                "backupCount": 3,
+                "formatter": "logfmt",
+            },
+        }
+        active_handlers = ["console", "file"]
+    else:
+        formatters = {
+            "logfmt": {"()": "app.infrastructure.logging._LogfmtFormatter"},
+        }
+        handlers = {
+            "console": {
+                "class": "logging.StreamHandler",
+                "stream": stream,
+                "formatter": "logfmt",
+            },
+        }
+        active_handlers = ["console"]
+
+    logging.config.dictConfig({
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": formatters,
+        "handlers": handlers,
         "loggers": {
             # Our application code
             "app": {
                 "level": app_level,
-                "handlers": ["console"],
+                "handlers": active_handlers,
                 "propagate": False,
             },
             # Silence noisy third-party libraries
             "uvicorn.access": {
                 "level": "WARNING",   # we have our own request middleware
-                "handlers": ["console"],
+                "handlers": active_handlers,
                 "propagate": False,
             },
             "uvicorn": {
                 "level": third_party_level,
-                "handlers": ["console"],
+                "handlers": active_handlers,
                 "propagate": False,
             },
             "fastapi": {
                 "level": third_party_level,
-                "handlers": ["console"],
+                "handlers": active_handlers,
                 "propagate": False,
             },
             "httpx": {
                 "level": "WARNING",
-                "handlers": ["console"],
+                "handlers": active_handlers,
                 "propagate": False,
             },
             "anthropic": {
                 "level": "WARNING",
-                "handlers": ["console"],
+                "handlers": active_handlers,
                 "propagate": False,
             },
             "sqlalchemy.engine": {
                 "level": "WARNING",
-                "handlers": ["console"],
+                "handlers": active_handlers,
                 "propagate": False,
             },
         },
         # Root catches everything else (sqlalchemy, aiofiles, etc.)
         "root": {
             "level": third_party_level,
-            "handlers": ["console"],
+            "handlers": active_handlers,
         },
     })

@@ -26,20 +26,47 @@ async def deduct_credit(db: AsyncSession, user_id: str) -> bool:
     return result.rowcount > 0
 
 
-async def add_credits(db: AsyncSession, user_id: str, amount: int):
-    """Add credits to a user's account."""
+async def add_credits(db: AsyncSession, user_id: str, amount: int, *, as_grant: bool = False):
+    """Add credits to a user's account.
+
+    Args:
+        as_grant: when True, increments ``total_granted`` (admin-issued, free)
+                  instead of ``total_purchased`` (paid). Negative ``amount``
+                  values still flow through ``balance`` only and never decrement
+                  the lifetime totals.
+    """
+    decrementing = amount < 0
+    if decrementing:
+        # Negative deltas (clawbacks) only adjust balance, never lifetime totals.
+        values: dict = {"balance": Credit.balance + amount}
+    elif as_grant:
+        values = {
+            "balance": Credit.balance + amount,
+            "total_granted": Credit.total_granted + amount,
+        }
+    else:
+        values = {
+            "balance": Credit.balance + amount,
+            "total_purchased": Credit.total_purchased + amount,
+        }
+
     result = await db.execute(
         update(Credit)
         .where(Credit.user_id == user_id)
-        .values(
-            balance=Credit.balance + amount,
-            total_purchased=Credit.total_purchased + amount,
-        )
+        .values(**values)
         .execution_options(synchronize_session=False)
     )
     if result.rowcount == 0:
-        # No credit record exists — create one
-        db.add(Credit(user_id=user_id, balance=amount, total_purchased=amount, total_used=0))
+        # No credit record exists — create one. Negative-only first-touch is
+        # undefined behaviour but we guard it: clamp to balance=0.
+        starting_balance = max(0, amount)
+        db.add(Credit(
+            user_id=user_id,
+            balance=starting_balance,
+            total_purchased=(amount if (not as_grant and amount > 0) else 0),
+            total_granted=(amount if (as_grant and amount > 0) else 0),
+            total_used=0,
+        ))
     await db.commit()
 
 

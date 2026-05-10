@@ -165,23 +165,70 @@
                 &#10033; Optional, but profiles that fill this in get noticeably better CVs every time.
             </div>
 
-            {% set self_description_pills = [
-                ('Pragmatic builder', "I'm a pragmatic builder who turns ambiguous requirements into shipped products. Colleagues describe me as reliable, calm under pressure, and the one who quietly unblocks the team."),
-                ('Quiet leader', "I lead by example, not by volume. I'm the engineer teammates DM when they're stuck, and I take pride in mentoring juniors into confident shippers."),
-                ('Detail-driven', "I'm meticulous about quality and care deeply about the craft. I write thorough tests, review carefully, and would rather ship something solid than something fast."),
-                ('Systems thinker', "I love understanding how things connect — untangling complex domains, simplifying architecture, and writing code that's still readable in two years.")
+            {# Self-description pills, grouped into 4 "ways you show up". The
+               wizard step 2 partial mirrors this list — keep them in sync. #}
+            {% set self_description_categories = [
+                ('Mindset', 'how I think', [
+                    ('Systems thinker', "I love understanding how things connect — untangling complex domains, simplifying processes, and leaving things easier to work with than I found them."),
+                    ('Numbers-led', "I like decisions backed by data. I'm comfortable in spreadsheets, models, and dashboards — and equally comfortable explaining what they mean to a room that doesn't think in numbers."),
+                    ('Methodical investigator', "I work problems in layers — read the file, check the precedent, ask the questions that surface the real story. I'd rather take an extra day than miss a detail that costs us later."),
+                    ('Creative problem-solver', "I see angles other people miss. I'm at my best with a blank page and an unclear problem — sketching, prototyping, and finding the version of the answer that's both elegant and actually works."),
+                    ('First-principles thinker', "I'd rather understand a problem from the ground up than copy what worked last time. I take ideas apart to see what's actually load-bearing, then rebuild them in a form that fits the situation in front of us."),
+                ]),
+                ('Working style', 'how I deliver', [
+                    ('Pragmatic builder', "I'm a pragmatic builder who turns ambiguous requirements into shipped work. Colleagues describe me as reliable, calm under pressure, and the one who quietly unblocks the team."),
+                    ('Detail-driven', "I'm meticulous about quality and care deeply about the craft. I check thoroughly, review carefully, and would rather get it right than get it fast."),
+                    ('Hands-on', "I'd rather get on the floor than write a memo about it. Count on me to read the drawings, find the failure mode, and fix the actual thing in front of us — safely and the first time."),
+                    ('Steady administrator', "I'm the person who keeps the inbox clear, the calendar honest, and the paper trail tidy. Discreet, dependable, and three steps ahead — I make other people's complicated jobs feel simple."),
+                    ('Process-builder', "I leave places tidier than I found them. I document the workflow, write the runbook, and turn one-off heroics into a process the next person can follow without my help."),
+                ]),
+                ('With people', 'how I lead, communicate, and relate', [
+                    ('Quiet leader', "I lead by example, not by volume. I'm the person teammates message when they're stuck, and I take pride in mentoring juniors into confident, capable colleagues."),
+                    ('People-first leader', "I lead by getting the conditions right — clarity, trust, and protection from the noise — then I trust people to do the work they were hired for. My job is to remove blockers, not run the show."),
+                    ('Story-led communicator', "I turn the noise into a narrative. Whether it's a board update, a campaign, or an internal change, I find the through-line and make it land with whoever needs to hear it."),
+                    ('Relationship-builder', "I build the kind of relationships that compound over years. People remember me as someone who listens carefully, follows up reliably, and goes to bat for them when it matters."),
+                    ('Trusted advisor', "Clients come to me when the stakes are high and the brief is ambiguous. I translate complex situations into clear options, and I'm honest about the trade-offs even when it's not what they want to hear."),
+                    ('Compassionate carer', "I do this work because the people on the other side of it matter. I'm patient, attentive, and I take the time to understand the human story behind the file."),
+                    ('Patient teacher', "I love the moment something clicks for someone. I break complex things into honest, small steps, meet people where they are, and I'd rather they understand it than be impressed by me."),
+                ]),
+                ('Under pressure & change', 'how I respond when things shift', [
+                    ('Calm operator', "I keep the wheels turning. When things get hectic I don't get louder — I get more organised. Teams describe me as the steady hand that turns chaos into a checklist."),
+                    ('Adaptable', "Comfortable with change. New tools, shifting priorities, a re-org that lands at 4pm on a Friday — I'd rather pick it up and run with it than wish things were the way they were last week."),
+                    ('Consistent', "I bring the same version of myself to work every day. Whatever's going on outside the office, the work I deliver is steady — predictable in the best sense, dependable when others are stretched thin."),
+                    ('Resilient', "Setbacks don't knock me out for long. When something I cared about doesn't land, I take an honest beat to learn from it, then I'm back at it. I'd rather try, miss, and iterate than play safe and stay still."),
+                    ('Energiser', "I bring energy to teams that need it. I'm the one who notices when the room has gone flat, calls the right break, and brings genuine enthusiasm to the parts of the work other people find tedious — without forcing it."),
+                ]),
             ] %}
             {% set values_pills = [
-                ('Quality first', "Code quality over speed, but never at the cost of momentum. I value honest reviews, thorough testing, and simplicity over cleverness."),
-                ('User-centred', "I build for the person on the other end of the screen. I value clear UX, accessible defaults, and shipping what genuinely helps."),
+                ('Quality first', "Quality over speed, but never at the cost of momentum. I value honest reviews, careful checks, and simplicity over cleverness."),
+                ('User-centred', "I work for the person on the other end of the work. I value clear communication, accessible defaults, and shipping what genuinely helps them."),
                 ('Open & honest', "Transparent communication, generous credit-sharing, and the willingness to admit when I'm wrong. I value a team that can disagree well."),
-                ('Always learning', "Continuous learning, pairing with people smarter than me, and reading code outside my stack. I'd rather learn than be right.")
+                ('Always learning', "Continuous learning, pairing with people smarter than me, and stretching outside my comfort zone. I'd rather learn than be right."),
+                ('Integrity & discretion', "I treat confidential information like it's mine to protect. I follow process, document carefully, and don't take shortcuts I'd be uncomfortable defending in writing."),
+                ('Outcomes that matter', "I care about the result more than the activity. I'd rather deliver one thing that moves the dial than ten that keep us busy."),
+                ('Care & service', "The people I serve — clients, patients, students, customers — are the point of the work. I want them to leave better off, and treated like adults."),
+                ('Craft & standards', "There's a right way to build a thing — solid, honest, well-finished — and I like to work to that standard whether anyone else is watching or not."),
+                ('Collaboration over heroics', "Strong teams beat strong individuals. I share credit generously, prefer pairing over lone-wolf work, and trust that the best decisions come out of healthy disagreement."),
+                ('Empathy first', "I assume good intent and listen before I form a view. People tell me hard things because they know I won't make them feel small for it."),
+                ('Calm under pressure', "I value the kind of environment where we can think clearly when it matters. I don't escalate energy in a crisis — I lower it, then we work the problem."),
+                ('Ownership', "If I said I'd do it, it gets done. If something I touched went wrong, I'm the one putting my hand up first and fixing it."),
+                ('Fairness & inclusion', "I want everyone in the room to be heard, to feel safe disagreeing, and to be measured by the same yardstick. Good cultures don't happen by accident."),
+                ('Curiosity & rigour', "I like questions more than answers. I'd rather sit with a problem long enough to understand it than reach for the first plausible explanation.")
             ] %}
 
-            {% call form_group("How would you describe yourself as a professional?", hint="Your working style, strengths, what colleagues say about you.", optional=true) %}
-                <div class="voice-pills" data-target="self_description">
-                    {% for label, text in self_description_pills %}
-                    <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+            {% call form_group("How would you describe yourself as a professional?", hint="Your working style, strengths, what colleagues say about you. Pick a starter that sounds like you and rewrite it.", optional=true) %}
+                <div class="voice-pills voice-pills--grouped" data-target="self_description">
+                    {% for cat_name, cat_hint, pills in self_description_categories %}
+                    <div class="voice-pill-group">
+                        <span class="voice-pill-group__label">
+                            {{ cat_name }}<span class="voice-pill-group__hint">— {{ cat_hint }}</span>
+                        </span>
+                        <div class="voice-pill-group__pills">
+                            {% for label, text in pills %}
+                            <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
                 {{ text_area("self_description", rows=3, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems…", value=pii.get('self_description', '')) }}

@@ -1,9 +1,11 @@
 import json
 import logging
+import re
 
 from app.cv_export.adapters.template_registry import RegionConfig
 from app.cv_generation.adapters.prompt_guard import MAX_CV_LENGTH, MAX_JOB_DESC_LENGTH, sanitize_user_input
 from app.infrastructure.llm.client import LLMClient, set_llm_context
+from app.pii.use_cases.redact_pii import PIIRedactor
 from app.scoring.adapters.keyword_matcher import ATSResult
 
 logger = logging.getLogger(__name__)
@@ -196,8 +198,13 @@ def _build_ats_report(ats: ATSResult) -> str:
     return "\n".join(lines)
 
 
-def _build_personal_context(attempt: dict) -> str:
-    """Build personal voice context from attempt data."""
+def _build_personal_context(attempt: dict, redactor=None) -> str:
+    """Build personal voice context from attempt data.
+
+    If a ``redactor`` is provided, reference contact details (name, email,
+    phone) are emitted as REF tokens so they never reach the LLM. The
+    redactor seeds its internal state so ``restore()`` will swap them back.
+    """
     parts = []
     if attempt.get("self_description"):
         parts.append(f"Self-description: {attempt['self_description']}")
@@ -209,9 +216,23 @@ def _build_personal_context(attempt: dict) -> str:
         parts.append(f"Visa/work rights: {attempt['visa_status']}")
     if attempt.get("references"):
         refs = attempt["references"]
+        # Seed the redactor's references list (used by .restore()) before
+        # emitting tokenized lines.
+        if redactor is not None:
+            redactor.references = [
+                dict(r) for r in refs if isinstance(r, dict)
+            ]
         ref_lines = []
-        for r in refs:
-            ref_lines.append(f"  - {r.get('name', '')} | {r.get('title', '')} at {r.get('company', '')} | {r.get('email', '')} | {r.get('phone', '')}")
+        for i, r in enumerate(refs, 1):
+            if redactor is not None:
+                name_val = f"<<REF_NAME_{i}>>" if r.get("name") else ""
+                email_val = f"<<REF_EMAIL_{i}>>" if r.get("email") else ""
+                phone_val = f"<<REF_PHONE_{i}>>" if r.get("phone") else ""
+            else:
+                name_val = r.get("name", "")
+                email_val = r.get("email", "")
+                phone_val = r.get("phone", "")
+            ref_lines.append(f"  - {name_val} | {r.get('title', '')} at {r.get('company', '')} | {email_val} | {phone_val}")
         if ref_lines:
             parts.append("References provided by the candidate:\n" + "\n".join(ref_lines))
     return "\n".join(parts) if parts else ""
@@ -261,7 +282,11 @@ async def generate_tailored_cv(
     job_description = sanitize_user_input(job_description, MAX_JOB_DESC_LENGTH, "Job description")
 
     region_rules = _build_region_rules(region)
-    personal_context = _build_personal_context(attempt or {})
+    # Build a local redactor purely so reference contact details (name/email/phone)
+    # are tokenised before being embedded in the prompt. The cv_text passed in is
+    # already redacted upstream in the pipeline.
+    _ref_redactor = PIIRedactor(full_name="") if attempt and attempt.get("references") else None
+    personal_context = _build_personal_context(attempt or {}, redactor=_ref_redactor)
     ats_report = _build_ats_report(ats_result) if ats_result else ""
     keyword_context = _build_keyword_context(missing_keywords, keyword_categories)
 
@@ -352,6 +377,11 @@ Skills:
         cv_data = _parse_cv_json(result.text)
         logger.info("Parse result: %s", "OK" if cv_data else "FAILED")
         if cv_data is not None:
+            # Restore reference tokens (name/email/phone) emitted into the
+            # personal context. The upstream pipeline redactor handles
+            # general PII restoration; this only swaps back ref tokens.
+            if _ref_redactor is not None:
+                cv_data = _ref_redactor.restore(cv_data)
             # Attach LLM usage metadata for logging
             cv_data["_llm_usage"] = {
                 "model": result.model,
@@ -367,21 +397,88 @@ Skills:
         return None
 
 
+def _extract_json_object(raw: str) -> dict | None:
+    """Best-effort extraction of a JSON object from a raw LLM response string."""
+    raw = raw.strip()
+    candidates: list[str] = []
+    fence_match = re.search(r"```(?:json)?\s*\n(.*?)\n```", raw, re.DOTALL)
+    if fence_match:
+        candidates.append(fence_match.group(1).strip())
+    first_brace = raw.find("{")
+    last_brace = raw.rfind("}")
+    if first_brace != -1 and last_brace > first_brace:
+        candidates.append(raw[first_brace : last_brace + 1])
+    candidates.append(raw)
+    for candidate in candidates:
+        try:
+            data = json.loads(candidate)
+            if isinstance(data, dict):
+                return data
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+async def categorize_missing_keywords(
+    missing_keywords: list[str],
+    skills_grouped: list[dict],
+    llm,
+) -> dict[str, str]:
+    """Map each missing keyword to the best-fitting category.
+
+    Returns {keyword: category_name}. Reuses existing category names from
+    skills_grouped where reasonable; may invent a new category name.
+    Returns {} on any failure — callers must tolerate a missing/empty mapping.
+    """
+    if not missing_keywords or not skills_grouped:
+        return {}
+
+    keywords = missing_keywords[:30]
+    existing_categories = list(dict.fromkeys(
+        g["category"] for g in skills_grouped if g.get("category")
+    ))
+    # Build a case-insensitive lookup so we can normalise the LLM's response
+    # back to the canonical casing used in skills_grouped.
+    canonical = {c.strip().lower(): c for c in existing_categories}
+
+    prompt = (
+        "You are a CV categorisation assistant. "
+        "Given the existing skill categories and a list of missing keywords, "
+        "map each keyword to the most appropriate category. "
+        "Prefer reusing existing category names exactly. "
+        "You may invent a new category name only when no existing one fits.\n\n"
+        f"Existing categories: {existing_categories}\n\n"
+        f"Keywords to categorise: {keywords}\n\n"
+        'Return ONLY valid JSON of the form {"keyword": "category", ...} '
+        "with one entry per keyword. No explanation, no markdown."
+    )
+
+    try:
+        result = await llm.generate(prompt)
+        data = _extract_json_object(result.text or "")
+        if not isinstance(data, dict):
+            logger.warning("categorize_missing_keywords: LLM returned non-dict — falling back to {}")
+            return {}
+        # Normalise category names back to canonical casing
+        return {
+            kw: canonical.get(cat.strip().lower(), cat)
+            for kw, cat in data.items()
+            if isinstance(kw, str) and isinstance(cat, str)
+        }
+    except Exception:
+        logger.warning("categorize_missing_keywords: failed", exc_info=True)
+        return {}
+
+
 def _parse_cv_json(raw: str) -> dict | None:
     """Parse the AI response into structured CV data."""
     logger.info("Parsing CV JSON raw_len=%d", len(raw))
-    raw = raw.strip()
-    # Strip markdown fences if present
-    if raw.startswith("```"):
-        raw = raw.split("\n", 1)[1]
-        if "```" in raw:
-            raw = raw[:raw.rfind("```")]
-        raw = raw.strip()
-
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        logger.error("Failed to parse CV JSON: %s...", raw[:200])
+    data = _extract_json_object(raw)
+    if data is None:
+        logger.error(
+            "Failed to parse CV JSON: head=%r tail=%r",
+            raw[:200], raw[-200:],
+        )
         return None
 
     # Ensure required fields have defaults

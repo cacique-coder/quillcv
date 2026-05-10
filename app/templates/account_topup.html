@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block body_layout %}app{% endblock %}
+
+{% block title %}Buy Credits — QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<style>
+  .topup-wrap { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+  .topup-head { margin-bottom: 1.5rem; }
+  .topup-head h2 { margin: 0 0 0.35rem; color: var(--ink, var(--text)); }
+  .topup-head .topup-balance {
+    color: var(--ink-2, var(--text-muted)); font-size: 0.95rem;
+  }
+  .topup-grid {
+    display: grid; gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .topup-card {
+    display: flex; flex-direction: column; gap: 0.65rem;
+    padding: 1.25rem 1.1rem;
+    background: var(--paper-raised, var(--surface));
+    border: 1px solid var(--rule, var(--border));
+    border-radius: var(--radius, 10px);
+    text-align: center;
+    transition: border-color 160ms ease, transform 160ms ease;
+  }
+  .topup-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .topup-card--featured {
+    border-color: var(--accent);
+    box-shadow: 0 4px 18px rgba(108, 99, 255, 0.10);
+  }
+  .topup-card__credits {
+    font-size: 2rem; font-weight: 700; color: var(--accent);
+    line-height: 1;
+  }
+  .topup-card__credits-label {
+    font-size: 0.78rem; color: var(--ink-2, var(--text-muted));
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .topup-card__price {
+    font-size: 1.4rem; font-weight: 600; color: var(--ink, var(--text));
+  }
+  .topup-card__per { font-size: 0.78rem; color: var(--ink-2, var(--text-muted)); }
+  .topup-card__pill {
+    align-self: center; font-size: 0.7rem; font-weight: 500;
+    padding: 0.15rem 0.5rem; border-radius: 999px;
+    background: rgba(108, 99, 255, 0.12); color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .topup-card form { margin: 0.4rem 0 0; }
+  .topup-card .btn { width: 100%; }
+  .topup-foot {
+    margin-top: 1.5rem; font-size: 0.85rem; color: var(--ink-2, var(--text-muted));
+    text-align: center;
+  }
+  .topup-foot a { color: var(--accent); text-decoration: none; }
+  .topup-foot a:hover { text-decoration: underline; }
+</style>
+
+<div class="topup-wrap">
+  <div class="topup-head">
+    <h2>Buy more credits</h2>
+    <p class="topup-balance">
+      You have <strong>{{ credits.balance if credits else 0 }}</strong>
+      credits available. Each credit produces one AI-tailored CV or cover letter.
+      Credits never expire.
+    </p>
+  </div>
+
+  <div class="topup-grid">
+    {% for pack in packs %}
+    <div class="topup-card {% if pack.id == 'standard' %}topup-card--featured{% endif %}">
+      {% if pack.id == 'standard' %}<span class="topup-card__pill">Most popular</span>{% endif %}
+      {% if pack.id == 'max' %}<span class="topup-card__pill">Best value</span>{% endif %}
+      <div class="topup-card__credits">{{ pack.credits }}</div>
+      <div class="topup-card__credits-label">credits</div>
+      <div class="topup-card__price">${{ "%.2f" | format(pack.price_aud) }} <small style="font-size:0.7rem;color:var(--ink-2)">AUD</small></div>
+      <div class="topup-card__per">{{ pack.per_credit }} per credit</div>
+      <form method="post" action="/checkout/topup/{{ pack.id }}">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <button type="submit" class="btn btn-primary btn-sm">Buy {{ pack.credits }}</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="topup-foot">
+    Looking for the alpha plan? <a href="/pricing">See alpha pricing →</a>
+    &nbsp;&middot;&nbsp; <a href="/account">Back to account</a>
+  </p>
+</div>
+{% endblock %}

@@ -545,3 +545,273 @@ main:has(.plan-rail) {
   .plan-card, .plan-card.plan-card--right, .receipt { transform: none !important; }
   .doodle { animation: none !important; }
 }
+
+/* ─── Region warning callouts ─────────────────────────────────────────
+ * Inline, non-blocking nudges shown in the wizard when user-supplied
+ * data conflicts with the selected region's CV conventions. Reuses
+ * --warn / --warn-wash tokens from tokens.css for the warning variant
+ * and a neutral muted look for info-level.
+ */
+.region-warning-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.region-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--warn);
+  background: var(--warn-wash);
+  color: var(--ink, inherit);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.region-warning--info {
+  border-color: var(--border, rgba(0,0,0,0.12));
+  background: var(--surface-2, rgba(0,0,0,0.03));
+  color: var(--text-muted, inherit);
+}
+.region-warning__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-weight: 700;
+  font-family: var(--serif, serif);
+}
+.region-warning__icon::before { content: "!"; }
+.region-warning--info .region-warning__icon::before { content: "i"; }
+.region-warning__body { flex: 1; }
+
+/* ─── Pricing notice (cancel / error banners on /pricing) ────────────
+ * Centered narrow banner shown above the plan rail when the user lands
+ * on /pricing with ?status=cancelled or ?error=<code>. Two variants:
+ *   .pricing-notice            — neutral/info (cancel — "card not charged")
+ *   .pricing-notice--error     — red, used for harder error codes
+ * Re-uses the warm-paper visual language so it doesn't fight the
+ * receipt-and-plan-cards aesthetic.
+ */
+.pricing-notice {
+  max-width: 720px;
+  margin: 24px auto 0;
+  padding: 14px 18px;
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+  border-radius: var(--radius, 8px);
+  color: var(--ink, inherit);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--sh-1, 0 1px 2px rgba(0,0,0,0.04));
+}
+.pricing-notice__body { flex: 1 1 auto; min-width: 220px; }
+.pricing-notice__body strong { color: var(--ink); }
+.pricing-notice .btn { flex-shrink: 0; }
+.pricing-notice--error {
+  border-color: var(--danger, var(--red, #f87171));
+  background: var(--danger-wash, rgba(248, 113, 113, 0.10));
+  color: var(--danger-ink, var(--ink, inherit));
+}
+
+/* ── Toggle switch ───────────────────────────────────────────
+ * Accessible iOS-style toggle that wraps a real <input type="checkbox">.
+ * Markup:
+ *   <label class="toggle">
+ *     <input type="checkbox" name="..." class="toggle__input">
+ *     <span class="toggle__track"><span class="toggle__thumb"></span></span>
+ *     <span class="toggle__label">Label text</span>
+ *   </label>
+ * The label text on the right is optional; pair with a separate paragraph
+ * for a longer description.
+ */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.92rem;
+  color: var(--ink, var(--text, inherit));
+}
+.toggle__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.toggle__track {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  background: var(--rule, var(--border, #d4d4d4));
+  border-radius: 999px;
+  flex-shrink: 0;
+  transition: background 160ms ease;
+}
+.toggle__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 160ms ease;
+}
+.toggle__input:checked ~ .toggle__track {
+  background: var(--accent, #6c63ff);
+}
+.toggle__input:checked ~ .toggle__track .toggle__thumb {
+  transform: translateX(20px);
+}
+.toggle__input:focus-visible ~ .toggle__track {
+  outline: 2px solid var(--accent, #6c63ff);
+  outline-offset: 2px;
+}
+.toggle__input:disabled ~ .toggle__track {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.toggle__label { line-height: 1.35; }
+.toggle--lg .toggle__track { width: 52px; height: 28px; }
+.toggle--lg .toggle__thumb { width: 24px; height: 24px; }
+.toggle--lg .toggle__input:checked ~ .toggle__track .toggle__thumb { transform: translateX(24px); }
+
+/* Card wrapping a toggle + descriptive copy + status text. */
+.toggle-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem 1.15rem;
+  background: var(--paper-raised, var(--surface, transparent));
+  border: 1px solid var(--rule, var(--border));
+  border-radius: var(--radius, 8px);
+}
+.toggle-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.toggle-card__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ink, var(--text));
+}
+.toggle-card__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-2, var(--text-muted));
+  line-height: 1.5;
+}
+.toggle-card__status {
+  font-size: 0.82rem;
+  color: var(--ink-2, var(--text-muted));
+}
+.toggle-card__status--on  { color: var(--green, #34d399); }
+.toggle-card__status--off { color: var(--ink-2, var(--text-muted)); }
+
+/* ─── Top-up page (/account/topup) ───────────────────────────────── */
+.topup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.topup-balance {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+  padding: 12px 20px;
+  text-align: center;
+  box-shadow: var(--sh-1);
+  white-space: nowrap;
+}
+.topup-balance .credits-num {
+  font-size: 28px;
+  font-weight: 600;
+  font-family: var(--mono);
+  line-height: 1;
+  color: var(--ink);
+}
+.topup-balance .credits-lbl {
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: .06em;
+  margin-top: 2px;
+}
+.topup-offline-banner {
+  background: var(--warn-wash, #fef9ec);
+  border: 1px solid var(--warn, #ca8a04);
+  border-radius: var(--r-2);
+  color: var(--ink-2);
+  font-size: 14px;
+  padding: 12px 16px;
+  margin-bottom: 1.25rem;
+}
+.topup-offline-banner a { color: var(--accent); }
+.topup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.topup-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+  padding: 20px 20px 18px;
+  box-shadow: var(--sh-1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+.topup-card--featured {
+  border-color: var(--accent);
+}
+.topup-pack-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: .06em;
+  color: var(--accent);
+  background: var(--accent-wash, color-mix(in srgb, var(--accent) 12%, transparent));
+  border: 1px solid var(--accent);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  margin-bottom: 6px;
+  width: fit-content;
+}
+.topup-pack-name {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 440;
+  color: var(--ink);
+}
+.topup-pack-price {
+  font-size: 26px;
+  font-weight: 600;
+  font-family: var(--mono);
+  color: var(--ink);
+  line-height: 1.1;
+  margin-top: 4px;
+}
+.topup-pack-rate {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+}
+.topup-card form { margin-top: auto; }

@@ -9,6 +9,7 @@ import json
 import logging
 
 from app.infrastructure.llm.client import LLMClient, set_llm_context
+from app.pii.use_cases.redact_pii import PIIRedactor
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,11 @@ async def review_cv_quality(
 
     # Clean copy without internal metadata
     clean_data = {k: v for k, v in cv_data.items() if not k.startswith("_")}
-    cv_json = json.dumps(clean_data, indent=2)
+
+    # Redact PII before serialising for the LLM prompt
+    redactor = PIIRedactor.from_cv_data(clean_data)
+    redacted_data = redactor.redact_cv_dict(clean_data)
+    cv_json = json.dumps(redacted_data, indent=2)
 
     prompt = _REVIEW_PROMPT.format(
         cv_json=cv_json[:8000],
@@ -106,6 +111,9 @@ async def review_cv_quality(
         data = json.loads(raw)
         data.setdefault("flags", [])
         data.setdefault("summary", "")
+
+        # Restore tokens in flags so downstream consumers see real CV text
+        data = redactor.restore(data)
 
         # Attach usage for logging
         data["_llm_usage"] = {

@@ -1,193 +1,494 @@
 {% extends "base.html" %}
 {% block body_layout %}app{% endblock %}
+{% from "macros/ui.html" import form_group, text_input, text_area, reference_entry, phone_input %}
 
 {% block title %}My Account — QuillCV{% endblock %}
 {% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block content %}
-<div class="account-page">
-    <div class="account-header">
-        <h2>My Account</h2>
-    </div>
+<style>
+  /* Two-column shell — sticky in-page TOC on the left, content on the right.
+     Collapses to a horizontal pill bar at the top on narrow screens. */
+  .account-shell {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 2.5rem;
+    max-width: 1100px;
+    margin: 1.5rem auto;
+    padding: 0 1.5rem;
+  }
+  @media (max-width: 900px) {
+    .account-shell { grid-template-columns: 1fr; gap: 0.5rem; }
+  }
+  .account-toc {
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
+    display: grid;
+    gap: 4px;
+    padding: 0.6rem 0.4rem;
+    border: 1px solid var(--rule, var(--border));
+    border-radius: var(--radius, 8px);
+    background: var(--paper-raised, var(--surface, transparent));
+    font-size: 0.92rem;
+  }
+  .account-toc__label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-3, var(--text-muted));
+    padding: 0.3rem 0.7rem 0.15rem;
+  }
+  .account-toc a {
+    text-decoration: none;
+    color: var(--ink-2, var(--text-muted));
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    line-height: 1.25;
+    transition: color 120ms, background 120ms;
+  }
+  .account-toc a:hover { color: var(--accent); background: var(--accent-wash, rgba(108,99,255,0.07)); }
+  .account-toc a.is-active { color: var(--accent); font-weight: 600; }
+  .account-toc a.account-toc__danger { color: var(--red, #f87171); }
+  @media (max-width: 900px) {
+    .account-toc {
+      position: static;
+      flex-direction: row;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding: 0.4rem;
+      white-space: nowrap;
+    }
+    .account-toc__label { display: none; }
+    .account-toc a { flex-shrink: 0; padding: 0.35rem 0.7rem; font-size: 0.85rem; }
+  }
+  .account-main { display: grid; gap: 1.5rem; }
+  .account-section {
+    scroll-margin-top: 1rem;
+  }
+  .account-section h3 {
+    margin: 0 0 0.75rem;
+  }
+  /* Career-profile form group spacing — keeps the existing voice-pill styling
+     but tightens the gaps between sub-questions. */
+  .career-form { display: grid; gap: 1.25rem; }
+  .career-form .country-select-grid { margin-top: 0.25rem; }
+  .career-form .form-group { margin-bottom: 0; }
+</style>
 
-    <!-- Profile Section -->
-    <div class="account-section">
-        <h3>Profile</h3>
-        <form hx-post="/account/update-profile" hx-target="#profile-result" hx-swap="innerHTML">
-            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-            <div class="account-field">
-                <label for="acct-name">Name</label>
-                <input id="acct-name" type="text" name="name" class="input-field" value="{{ request.state.user.name }}">
-            </div>
-            <div class="account-field">
-                <label>Email</label>
-                <input type="email" class="input-field" value="{{ request.state.user.email }}" disabled>
-                <span class="account-hint">Email cannot be changed</span>
-            </div>
-            <div class="account-field">
-                <label>Member since</label>
-                <span class="account-value">{{ request.state.user.created_at.strftime("%d %b %Y") }}</span>
-            </div>
-            <button type="submit" class="btn-primary btn-sm">Save Changes</button>
-            <div id="profile-result"></div>
-        </form>
-    </div>
+<div class="account-shell">
+  <nav class="account-toc" aria-label="Account sections">
+    <span class="account-toc__label">My account</span>
+    <a href="#identity" data-toc-target="identity">Identity</a>
+    <a href="#career-profile" data-toc-target="career-profile">Career profile</a>
+    <a href="#vault" data-toc-target="vault">Personal vault</a>
+    <a href="#security" data-toc-target="security">Security</a>
+    <a href="#billing" data-toc-target="billing">Credits &amp; billing</a>
+    {% if prompt_logging_eligible %}
+    <a href="#privacy" data-toc-target="privacy">Privacy &amp; sharing</a>
+    {% endif %}
+    <a href="#danger" class="account-toc__danger" data-toc-target="danger">Danger zone</a>
+  </nav>
 
-    <!-- Credits Section -->
-    <div class="account-section">
-        <h3>Credits</h3>
-        <div class="account-stats">
-            <div class="account-stat">
-                <span class="account-stat-value">{{ request.state.balance }}</span>
-                <span class="account-stat-label">Available</span>
-            </div>
-            <div class="account-stat">
-                <span class="account-stat-value">{{ credits.total_purchased if credits else 0 }}</span>
-                <span class="account-stat-label">Purchased</span>
-            </div>
-            <div class="account-stat">
-                <span class="account-stat-value">{{ credits.total_used if credits else 0 }}</span>
-                <span class="account-stat-label">Used</span>
-            </div>
-            <div class="account-stat">
-                <span class="account-stat-value">{{ saved_cv_count }}</span>
-                <span class="account-stat-label">CVs Saved</span>
-            </div>
-        </div>
-        <a href="/pricing" class="btn-secondary btn-sm">Buy More Credits</a>
-    </div>
+  <div class="account-main account-page">
 
-    <!-- Personal Information (PII Vault) Section -->
-    <div class="account-section account-section--vault">
-        <h3>
-            <!-- Hand-drawn wobbly lock icon (matches onboarding.html pattern) -->
-            <svg viewBox="0 0 14 16" width="13" height="14" fill="none" aria-hidden="true" style="vertical-align:-2px; margin-right:6px">
-                <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
-            </svg>
-            Personal Information (Encrypted)
-        </h3>
-        {% set pii = request.state.session.get("pii", {}) if request.state.session is defined else {} %}
-        {% if pii and pii.get("full_name") %}
-        <div class="vault-account-preview">
-            <div class="vault-preview-row">
-                <span class="vault-preview-label">Name</span>
-                <span class="vault-preview-value">{{ pii.full_name }}</span>
-            </div>
-            {% if pii.get("email") %}
-            <div class="vault-preview-row">
-                <span class="vault-preview-label">CV Email</span>
-                <span class="vault-preview-value">{{ pii.email }}</span>
-            </div>
-            {% endif %}
-            {% if pii.get("phone") %}
-            <div class="vault-preview-row">
-                <span class="vault-preview-label">Phone</span>
-                <span class="vault-preview-value">{{ pii.phone }}</span>
-            </div>
-            {% endif %}
-            {% if pii.get("dob") %}
-            <div class="vault-preview-row">
-                <span class="vault-preview-label">Date of Birth</span>
-                <span class="vault-preview-value">{{ pii.dob }}</span>
-            </div>
-            {% endif %}
-        </div>
-        {% else %}
-        <p class="account-hint">No personal information saved yet.</p>
-        {% endif %}
-        <p class="account-hint" style="margin-top:0.75rem">
-            This data is encrypted with your password — only you can see it.
-        </p>
-        <a href="/account/pii" class="btn-secondary btn-sm" style="margin-top:1rem; display:inline-block">
-            Update Personal Information
-        </a>
-    </div>
-
-    <!-- Security Section -->
-    <div class="account-section">
-        <h3>Security</h3>
-
-        {% if request.state.user.provider %}
+    {# ── Identity ───────────────────────────────────────────────── #}
+    <section id="identity" class="account-section">
+      <h3>Identity</h3>
+      <form hx-post="/account/update-profile" hx-target="#profile-result" hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <div class="account-field">
-            <label>Connected account</label>
-            <span class="account-value">{{ request.state.user.provider | title }} ({{ request.state.user.provider_id[:8] if request.state.user.provider_id else '' }}...)</span>
+          <label for="acct-name">Display name</label>
+          <input id="acct-name" type="text" name="name" class="input-field" value="{{ request.state.user.name }}">
+          <span class="account-hint">Shown in the app. Doesn't affect what's printed on your CV — that comes from the vault.</span>
         </div>
-        {% endif %}
+        <div class="account-field">
+          <label>Email</label>
+          <input type="email" class="input-field" value="{{ request.state.user.email }}" disabled>
+          <span class="account-hint">Email cannot be changed.</span>
+        </div>
+        <div class="account-field">
+          <label>Member since</label>
+          <span class="account-value">{{ request.state.user.created_at.strftime("%d %b %Y") }}</span>
+        </div>
+        <button type="submit" class="btn-primary btn-sm">Save changes</button>
+        <div id="profile-result"></div>
+      </form>
+    </section>
 
-        {% if request.state.user.password_hash %}
-        <form hx-post="/account/change-password" hx-target="#password-result" hx-swap="innerHTML" class="account-password-form">
-            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-            <div class="account-field">
-                <label for="acct-cur-pw">Current Password</label>
-                <input id="acct-cur-pw" type="password" name="current_password" class="input-field" required>
-            </div>
-            <div class="account-field">
-                <label for="acct-new-pw">New Password</label>
-                <input id="acct-new-pw" type="password" name="new_password" class="input-field" required minlength="8">
-            </div>
-            <button type="submit" class="btn-secondary btn-sm">Change Password</button>
-            <div id="password-result"></div>
-        </form>
-        {% else %}
-        <p class="account-hint">You signed up with {{ request.state.user.provider | title }}. No password set.</p>
-        {% endif %}
+    {# ── Career profile (was /profile, sans PII) ────────────────── #}
+    <section id="career-profile" class="account-section">
+      <h3>Career profile</h3>
+      <p class="account-hint" style="margin-top:-0.4rem;margin-bottom:1rem">
+        How you want every CV we generate to feel — your default region, voice, values, and
+        the base CV the AI mines for facts. Personal contact details live in your
+        <a href="#vault">vault</a>, not here.
+      </p>
 
-        {% if passkeys %}
-        <div class="account-passkeys">
-            <label>Passkeys</label>
-            {% for pk in passkeys %}
-            <div class="account-passkey-item">
-                <span>{{ pk.name }}</span>
-                <span class="account-hint">Added {{ pk.created_at.strftime("%d %b %Y") }}</span>
+      <form class="career-form" hx-post="/account/career/save"
+            hx-target="#career-result" hx-swap="innerHTML"
+            enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+
+        {# Default region #}
+        {% call form_group("Default region", hint="The country whose CV conventions and regional fields apply by default. You can override this per job.", optional=true) %}
+          <div class="country-select-grid">
+            {% for r in regions %}
+            <label class="country-select-card" for="account-region-{{ r.code }}">
+              <input type="radio" name="region" id="account-region-{{ r.code }}" value="{{ r.code }}"
+                     {% if r.code == pii.get('region', '') %}checked{% endif %}
+                     hx-get="/profile/region-change/{{ r.code }}"
+                     hx-target="#profile-region-summary"
+                     hx-swap="innerHTML"
+                     hx-trigger="change"
+                     hx-include="[name='region']">
+              <div class="country-select-inner">
+                <span class="country-select-flag">{{ r.flag }}</span>
+                <div class="country-select-info">
+                  <strong>{{ r.name }}</strong>
+                  <span class="country-select-meta">{{ r.language }} · {{ r.page_length }}</span>
+                </div>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          <div id="profile-region-summary" class="region-summary" style="margin-top:0.75rem">
+            {% if pii.get('region') %}
+              {% include "partials/wizard/region_summary.html" %}
+            {% endif %}
+          </div>
+        {% endcall %}
+
+        {# Regional requirements (photo expectations etc.) #}
+        {% set fields = region_fields if region_fields is defined else {} %}
+        {% set oob = false %}
+        {% include "partials/profile/regional_fields.html" %}
+
+        {# Professional voice — bubbles + values #}
+        {% set self_description_categories = [
+            ('Mindset', 'how I think', [
+                ('Systems thinker', "I love understanding how things connect — untangling complex domains, simplifying processes, and leaving things easier to work with than I found them."),
+                ('Numbers-led', "I like decisions backed by data. I'm comfortable in spreadsheets, models, and dashboards — and equally comfortable explaining what they mean to a room that doesn't think in numbers."),
+                ('Methodical investigator', "I work problems in layers — read the file, check the precedent, ask the questions that surface the real story. I'd rather take an extra day than miss a detail that costs us later."),
+                ('Creative problem-solver', "I see angles other people miss. I'm at my best with a blank page and an unclear problem — sketching, prototyping, and finding the version of the answer that's both elegant and actually works."),
+                ('First-principles thinker', "I'd rather understand a problem from the ground up than copy what worked last time. I take ideas apart to see what's actually load-bearing, then rebuild them in a form that fits the situation in front of us."),
+            ]),
+            ('Working style', 'how I deliver', [
+                ('Pragmatic builder', "I'm a pragmatic builder who turns ambiguous requirements into shipped work. Colleagues describe me as reliable, calm under pressure, and the one who quietly unblocks the team."),
+                ('Detail-driven', "I'm meticulous about quality and care deeply about the craft. I check thoroughly, review carefully, and would rather get it right than get it fast."),
+                ('Hands-on', "I'd rather get on the floor than write a memo about it. Count on me to read the drawings, find the failure mode, and fix the actual thing in front of us — safely and the first time."),
+                ('Steady administrator', "I'm the person who keeps the inbox clear, the calendar honest, and the paper trail tidy. Discreet, dependable, and three steps ahead — I make other people's complicated jobs feel simple."),
+                ('Process-builder', "I leave places tidier than I found them. I document the workflow, write the runbook, and turn one-off heroics into a process the next person can follow without my help."),
+            ]),
+            ('With people', 'how I lead, communicate, and relate', [
+                ('Quiet leader', "I lead by example, not by volume. I'm the person teammates message when they're stuck, and I take pride in mentoring juniors into confident, capable colleagues."),
+                ('People-first leader', "I lead by getting the conditions right — clarity, trust, and protection from the noise — then I trust people to do the work they were hired for. My job is to remove blockers, not run the show."),
+                ('Story-led communicator', "I turn the noise into a narrative. Whether it's a board update, a campaign, or an internal change, I find the through-line and make it land with whoever needs to hear it."),
+                ('Relationship-builder', "I build the kind of relationships that compound over years. People remember me as someone who listens carefully, follows up reliably, and goes to bat for them when it matters."),
+                ('Trusted advisor', "Clients come to me when the stakes are high and the brief is ambiguous. I translate complex situations into clear options, and I'm honest about the trade-offs even when it's not what they want to hear."),
+                ('Compassionate carer', "I do this work because the people on the other side of it matter. I'm patient, attentive, and I take the time to understand the human story behind the file."),
+                ('Patient teacher', "I love the moment something clicks for someone. I break complex things into honest, small steps, meet people where they are, and I'd rather they understand it than be impressed by me."),
+            ]),
+            ('Under pressure & change', 'how I respond when things shift', [
+                ('Calm operator', "I keep the wheels turning. When things get hectic I don't get louder — I get more organised. Teams describe me as the steady hand that turns chaos into a checklist."),
+                ('Adaptable', "Comfortable with change. New tools, shifting priorities, a re-org that lands at 4pm on a Friday — I'd rather pick it up and run with it than wish things were the way they were last week."),
+                ('Consistent', "I bring the same version of myself to work every day. Whatever's going on outside the office, the work I deliver is steady — predictable in the best sense, dependable when others are stretched thin."),
+                ('Resilient', "Setbacks don't knock me out for long. When something I cared about doesn't land, I take an honest beat to learn from it, then I'm back at it. I'd rather try, miss, and iterate than play safe and stay still."),
+                ('Energiser', "I bring energy to teams that need it. I'm the one who notices when the room has gone flat, calls the right break, and brings genuine enthusiasm to the parts of the work other people find tedious — without forcing it."),
+            ]),
+        ] %}
+        {% set values_pills = [
+            ('Quality first', "Quality over speed, but never at the cost of momentum. I value honest reviews, careful checks, and simplicity over cleverness."),
+            ('User-centred', "I work for the person on the other end of the work. I value clear communication, accessible defaults, and shipping what genuinely helps them."),
+            ('Open & honest', "Transparent communication, generous credit-sharing, and the willingness to admit when I'm wrong. I value a team that can disagree well."),
+            ('Always learning', "Continuous learning, pairing with people smarter than me, and stretching outside my comfort zone. I'd rather learn than be right."),
+            ('Integrity & discretion', "I treat confidential information like it's mine to protect. I follow process, document carefully, and don't take shortcuts I'd be uncomfortable defending in writing."),
+            ('Outcomes that matter', "I care about the result more than the activity. I'd rather deliver one thing that moves the dial than ten that keep us busy."),
+            ('Care & service', "The people I serve — clients, patients, students, customers — are the point of the work. I want them to leave better off, and treated like adults."),
+            ('Craft & standards', "There's a right way to build a thing — solid, honest, well-finished — and I like to work to that standard whether anyone else is watching or not."),
+            ('Collaboration over heroics', "Strong teams beat strong individuals. I share credit generously, prefer pairing over lone-wolf work, and trust that the best decisions come out of healthy disagreement."),
+            ('Empathy first', "I assume good intent and listen before I form a view. People tell me hard things because they know I won't make them feel small for it."),
+            ('Calm under pressure', "I value the kind of environment where we can think clearly when it matters. I don't escalate energy in a crisis — I lower it, then we work the problem."),
+            ('Ownership', "If I said I'd do it, it gets done. If something I touched went wrong, I'm the one putting my hand up first and fixing it."),
+            ('Fairness & inclusion', "I want everyone in the room to be heard, to feel safe disagreeing, and to be measured by the same yardstick. Good cultures don't happen by accident."),
+            ('Curiosity & rigour', "I like questions more than answers. I'd rather sit with a problem long enough to understand it than reach for the first plausible explanation.")
+        ] %}
+
+        {% call form_group("How would you describe yourself as a professional?", hint="Pick a starter that sounds like you and rewrite it.", optional=true) %}
+          <div class="voice-pills voice-pills--grouped" data-target="self_description">
+            {% for cat_name, cat_hint, pills in self_description_categories %}
+            <div class="voice-pill-group">
+              <span class="voice-pill-group__label">{{ cat_name }}<span class="voice-pill-group__hint">— {{ cat_hint }}</span></span>
+              <div class="voice-pill-group__pills">
+                {% for label, text in pills %}
+                <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                {% endfor %}
+              </div>
             </div>
             {% endfor %}
+          </div>
+          {{ text_area("self_description", rows=3, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems…", value=pii.get('self_description', '')) }}
+        {% endcall %}
+
+        {% call form_group("What are your professional values?", hint="What matters to you in how you work and what you build.", optional=true) %}
+          <div class="voice-pills" data-target="values">
+            {% for label, text in values_pills %}
+            <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+            {% endfor %}
+          </div>
+          {{ text_area("values", rows=3, placeholder="e.g. Quality, care for users, continuous learning, transparent communication…", value=pii.get('values', '')) }}
+        {% endcall %}
+
+        {# Online presence — these aren't strictly PII (LinkedIn URL is public). Stays here. #}
+        {% call form_group("LinkedIn", hint="Public profile URL — appears on your CV.", optional=true) %}
+          {{ text_input("linkedin", placeholder="https://www.linkedin.com/in/your-handle", value=pii.get('linkedin', '')) }}
+        {% endcall %}
+        {% call form_group("GitHub", hint="Optional — appears on your CV when relevant.", optional=true) %}
+          {{ text_input("github", placeholder="https://github.com/your-handle", value=pii.get('github', '')) }}
+        {% endcall %}
+        {% call form_group("Portfolio / website", optional=true) %}
+          {{ text_input("portfolio", placeholder="https://yoursite.com", value=pii.get('portfolio', '')) }}
+        {% endcall %}
+        {% call form_group("Location", hint="City, region — for the CV header.", optional=true) %}
+          {{ text_input("location", placeholder="Sydney, NSW", value=pii.get('location', '')) }}
+        {% endcall %}
+
+        {# Base CV upload #}
+        {% call form_group("Base CV", hint="The AI mines this for experience, skills, and achievements when generating tailored versions.", optional=true) %}
+          {% if cv_filename %}
+          <div class="profile-cv-current" style="margin-bottom:0.6rem">
+            <span class="profile-cv-filename">📄 {{ cv_filename }}</span>
+            <span class="profile-cv-status">Saved</span>
+          </div>
+          {% endif %}
+          <input type="file" name="cv_file"
+                 accept=".pdf,.docx,.doc,.txt,.md"
+                 class="profile-cv-input"
+                 aria-describedby="account-cv-hint">
+          <p id="account-cv-hint" class="hint">PDF, DOCX, or TXT — max 20MB</p>
+        {% endcall %}
+
+        {# References (only when the region expects them) #}
+        {% if fields.get('references') %}
+        {% call form_group("References", hint="Add 2–3 professional referees. The AI cannot fabricate these.", optional=true) %}
+          {% set refs = pii.get('references', []) %}
+          <div id="account-references-list">
+            {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
+            {{ reference_entry(2, refs[1] if refs|length > 1 else {}) }}
+          </div>
+        {% endcall %}
+        {% endif %}
+
+        <div>
+          <button type="submit" class="btn-primary btn-sm"
+                  hx-disabled-elt="this"
+                  hx-on::before-request="this.innerHTML='Saving…';">
+            Save career profile
+          </button>
+          <div id="career-result" style="margin-top:0.5rem"></div>
+        </div>
+      </form>
+    </section>
+
+    {# ── Personal vault ─────────────────────────────────────────── #}
+    <section id="vault" class="account-section account-section--vault">
+      <h3>
+        <svg viewBox="0 0 14 16" width="13" height="14" fill="none" aria-hidden="true" style="vertical-align:-2px;margin-right:6px">
+          <path d="M2 8 C1 8, 1 8, 1 9 L1 14 C1 15, 2 15, 2 15 L12 15 C13 15, 13 14, 13 14 L13 9 C13 8, 12 8, 12 8 Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M4 8 C4 5, 5 4, 7 4 C9 4, 10 5, 10 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+        </svg>
+        Personal vault
+      </h3>
+      {% set vpii = request.state.session.get("pii", {}) if request.state.session is defined else {} %}
+      {% if vpii and vpii.get("full_name") %}
+      <div class="vault-account-preview">
+        <div class="vault-preview-row"><span class="vault-preview-label">Name</span><span class="vault-preview-value">{{ vpii.full_name }}</span></div>
+        {% if vpii.get("email") %}<div class="vault-preview-row"><span class="vault-preview-label">CV email</span><span class="vault-preview-value">{{ vpii.email }}</span></div>{% endif %}
+        {% if vpii.get("phone") %}<div class="vault-preview-row"><span class="vault-preview-label">Phone</span><span class="vault-preview-value">{{ vpii.phone }}</span></div>{% endif %}
+        {% if vpii.get("dob") %}<div class="vault-preview-row"><span class="vault-preview-label">Date of birth</span><span class="vault-preview-value">{{ vpii.dob }}</span></div>{% endif %}
+      </div>
+      {% else %}
+      <p class="account-hint">No personal information saved yet.</p>
+      {% endif %}
+      <p class="account-hint" style="margin-top:0.75rem">
+        Your name, contact details, date of birth, and any document IDs are kept in an encrypted vault — only you can read them.
+      </p>
+      <a href="/account/pii" class="btn-secondary btn-sm" style="margin-top:1rem;display:inline-block">
+        Open vault →
+      </a>
+    </section>
+
+    {# ── Security ───────────────────────────────────────────────── #}
+    <section id="security" class="account-section">
+      <h3>Security</h3>
+      {% if request.state.user.provider %}
+      <div class="account-field">
+        <label>Connected account</label>
+        <span class="account-value">{{ request.state.user.provider | title }} ({{ request.state.user.provider_id[:8] if request.state.user.provider_id else '' }}…)</span>
+      </div>
+      {% endif %}
+
+      {% if request.state.user.password_hash %}
+      <div class="account-hint" role="note" style="margin-bottom: 0.75rem; padding: 0.75rem; border-left: 3px solid var(--warning, #d97706); background: var(--surface-2, rgba(217, 119, 6, 0.08));">
+        <strong>Heads up:</strong> Changing your password will make your saved PII unreadable. You'll need to re-fill it on your profile.
+      </div>
+      <form hx-post="/account/change-password" hx-target="#password-result" hx-swap="innerHTML" class="account-password-form">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <div class="account-field">
+          <label for="acct-cur-pw">Current password</label>
+          <input id="acct-cur-pw" type="password" name="current_password" class="input-field" required>
+        </div>
+        <div class="account-field">
+          <label for="acct-new-pw">New password</label>
+          <input id="acct-new-pw" type="password" name="new_password" class="input-field" required minlength="8">
+        </div>
+        <button type="submit" class="btn-secondary btn-sm">Change password</button>
+        <div id="password-result"></div>
+      </form>
+      {% else %}
+      <p class="account-hint">You signed up with {{ request.state.user.provider | title }}. No password set.</p>
+      {% endif %}
+
+      {% if passkeys %}
+      <div class="account-passkeys">
+        <label>Passkeys</label>
+        {% for pk in passkeys %}
+        <div class="account-passkey-item">
+          <span>{{ pk.name }}</span>
+          <span class="account-hint">Added {{ pk.created_at.strftime("%d %b %Y") }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    {# ── Credits & billing ──────────────────────────────────────── #}
+    <section id="billing" class="account-section">
+      <h3>Credits &amp; billing</h3>
+      <div class="account-stats">
+        <div class="account-stat">
+          <span class="account-stat-value">{{ request.state.balance }}</span>
+          <span class="account-stat-label">Available</span>
+        </div>
+        <div class="account-stat">
+          <span class="account-stat-value">{{ credits.total_purchased if credits else 0 }}</span>
+          <span class="account-stat-label">Purchased</span>
+        </div>
+        {% if credits and credits.total_granted %}
+        <div class="account-stat">
+          <span class="account-stat-value">{{ credits.total_granted }}</span>
+          <span class="account-stat-label">Granted</span>
         </div>
         {% endif %}
-    </div>
+        <div class="account-stat">
+          <span class="account-stat-value">{{ credits.total_used if credits else 0 }}</span>
+          <span class="account-stat-label">Used</span>
+        </div>
+        <div class="account-stat">
+          <span class="account-stat-value">{{ saved_cv_count }}</span>
+          <span class="account-stat-label">CVs saved</span>
+        </div>
+      </div>
+      <a href="/account/topup" class="btn-secondary btn-sm">Buy more credits</a>
 
-    <!-- Billing Section -->
-    <div class="account-section">
-        <h3>Billing History</h3>
-        {% if payments %}
-        <table class="account-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Credits</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in payments %}
-                <tr>
-                    <td>{{ p.created_at.strftime("%d %b %Y") }}</td>
-                    <td>${{ "%.2f" | format(p.amount_cents / 100) }}</td>
-                    <td>{{ p.credits_granted }}</td>
-                    <td><span class="account-status account-status--{{ p.status }}">{{ p.status | title }}</span></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="account-hint">No payments yet. <a href="/pricing">Buy credits</a> to get started.</p>
-        {% endif %}
-    </div>
+      <h4 style="margin-top:1.5rem;font-size:0.95rem">Billing history</h4>
+      {% if payments %}
+      <table class="account-table">
+        <thead>
+          <tr><th>Date</th><th>Amount</th><th>Credits</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td>{{ p.created_at.strftime("%d %b %Y") }}</td>
+            <td>${{ "%.2f" | format(p.amount_cents / 100) }}</td>
+            <td>{{ p.credits_granted }}</td>
+            <td><span class="account-status account-status--{{ p.status }}">{{ p.status | title }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="account-hint">No payments yet.</p>
+      {% endif %}
+    </section>
 
-    <!-- Danger Zone -->
-    <div class="account-section account-section--danger">
-        <h3>Danger Zone</h3>
-        <p class="account-hint">Permanently delete your account and all associated data. This cannot be undone.</p>
-        <form hx-post="/account/delete" hx-target="#delete-result" hx-swap="innerHTML">
-            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-            <div class="account-field">
-                <label for="acct-confirm">Type DELETE to confirm</label>
-                <input id="acct-confirm" type="text" name="confirm" class="input-field" placeholder="DELETE" required>
-            </div>
-            <button type="submit" class="btn-danger btn-sm">Delete My Account</button>
-            <div id="delete-result"></div>
-        </form>
-    </div>
+    {# ── Privacy & sharing (admin-gated) ────────────────────────── #}
+    {% if prompt_logging_eligible %}
+    <section id="privacy" class="account-section">
+      <h3>Privacy &amp; sharing</h3>
+      <div class="toggle-card">
+        <div class="toggle-card__row">
+          <div>
+            <div class="toggle-card__title">Help us tune QuillCV's AI</div>
+            <p class="toggle-card__hint" style="margin-top:0.25rem">
+              Lets our team peek at the instructions we send to the AI when it
+              writes your CV or cover letter, so we can spot rough output and
+              improve the wording. Off by default — toggle any time.
+            </p>
+          </div>
+          <label class="toggle toggle--lg" aria-label="Share prompts with the QuillCV team">
+            <input type="checkbox" class="toggle__input" name="granted"
+                   {% if prompt_logging_granted %}checked{% endif %}
+                   hx-post="/account/prompt-logging"
+                   hx-trigger="change"
+                   hx-target="#prompt-log-result"
+                   hx-swap="innerHTML"
+                   hx-headers='{"X-CSRF-Token": "{{ request.state.csrf_token }}"}'>
+            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+          </label>
+        </div>
+        <div id="prompt-log-result" class="toggle-card__status">
+          {% if prompt_logging_granted %}
+            <span class="toggle-card__status--on">On — thank you for helping improve QuillCV.</span>
+          {% else %}
+            <span class="toggle-card__status--off">Off — no prompts are saved.</span>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── Danger zone ────────────────────────────────────────────── #}
+    <section id="danger" class="account-section account-section--danger">
+      <h3>Danger zone</h3>
+      <p class="account-hint">Permanently delete your account and all associated data. This cannot be undone.</p>
+      <form hx-post="/account/delete" hx-target="#delete-result" hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <div class="account-field">
+          <label for="acct-confirm">Type DELETE to confirm</label>
+          <input id="acct-confirm" type="text" name="confirm" class="input-field" placeholder="DELETE" required>
+        </div>
+        <button type="submit" class="btn-danger btn-sm">Delete my account</button>
+        <div id="delete-result"></div>
+      </form>
+    </section>
+
+  </div>
 </div>
+
+<script src="/static/voice_pills.js" defer></script>
+<script>
+  // Highlight the TOC link whose section is currently in view.
+  (function () {
+    var links = document.querySelectorAll('.account-toc a[data-toc-target]');
+    var sections = Array.from(links).map(function (a) {
+      return document.getElementById(a.dataset.tocTarget);
+    });
+    if (!('IntersectionObserver' in window) || !sections.length) return;
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        links.forEach(function (a) { a.classList.remove('is-active'); });
+        var match = document.querySelector('.account-toc a[data-toc-target="' + entry.target.id + '"]');
+        if (match) match.classList.add('is-active');
+      });
+    }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+
+    sections.forEach(function (s) { if (s) observer.observe(s); });
+  })();
+</script>
 {% endblock %}

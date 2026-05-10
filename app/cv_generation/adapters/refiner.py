@@ -9,6 +9,7 @@ import logging
 import re
 
 from app.infrastructure.llm.client import LLMClient, set_llm_context
+from app.pii.use_cases.redact_pii import PIIRedactor
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +105,23 @@ async def apply_review_fixes(
     # Build a clean copy without internal metadata
     clean_data = {k: v for k, v in cv_data.items() if not k.startswith("_")}
 
+    # Redact PII before sending to LLM
+    redactor = PIIRedactor.from_cv_data(clean_data)
+    redacted_data = redactor.redact_cv_dict(clean_data)
+
+    # Also redact PII inside the user-supplied flag items (they're verbatim
+    # text from the redacted CV, but cv_data here is the *real* CV).
+    redacted_flags: list[dict] = []
+    for flag in flags:
+        rf = dict(flag)
+        if isinstance(rf.get("item"), str):
+            rf["item"] = redactor._redact_text_for_dict(rf["item"])
+        if isinstance(rf.get("reason"), str):
+            rf["reason"] = redactor._redact_text_for_dict(rf["reason"])
+        redacted_flags.append(rf)
+
     changes_lines = []
-    for i, flag in enumerate(flags, 1):
+    for i, flag in enumerate(redacted_flags, 1):
         action = "REMOVE entirely" if flag["severity"] == "remove" else "IMPROVE/REWRITE"
         line = f"{i}. {action}: \"{flag['item']}\" — {flag.get('reason', '')}"
 
@@ -117,7 +133,7 @@ async def apply_review_fixes(
         changes_lines.append(line)
 
     prompt = _REFINE_PROMPT.format(
-        cv_json=json.dumps(clean_data, indent=2),
+        cv_json=json.dumps(redacted_data, indent=2),
         job_description=job_description[:3000],
         changes="\n".join(changes_lines),
     )
@@ -132,6 +148,9 @@ async def apply_review_fixes(
             raw = raw.strip()
 
         updated = json.loads(raw)
+
+        # Restore PII tokens with real values before returning
+        updated = redactor.restore(updated)
 
         # Attach LLM usage
         updated["_llm_usage"] = {

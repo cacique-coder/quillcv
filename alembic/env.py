@@ -22,7 +22,8 @@ config = context.config
 
 # Set up Python logging from alembic.ini if present.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Don't kill loggers configured by app.infrastructure.logging
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 logger = logging.getLogger("alembic.env")
 

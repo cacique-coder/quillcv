@@ -4,6 +4,7 @@ import logging
 from app.cv_export.adapters.template_registry import RegionConfig
 from app.cv_generation.adapters.prompt_guard import MAX_JOB_DESC_LENGTH, sanitize_user_input
 from app.infrastructure.llm.client import LLMClient, set_llm_context
+from app.pii.use_cases.redact_pii import PIIRedactor
 
 logger = logging.getLogger(__name__)
 
@@ -181,7 +182,10 @@ async def generate_cover_letter(
     job_description = sanitize_user_input(job_description, MAX_JOB_DESC_LENGTH, "Job description")
 
     region_rules = _build_cl_region_rules(region)
-    cv_context = _build_cv_context(cv_data)
+    # Redact PII from cv_data before pulling out fields for the prompt context.
+    cv_redactor = PIIRedactor.from_cv_data(cv_data or {})
+    redacted_cv_data = cv_redactor.redact_cv_dict(cv_data or {})
+    cv_context = _build_cv_context(redacted_cv_data)
     personal_context = _build_personal_context(attempt or {})
     keyword_context = _build_keyword_context(keyword_categories) if keyword_categories else ""
 
@@ -229,6 +233,8 @@ Rules:
         cl_data = _parse_cl_json(result.text)
         logger.info("Parse result: %s", "OK" if cl_data else "FAILED")
         if cl_data is not None:
+            # Restore PII tokens (notably <<CANDIDATE_NAME>> in the name field)
+            cl_data = cv_redactor.restore(cl_data)
             # Attach LLM usage metadata for logging
             cl_data["_llm_usage"] = {
                 "model": result.model,

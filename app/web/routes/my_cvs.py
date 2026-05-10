@@ -6,12 +6,15 @@ import re
 
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
+from sqlalchemy import select
 
 from app.cv_export.adapters.docx_export import generate_docx
 from app.cv_export.adapters.puppeteer_pdf import generate_pdf
 from app.cv_export.adapters.template_registry import get_region
+from app.infrastructure.crypto import decrypt_data
 from app.infrastructure.persistence.cv_repo import get_saved_cv, list_saved_cvs
 from app.infrastructure.persistence.database import async_session
+from app.infrastructure.persistence.orm_models import Job
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -21,6 +24,17 @@ router = APIRouter()
 # Tokens that survive into rendered HTML when the PII vault is missing values.
 # Matches both fixed (e.g. <<DOB>>) and indexed (e.g. <<EMAIL_1>>) placeholders.
 _PII_TOKEN_RE = re.compile(r"<<[A-Z][A-Z0-9_]*>>")
+
+# cv_data keys that are NOT tokenised but whose values should fall back to the
+# PII vault when the stored JSON is empty (e.g. CV was generated before the
+# user populated these vault fields). Maps cv_data key -> vault key(s) to try.
+_VAULT_FALLBACK_FIELDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("visa_status",    ("visa_status",)),
+    ("nationality",    ("nationality",)),
+    ("marital_status", ("marital_status",)),
+    # photo_url: vault stores under photo_path; fall back to photo.
+    ("photo_url",      ("photo_path", "photo")),
+)
 
 # Tokens whose underlying field is *always optional* across regions. If the
 # vault has no value, the token is stripped to "" before render so it never
@@ -93,6 +107,46 @@ def _strip_optional_tokens(cv_data: dict) -> dict:
             raw = raw.replace(token, "")
             changed = True
     return json.loads(raw) if changed else cv_data
+
+
+def _resolve_cv_with_pii(cv_data: dict, pii: dict) -> dict:
+    """Substitute token placeholders and fill empty vault-backed fields from PII.
+
+    Returns a new dict — does not mutate the input. When pii is empty, only
+    optional-token stripping runs (matching today's behaviour for anonymous
+    users).
+    """
+    if pii:
+        candidate_slug = (pii.get("full_name") or "").lower().replace(" ", "-")
+        token_replacements = {
+            "<<CANDIDATE_NAME>>": pii.get("full_name", ""),
+            "<<EMAIL_1>>": pii.get("email", ""),
+            "<<PHONE_1>>": pii.get("phone", ""),
+            "<<DOB>>": pii.get("dob", ""),
+            "<<DOCUMENT_ID>>": pii.get("document_id", ""),
+            "<<LINKEDIN_URL>>": pii.get("linkedin", ""),
+            "<<GITHUB_URL>>": pii.get("github", ""),
+            "<<PORTFOLIO_URL>>": pii.get("portfolio", ""),
+            "<<CANDIDATE_SLUG>>": candidate_slug,
+        }
+        raw = json.dumps(cv_data)
+        for token, real_val in token_replacements.items():
+            if real_val:
+                raw = raw.replace(token, real_val)
+        cv_data = json.loads(raw)
+
+        # Fill vault-backed fields that were never tokenised.
+        for cv_key, vault_keys in _VAULT_FALLBACK_FIELDS:
+            current = cv_data.get(cv_key)
+            if current and (not isinstance(current, str) or current.strip()):
+                continue  # already has a value
+            for vk in vault_keys:
+                vault_val = pii.get(vk)
+                if vault_val and (not isinstance(vault_val, str) or vault_val.strip()):
+                    cv_data = {**cv_data, cv_key: vault_val}
+                    break
+
+    return _strip_optional_tokens(cv_data)
 
 
 def _detect_missing_fields(rendered: str, cv_data: dict | None = None, region_code: str = "") -> list[str]:
@@ -192,19 +246,44 @@ async def my_cvs_page(request: Request):
         cvs.sort(key=lambda c: c.created_at, reverse=True)
 
     # Flag any CV missing region-required fields — surfaced as a card badge.
+    # Resolve PII tokens + vault-backed fields first so the check sees the same
+    # data the user would actually get in preview/download.
     cv_status: dict[str, list[str]] = {}
     for cv in cvs:
         try:
-            data = json.loads(cv.cv_data_json) if cv.cv_data_json else {}
+            raw_data = json.loads(cv.cv_data_json) if cv.cv_data_json else {}
         except (json.JSONDecodeError, TypeError):
-            data = {}
-        # Use cv_data_json itself as the "rendered" haystack — it carries the
-        # same starter strings and tokens we want to detect, without paying
-        # for a full template render per card.
-        haystack = cv.cv_data_json or ""
-        missing = _detect_missing_fields(haystack, data, cv.region or "")
+            raw_data = {}
+        resolved = _resolve_cv_with_pii(raw_data, pii)
+        # Serialise the resolved dict so the token regex sees no surviving
+        # required tokens when the vault has filled them.
+        haystack = json.dumps(resolved)
+        missing = _detect_missing_fields(haystack, resolved, cv.region or "")
         if missing:
             cv_status[cv.id] = missing
+
+    # Batch-load cover letters for CVs that have a linked job.
+    cover_letters: dict[str, dict] = {}
+    job_ids = [cv.job_id for cv in cvs if cv.job_id]
+    if job_ids:
+        result = await db.execute(select(Job).where(Job.id.in_(job_ids)))
+        jobs_by_id = {j.id: j for j in result.scalars().all()}
+        for cv in cvs:
+            if not cv.job_id:
+                continue
+            job = jobs_by_id.get(cv.job_id)
+            if not job or not job.cover_letter_html:
+                continue
+            try:
+                from cryptography.fernet import InvalidToken
+                try:
+                    cl_html = decrypt_data(job.cover_letter_html)
+                except (InvalidToken, Exception):
+                    cl_html = job.cover_letter_html  # legacy unencrypted row
+                if cl_html:
+                    cover_letters[cv.id] = {"html": cl_html}
+            except Exception:
+                logger.debug("cover letter decrypt skipped for cv_id=%s", cv.id)
 
     return templates.TemplateResponse(
         "my_cvs.html",
@@ -212,6 +291,7 @@ async def my_cvs_page(request: Request):
             "request": request,
             "saved_cvs": cvs,
             "cv_status": cv_status,
+            "cover_letters": cover_letters,
         },
     )
 
@@ -226,28 +306,7 @@ async def my_cv_preview(request: Request, cv_id: str):
     if not saved:
         return Response("CV not found", status_code=404)
 
-    cv_data = json.loads(saved.cv_data_json)
-    # Fallback: replace any leftover PII tokens with vault values
-    if pii:
-        candidate_slug = (pii.get("full_name") or "").lower().replace(" ", "-")
-        token_replacements = {
-            "<<CANDIDATE_NAME>>": pii.get("full_name", ""),
-            "<<EMAIL_1>>": pii.get("email", ""),
-            "<<PHONE_1>>": pii.get("phone", ""),
-            "<<DOB>>": pii.get("dob", ""),
-            "<<DOCUMENT_ID>>": pii.get("document_id", ""),
-            "<<LINKEDIN_URL>>": pii.get("linkedin", ""),
-            "<<GITHUB_URL>>": pii.get("github", ""),
-            "<<PORTFOLIO_URL>>": pii.get("portfolio", ""),
-            "<<CANDIDATE_SLUG>>": candidate_slug,
-        }
-        raw = json.dumps(cv_data)
-        for token, real_val in token_replacements.items():
-            if real_val:
-                raw = raw.replace(token, real_val)
-        cv_data = json.loads(raw)
-
-    cv_data = _strip_optional_tokens(cv_data)
+    cv_data = _resolve_cv_with_pii(json.loads(saved.cv_data_json), pii)
     rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
 
     banner = _missing_token_banner(rendered, cv_data=cv_data, cv_id=cv_id, region_code=saved.region or "")
@@ -264,28 +323,7 @@ async def my_cv_download(request: Request, cv_id: str):
     if not saved:
         return Response("CV not found", status_code=404)
 
-    cv_data = json.loads(saved.cv_data_json)
-    # Fallback: replace any leftover PII tokens with vault values
-    if pii:
-        candidate_slug = (pii.get("full_name") or "").lower().replace(" ", "-")
-        token_replacements = {
-            "<<CANDIDATE_NAME>>": pii.get("full_name", ""),
-            "<<EMAIL_1>>": pii.get("email", ""),
-            "<<PHONE_1>>": pii.get("phone", ""),
-            "<<DOB>>": pii.get("dob", ""),
-            "<<DOCUMENT_ID>>": pii.get("document_id", ""),
-            "<<LINKEDIN_URL>>": pii.get("linkedin", ""),
-            "<<GITHUB_URL>>": pii.get("github", ""),
-            "<<PORTFOLIO_URL>>": pii.get("portfolio", ""),
-            "<<CANDIDATE_SLUG>>": candidate_slug,
-        }
-        raw = json.dumps(cv_data)
-        for token, real_val in token_replacements.items():
-            if real_val:
-                raw = raw.replace(token, real_val)
-        cv_data = json.loads(raw)
-
-    cv_data = _strip_optional_tokens(cv_data)
+    cv_data = _resolve_cv_with_pii(json.loads(saved.cv_data_json), pii)
     rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
 
     cv_name = cv_data.get("name", "CV") or "CV"
@@ -315,28 +353,7 @@ async def my_cv_download_docx(request: Request, cv_id: str):
     if not saved:
         return Response("CV not found", status_code=404)
 
-    cv_data = json.loads(saved.cv_data_json)
-    # Fallback: replace any leftover PII tokens with vault values
-    if pii:
-        candidate_slug = (pii.get("full_name") or "").lower().replace(" ", "-")
-        token_replacements = {
-            "<<CANDIDATE_NAME>>": pii.get("full_name", ""),
-            "<<EMAIL_1>>": pii.get("email", ""),
-            "<<PHONE_1>>": pii.get("phone", ""),
-            "<<DOB>>": pii.get("dob", ""),
-            "<<DOCUMENT_ID>>": pii.get("document_id", ""),
-            "<<LINKEDIN_URL>>": pii.get("linkedin", ""),
-            "<<GITHUB_URL>>": pii.get("github", ""),
-            "<<PORTFOLIO_URL>>": pii.get("portfolio", ""),
-            "<<CANDIDATE_SLUG>>": candidate_slug,
-        }
-        raw = json.dumps(cv_data)
-        for token, real_val in token_replacements.items():
-            if real_val:
-                raw = raw.replace(token, real_val)
-        cv_data = json.loads(raw)
-
-    cv_data = _strip_optional_tokens(cv_data)
+    cv_data = _resolve_cv_with_pii(json.loads(saved.cv_data_json), pii)
     region_code = saved.region or "AU"
     template_id = saved.template_id or "classic"
     cv_name = cv_data.get("name", "CV") or "CV"

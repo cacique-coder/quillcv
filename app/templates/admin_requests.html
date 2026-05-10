@@ -105,10 +105,8 @@
 </style>
 
 <div class="admin-wrap">
-  <div class="admin-nav">
-    <a href="/admin">Dashboard</a>
-    <a href="/admin/requests" class="active">All Requests</a>
-  </div>
+  {% set active = "requests" %}
+  {% include "partials/admin_nav.html" %}
 
   <h1 class="admin-heading">API Request Log</h1>
   <p class="admin-sub">{{ total_count }} total requests &mdash; page {{ page }} of {{ total_pages }}</p>

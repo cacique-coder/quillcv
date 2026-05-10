@@ -151,21 +151,109 @@
                 </div>
                 <div class="ats-kw-col">
                     <h3>Still missing</h3>
-                    <p class="hint" style="font-size: 0.8rem;">Click a keyword to add it directly to the Skills section — no AI call.</p>
-                    <div class="keyword-tags" id="missing-keywords-tags">
-                        {% for kw in ats_generated.missing_keywords[:15] %}
-                        <button type="button" class="tag tag-missing tag-clickable"
-                                hx-post="/add-skills"
-                                hx-vals='{"staged_keywords": {{ kw | tojson }} }'
-                                hx-target="#generate-area"
-                                hx-swap="outerHTML"
-                                hx-indicator="#regenerate-loader"
-                                title="Add to Skills">
-                            <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
-                        </button>
-                        {% endfor %}
-                        {% if ats_generated.missing_keywords | length > 15 %}
-                        {{ badge("+" ~ (ats_generated.missing_keywords | length - 15) ~ " more", "more") }}
+                    <p class="hint">Click a keyword to add it directly to the Skills section — no AI call.</p>
+                    <div id="missing-keywords-tags">
+                        {#
+                          missing_keyword_groups: dict[keyword, category] passed from the route.
+                          If absent or empty, fall back to flat rendering (no regression).
+                          Cap total rendered keywords at 15; show "+N more" for the rest.
+                        #}
+                        {% set all_missing = ats_generated.missing_keywords %}
+                        {% set cap = 15 %}
+                        {% set overflow = (all_missing | length) - cap %}
+                        {% if missing_keyword_groups %}
+                            {#-- Build stable category order: CV-groups order first, then new, then uncategorised --#}
+                            {% set cat_order = missing_keyword_categories_order | default([]) %}
+                            {#-- Collect categories not already in cat_order (LLM-invented) --#}
+                            {% set extra_cats = [] %}
+                            {% for kw, cat in missing_keyword_groups.items() %}
+                                {% if cat not in cat_order and cat not in extra_cats %}
+                                    {% set _ = extra_cats.append(cat) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% set ordered_cats = cat_order + extra_cats %}
+                            {#-- Group keywords: iterate ordered categories, then uncategorised --#}
+                            {% set ns = namespace(rendered=0) %}
+                            {% for cat in ordered_cats %}
+                                {% set kws_in_cat = [] %}
+                                {% for kw in all_missing %}
+                                    {% if missing_keyword_groups.get(kw) == cat and ns.rendered < cap %}
+                                        {% set _ = kws_in_cat.append(kw) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if kws_in_cat %}
+                                <div class="ats-kw-group">
+                                    <h4 class="ats-kw-subhead">{{ cat }}</h4>
+                                    <div class="keyword-tags">
+                                        {% for kw in kws_in_cat %}
+                                            {% if ns.rendered < cap %}
+                                            <button type="button" class="tag tag-missing tag-clickable"
+                                                    hx-post="/add-skills"
+                                                    hx-vals='{"staged_keywords": {{ kw | tojson }} }'
+                                                    hx-target="#generate-area"
+                                                    hx-swap="outerHTML"
+                                                    hx-indicator="#regenerate-loader"
+                                                    title="Add to Skills">
+                                                <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
+                                            </button>
+                                            {% set ns.rendered = ns.rendered + 1 %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                            {#-- Uncategorised / no mapping --#}
+                            {% set uncats = [] %}
+                            {% for kw in all_missing %}
+                                {% if not missing_keyword_groups.get(kw) and ns.rendered < cap %}
+                                    {% set _ = uncats.append(kw) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if uncats %}
+                            <div class="ats-kw-group">
+                                <h4 class="ats-kw-subhead">Other</h4>
+                                <div class="keyword-tags">
+                                    {% for kw in uncats %}
+                                        {% if ns.rendered < cap %}
+                                        <button type="button" class="tag tag-missing tag-clickable"
+                                                hx-post="/add-skills"
+                                                hx-vals='{"staged_keywords": {{ kw | tojson }} }'
+                                                hx-target="#generate-area"
+                                                hx-swap="outerHTML"
+                                                hx-indicator="#regenerate-loader"
+                                                title="Add to Skills">
+                                            <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
+                                        </button>
+                                        {% set ns.rendered = ns.rendered + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if overflow > 0 %}
+                            <div class="keyword-tags">
+                                {{ badge("+" ~ overflow ~ " more", "more") }}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            {#-- Flat fallback: no grouping data available --#}
+                            <div class="keyword-tags">
+                                {% for kw in all_missing[:cap] %}
+                                <button type="button" class="tag tag-missing tag-clickable"
+                                        hx-post="/add-skills"
+                                        hx-vals='{"staged_keywords": {{ kw | tojson }} }'
+                                        hx-target="#generate-area"
+                                        hx-swap="outerHTML"
+                                        hx-indicator="#regenerate-loader"
+                                        title="Add to Skills">
+                                    <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
+                                </button>
+                                {% endfor %}
+                                {% if overflow > 0 %}
+                                {{ badge("+" ~ overflow ~ " more", "more") }}
+                                {% endif %}
+                            </div>
                         {% endif %}
                     </div>
                 </div>
@@ -309,14 +397,3 @@
     {% endif %}
 
 </div>
-
-<script>
-function switchResultsTab(tabId, btn) {
-    document.querySelectorAll('.results-tab-panel').forEach(function(p) { p.style.display = 'none'; p.classList.remove('results-tab-panel--active'); });
-    document.querySelectorAll('.results-tab').forEach(function(t) { t.classList.remove('results-tab--active'); });
-    var panel = document.getElementById('results-tab-' + tabId);
-    if (panel) { panel.style.display = ''; panel.classList.add('results-tab-panel--active'); }
-    if (btn) { btn.classList.add('results-tab--active'); }
-}
-
-</script>

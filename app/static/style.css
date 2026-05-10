@@ -468,6 +468,59 @@ select.input-field {
 .cv-card-actions .btn-secondary:hover {
     border-color: var(--accent);
 }
+.cv-card-actions .cv-card-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.cv-card-actions .cv-card-action .cost {
+    font-family: var(--mono, ui-monospace, monospace);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: inherit;
+    opacity: 0.85;
+}
+.cv-card-actions .btn-secondary.cv-card-action .cost {
+    background: var(--rule, rgba(0, 0, 0, 0.08));
+    color: var(--text-muted, currentColor);
+}
+.cv-card-cover-letter {
+    margin-top: 0.9rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+}
+.cv-card-cover-letter > summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.cv-card-cover-letter > summary::before {
+    content: "▸";
+    font-size: 0.75rem;
+    transition: transform 0.15s;
+}
+.cv-card-cover-letter[open] > summary::before {
+    transform: rotate(90deg);
+}
+.cv-card-cover-letter-body {
+    margin-top: 0.75rem;
+    padding: 1rem 1.1rem;
+    background: var(--paper, var(--surface));
+    border-radius: 6px;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    overflow-x: auto;
+}
 .my-cvs-empty {
     text-align: center;
     padding: 3rem 1rem;

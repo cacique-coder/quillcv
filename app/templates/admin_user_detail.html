@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block body_layout %}app{% endblock %}
+{% block title %}Admin — {{ target.email }} | QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+  .admin-heading { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text); }
+  .admin-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .admin-nav { display: flex; gap: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; }
+  .admin-nav a {
+    color: var(--text-muted); text-decoration: none; padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .admin-nav a:hover, .admin-nav a.active { color: var(--accent); border-color: var(--accent); }
+  .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem; }
+  @media (max-width: 800px) { .panel-grid { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+  }
+  .panel h3 { font-size: 0.95rem; margin: 0 0 0.85rem; color: var(--text); }
+  .kv { display: grid; grid-template-columns: 9rem 1fr; gap: 0.4rem 0.75rem; font-size: 0.85rem; }
+  .kv dt { color: var(--text-muted); }
+  .kv dd { margin: 0; color: var(--text); font-family: monospace; word-break: break-all; }
+  .inline-form { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+  .inline-form input[type="number"] {
+    width: 6rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+    border-radius: var(--radius); background: var(--paper); color: var(--text);
+  }
+  .badge {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 500;
+  }
+  .b-on  { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .b-off { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .b-mute { background: rgba(148, 148, 148, 0.15); color: var(--text-muted); }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .data-table th {
+    text-align: left; padding: 0.5rem 0.75rem; color: var(--text-muted);
+    font-weight: 500; border-bottom: 1px solid var(--border);
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .data-table td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--text); }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: auto; margin-bottom: 1.5rem; }
+  .section-title { font-size: 1rem; font-weight: 600; color: var(--text); margin: 1.5rem 0 0.75rem; }
+  .danger { color: var(--red); }
+</style>
+
+<div class="admin-wrap">
+  {% set active = "users" %}
+  {% include "partials/admin_nav.html" %}
+
+  <h1 class="admin-heading">{{ target.email }}</h1>
+  <p class="admin-sub">
+    <a href="/admin/users">&larr; Back to users</a>
+    &nbsp;&middot;&nbsp; ID: <code>{{ target.id }}</code>
+  </p>
+
+  <div class="panel-grid">
+    <div class="panel">
+      <h3>Profile</h3>
+      <dl class="kv">
+        <dt>Name</dt>           <dd>{{ target.name or "—" }}</dd>
+        <dt>Email</dt>          <dd>{{ target.email }}</dd>
+        <dt>Role</dt>           <dd>{{ target.role }}</dd>
+        <dt>Active</dt>
+        <dd>
+          {% if target.is_active %}<span class="badge b-on">yes</span>{% else %}<span class="badge b-off">no</span>{% endif %}
+          <form method="post" action="/admin/users/{{ target.id }}/toggle-active" style="display:inline;margin-left:0.5rem">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+            <button class="btn-ghost btn-sm" type="submit"
+              {% if target.id == user.id %}disabled title="You can't disable yourself"{% endif %}>
+              Toggle
+            </button>
+          </form>
+        </dd>
+        <dt>Auth provider</dt>  <dd>{{ target.provider or "password" }}</dd>
+        <dt>Created</dt>        <dd>{{ target.created_at.strftime("%Y-%m-%d %H:%M") }}</dd>
+        <dt>Last login</dt>     <dd>{{ target.last_login.strftime("%Y-%m-%d %H:%M") if target.last_login else "—" }}</dd>
+        <dt>Age confirmed</dt>  <dd>{{ "yes" if target.age_confirmed_at else "no" }}</dd>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <h3>Credits</h3>
+      <dl class="kv">
+        <dt>Balance</dt>        <dd>{{ credits.balance if credits else 0 }}</dd>
+        <dt>Total purchased</dt><dd>{{ credits.total_purchased if credits else 0 }}</dd>
+        <dt>Total granted</dt>  <dd>{{ credits.total_granted if credits else 0 }}</dd>
+        <dt>Total used</dt>     <dd>{{ credits.total_used if credits else 0 }}</dd>
+      </dl>
+      <form class="inline-form" method="post" action="/admin/users/{{ target.id }}/credits">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <input type="number" name="amount" value="10" required>
+        <button class="btn-primary btn-sm" type="submit">Grant credits</button>
+        <span style="font-size:0.8rem;color:var(--text-muted)">(use a negative number to claw back)</span>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h3>Prompt logging</h3>
+      <dl class="kv">
+        <dt>Eligible</dt>
+        <dd>
+          {% if target.prompt_logging_eligible %}<span class="badge b-on">yes</span>{% else %}<span class="badge b-mute">no</span>{% endif %}
+          <form method="post" action="/admin/users/{{ target.id }}/toggle-prompt-eligible" style="display:inline;margin-left:0.5rem">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+            <button class="btn-ghost btn-sm" type="submit">Toggle</button>
+          </form>
+        </dd>
+        <dt>User consent</dt>
+        <dd>
+          {% if last_prompt_consent and last_prompt_consent.granted %}
+            <span class="badge b-on">granted</span>
+            <span style="color:var(--text-muted);font-size:0.78rem">on {{ last_prompt_consent.created_at.strftime("%Y-%m-%d") }}</span>
+          {% elif last_prompt_consent %}
+            <span class="badge b-off">withdrawn</span>
+          {% else %}
+            <span class="badge b-mute">none</span>
+          {% endif %}
+        </dd>
+        <dt>Captured prompts</dt>
+        <dd>{{ prompt_count }} {% if prompt_count %}<a href="/admin/prompts?user_id={{ target.id }}">view</a>{% endif %}</dd>
+      </dl>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.75rem">
+        Eligibility lets the user see the prompt-logging toggle in their account settings.
+        Capturing only happens once they actively opt in.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h3>Account integrity</h3>
+      <dl class="kv">
+        <dt>Has password</dt>   <dd>{{ "yes" if target.password_hash else "no" }}</dd>
+        <dt>Provider ID</dt>    <dd>{{ target.provider_id or "—" }}</dd>
+        <dt>Saved CVs</dt>      <dd><a href="/admin/users/{{ target.id }}#cvs">see below</a></dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="section-title">Recent payments</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Date</th><th>Status</th><th>Amount</th><th>Credits</th><th>Stripe Session</th></tr></thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td style="white-space:nowrap;font-size:0.8rem">{{ p.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+          <td>{{ p.status }}</td>
+          <td>${{ "%.2f" | format(p.amount_cents / 100) }} {{ p.currency.upper() }}</td>
+          <td>{{ p.credits_granted }}</td>
+          <td style="font-family:monospace;font-size:0.75rem">{{ p.stripe_session_id[:24] }}…</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="color:var(--text-muted)">No payments.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">Recent generations</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Started</th><th>Transaction</th><th>API calls</th><th>Cost</th></tr></thead>
+      <tbody>
+        {% for a in attempts %}
+        <tr>
+          <td style="white-space:nowrap;font-size:0.8rem">{{ a.started_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+          <td><a href="/admin/requests/{{ a.transaction_id }}" style="font-family:monospace;font-size:0.78rem">{{ a.transaction_id[:16] }}…</a></td>
+          <td>{{ a.api_calls }}</td>
+          <td>${{ "%.4f" | format(a.total_cost) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="color:var(--text-muted)">No generations.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

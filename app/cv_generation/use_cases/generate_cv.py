@@ -17,7 +17,7 @@ from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
 from app.cv_export.adapters.template_registry import REGION_RULES, get_region, get_template
-from app.cv_generation.adapters.anthropic_generator import generate_tailored_cv
+from app.cv_generation.adapters.anthropic_generator import categorize_missing_keywords, generate_tailored_cv
 from app.cv_generation.adapters.cover_letter_generator import generate_cover_letter
 from app.cv_generation.adapters.generation_log import log_generation
 from app.cv_generation.adapters.keyword_llm import extract_keywords_llm
@@ -47,6 +47,22 @@ if _sys.version_info >= (3, 14):
 
 # Type alias for progress callback
 ProgressCallback = Callable[[str, str], Coroutine]
+
+
+def _cached(attempt: dict, key: str):
+    """Return cached value at ``key`` if non-empty, else None.
+
+    For dicts/lists, non-empty means at least one entry.
+    For strings, strips whitespace before testing truthiness.
+    """
+    val = attempt.get(key)
+    if val is None:
+        return None
+    if isinstance(val, str):
+        return val if val.strip() else None
+    if isinstance(val, (dict, list)):
+        return val if val else None
+    return val
 
 
 async def _noop_progress(step: str, detail: str) -> None:
@@ -95,7 +111,7 @@ async def run_generation_pipeline(
 
     timings = {}
 
-    # 1. Parse CV
+    # 1. Parse CV (cheap — always run)
     await on_progress("Reading your CV", "Parsing document structure")
     t0 = time.monotonic()
     cv_text = parse_cv(cv_filename, cv_bytes)
@@ -125,21 +141,29 @@ async def run_generation_pipeline(
     template_id = attempt.get("template_id", "modern")
     job_description = attempt.get("job_description", "")
 
-    # 2. Extract keywords
+    # 2. Extract keywords — skip if cached
     await on_progress("Scanning the job description", "Extracting keywords & requirements")
-    t0 = time.monotonic()
-    keyword_data = await extract_keywords_llm(job_description, llm_fast)
-    if keyword_data:
+    cached_keywords = _cached(attempt, "extracted_keywords")
+    if cached_keywords and cached_keywords.get("all_keywords"):
+        keyword_data = cached_keywords
         job_keywords = keyword_data["all_keywords"]
         keyword_categories = keyword_data["categories"]
-        update_attempt(attempt_id, extracted_keywords=keyword_data)
+        logger.info("Pipeline[%s] step=keywords cached", attempt_id)
+        timings["keyword_extraction"] = 0.0
     else:
-        job_keywords = None
-        keyword_categories = None
-    timings["keyword_extraction"] = round(time.monotonic() - t0, 2)
-    logger.info("Pipeline[%s] step=keywords duration=%.2fs found=%d", attempt_id, timings["keyword_extraction"], len(job_keywords) if job_keywords else 0)
+        t0 = time.monotonic()
+        keyword_data = await extract_keywords_llm(job_description, llm_fast)
+        timings["keyword_extraction"] = round(time.monotonic() - t0, 2)
+        if keyword_data:
+            job_keywords = keyword_data["all_keywords"]
+            keyword_categories = keyword_data["categories"]
+            update_attempt(attempt_id, extracted_keywords=keyword_data)
+        else:
+            job_keywords = None
+            keyword_categories = None
+        logger.info("Pipeline[%s] step=keywords duration=%.2fs found=%d", attempt_id, timings["keyword_extraction"], len(job_keywords) if job_keywords else 0)
 
-    # 3. ATS analysis on original
+    # 3. ATS analysis on original (sync, ~0s — always recompute)
     await on_progress("Running ATS check", "Scoring your original CV")
     t0 = time.monotonic()
     ats_result = analyze_ats(cv_text, job_description, keywords_override=job_keywords)
@@ -151,118 +175,230 @@ async def run_generation_pipeline(
     region_config = get_region(region_code) or get_region("US")
     region_rules = REGION_RULES.get(region_code, REGION_RULES["US"])
 
-    # 4. Generate tailored CV (the slow step)
+    # 4. Generate tailored CV — skip if cached
     await on_progress("Writing your new CV", "AI at work — this is the big one")
-    t0 = time.monotonic()
-    cv_data = await generate_tailored_cv(
-        cv_text_for_llm, job_description, ats_result.missing_keywords,
-        region=region_config, llm=llm, attempt=attempt,
-        ats_result=ats_result, keyword_categories=keyword_categories,
-    )
-    timings["ai_generate"] = round(time.monotonic() - t0, 2)
-    logger.info("Pipeline[%s] step=ai_generate duration=%.2fs success=%s", attempt_id, timings["ai_generate"], cv_data is not None)
-
-    if cv_data is None:
-        import hashlib as _hashlib
-        _input_len = len(cv_text_for_llm) + len(job_description)
-        _last_char_hash = _hashlib.sha256(cv_text_for_llm[-64:].encode(errors="replace")).hexdigest()[:8]
-        logger.error(
-            "Pipeline[%s] generate_tailored_cv returned None — "
-            "input_chars=%d last_char_hash=%s model=%s duration=%.2fs",
-            attempt_id, _input_len, _last_char_hash,
-            getattr(llm, "model", "unknown"), timings["ai_generate"],
+    cached_cv_data = _cached(attempt, "cv_data")
+    cached_rendered_cv = _cached(attempt, "rendered_cv")
+    if cached_cv_data and cached_rendered_cv:
+        cv_data = cached_cv_data
+        rendered_cv = cached_rendered_cv
+        logger.info("Pipeline[%s] step=ai_generate cached", attempt_id)
+        timings["ai_generate"] = 0.0
+        # Placeholder check still runs so warnings surface on resumed runs
+        placeholder_issues = check_placeholders(cv_data)
+        if placeholder_issues:
+            logger.warning(
+                "Placeholder issues in cached CV (attempt=%s): %s",
+                attempt_id, placeholder_issues,
+            )
+    else:
+        t0 = time.monotonic()
+        cv_data = await generate_tailored_cv(
+            cv_text_for_llm, job_description, ats_result.missing_keywords,
+            region=region_config, llm=llm, attempt=attempt,
+            ats_result=ats_result, keyword_categories=keyword_categories,
         )
-        raise ValueError("CV generation failed. Please try again.")
+        timings["ai_generate"] = round(time.monotonic() - t0, 2)
+        logger.info("Pipeline[%s] step=ai_generate duration=%.2fs success=%s", attempt_id, timings["ai_generate"], cv_data is not None)
 
-    # Restore real PII values from tokens
-    if redactor:
-        cv_data = redactor.restore(cv_data)
+        if cv_data is None:
+            import hashlib as _hashlib
+            _input_len = len(cv_text_for_llm) + len(job_description)
+            _last_char_hash = _hashlib.sha256(cv_text_for_llm[-64:].encode(errors="replace")).hexdigest()[:8]
+            logger.error(
+                "Pipeline[%s] generate_tailored_cv returned None — "
+                "input_chars=%d last_char_hash=%s model=%s duration=%.2fs",
+                attempt_id, _input_len, _last_char_hash,
+                getattr(llm, "model", "unknown"), timings["ai_generate"],
+            )
+            raise ValueError("CV generation failed. Please try again.")
 
-    # Quality gate — catch any leftover placeholders
-    placeholder_issues = check_placeholders(cv_data)
-    if placeholder_issues:
-        logger.warning(
-            "Placeholder issues in generated CV (attempt=%s): %s",
-            attempt_id, placeholder_issues,
+        # Restore real PII values from tokens
+        if redactor:
+            cv_data = redactor.restore(cv_data)
+
+        # Quality gate — catch any leftover placeholders
+        placeholder_issues = check_placeholders(cv_data)
+        if placeholder_issues:
+            logger.warning(
+                "Placeholder issues in generated CV (attempt=%s): %s",
+                attempt_id, placeholder_issues,
+            )
+
+        # Structural sanity log
+        logger.info(
+            "Pipeline[%s] cv_data_shape title=%r summary_chars=%d experience=%d "
+            "skills=%d skills_grouped=%d education=%d certifications=%d projects=%d",
+            attempt_id,
+            (cv_data.get("title") or "")[:80],
+            len((cv_data.get("summary") or "")),
+            len(cv_data.get("experience") or []),
+            len(cv_data.get("skills") or []),
+            len(cv_data.get("skills_grouped") or []),
+            len(cv_data.get("education") or []),
+            len(cv_data.get("certifications") or []),
+            len(cv_data.get("projects") or []),
         )
 
-    # Structural sanity log — surfaces "no education / no skills / wrong title"
-    # bug reports without needing to dump the full cv_data blob.
-    logger.info(
-        "Pipeline[%s] cv_data_shape title=%r summary_chars=%d experience=%d "
-        "skills=%d skills_grouped=%d education=%d certifications=%d projects=%d",
-        attempt_id,
-        (cv_data.get("title") or "")[:80],
-        len((cv_data.get("summary") or "")),
-        len(cv_data.get("experience") or []),
-        len(cv_data.get("skills") or []),
-        len(cv_data.get("skills_grouped") or []),
-        len(cv_data.get("education") or []),
-        len(cv_data.get("certifications") or []),
-        len(cv_data.get("projects") or []),
-    )
+        # 5. Render template
+        await on_progress("Rendering the template", "Laying out your final design")
+        llm_usage = cv_data.pop("_llm_usage", {})
+        rendered_cv = templates.get_template(
+            f"cv_templates/{template_id}.html"
+        ).render(**cv_data)
+        cv_data["_llm_usage"] = llm_usage
 
-    # 5. Render template
-    await on_progress("Rendering the template", "Laying out your final design")
-    llm_usage = cv_data.pop("_llm_usage", {})
-    rendered_cv = templates.get_template(
-        f"cv_templates/{template_id}.html"
-    ).render(**cv_data)
-    cv_data["_llm_usage"] = llm_usage
+        # Persist cv_data + rendered_cv immediately so a crash in the parallel
+        # block doesn't force a re-run of the expensive generation step.
+        update_attempt(attempt_id, cv_data=cv_data, rendered_cv=rendered_cv)
+
     logger.info("Pipeline[%s] step=render template=%s html_len=%d", attempt_id, template_id, len(rendered_cv))
 
-    # 5b. Generate cover letter
-    await on_progress("Writing your cover letter", "Crafting a tailored cover letter")
-    t0 = time.monotonic()
-    cover_letter_data = await generate_cover_letter(
-        cv_data=cv_data,
-        job_description=job_description,
-        region=region_config,
-        llm=llm,
-        attempt=attempt,
-        keyword_categories=keyword_categories,
-    )
-    timings["cover_letter"] = round(time.monotonic() - t0, 2)
-    logger.info(
-        "Pipeline[%s] step=cover_letter duration=%.2fs success=%s",
-        attempt_id, timings["cover_letter"], cover_letter_data is not None,
-    )
-
-    # Restore PII in cover letter
-    if cover_letter_data and redactor:
-        cover_letter_data = redactor.restore(cover_letter_data)
-
-    # Render cover letter HTML (simple template)
-    cover_letter_html = None
-    if cover_letter_data:
-        cl_llm_usage = cover_letter_data.pop("_llm_usage", {})
-        try:
-            cover_letter_html = templates.get_template(
-                "cover_letter_templates/formal.html"
-            ).render(**cover_letter_data)
-        except Exception:
-            logger.exception("Pipeline[%s] Cover letter template render failed", attempt_id)
-        cover_letter_data["_llm_usage"] = cl_llm_usage
-
-    # 6. ATS + quality review in parallel
-    await on_progress("Final ATS comparison", "Scoring the result and reviewing quality")
-    t0 = time.monotonic()
+    # 5b. Strip HTML → plain text for ATS scoring (sync, instant — always recompute)
     generated_text = re.sub(r'<style[^>]*>.*?</style>', '', rendered_cv, flags=re.DOTALL)
     generated_text = re.sub(r'<[^>]+>', ' ', generated_text)
     generated_text = re.sub(r'\s+', ' ', generated_text).strip()
 
-    async def _ats():
-        return analyze_ats(generated_text, job_description, keywords_override=job_keywords)
+    # ATS score on generated CV — sync, no LLM, always recompute
+    t0 = time.monotonic()
+    ats_generated = analyze_ats(generated_text, job_description, keywords_override=job_keywords)
+    timings["ats_generated"] = round(time.monotonic() - t0, 2)
+    logger.info("Pipeline[%s] step=ats_generated duration=%.2fs score=%d", attempt_id, timings["ats_generated"], ats_generated.score)
 
-    async def _review():
-        return await review_cv_quality(
+    # 6. Cover letter + quality review + keyword categorisation in parallel
+    # Only enqueue tasks whose results are not already cached.
+    await on_progress("Polishing the result", "Cover letter, quality review and keyword grouping running together")
+
+    async def _timed(key: str, coro):
+        """Run *coro*, record its wall-time to ``timings[key]``, return result."""
+        _t = time.monotonic()
+        result = await coro
+        timings[key] = round(time.monotonic() - _t, 2)
+        return result
+
+    # --- Cover letter ---
+    cached_cl_data = _cached(attempt, "cover_letter_data")
+    if cached_cl_data:
+        cover_letter_data = cached_cl_data
+        cover_letter_html = attempt.get("cover_letter_html")
+        logger.info("Pipeline[%s] step=cover_letter cached", attempt_id)
+        run_cover_letter = False
+    else:
+        run_cover_letter = True
+
+    # --- Quality review ---
+    cached_review = _cached(attempt, "quality_review")
+    if cached_review:
+        quality_review = cached_review
+        logger.info("Pipeline[%s] step=quality_review cached", attempt_id)
+        run_review = False
+    else:
+        run_review = True
+
+    # --- Categorize missing keywords ---
+    cached_groups = _cached(attempt, "missing_keyword_groups")
+    if cached_groups:
+        missing_keyword_groups = cached_groups
+        logger.info("Pipeline[%s] step=categorize_missing cached", attempt_id)
+        run_categorize = False
+    else:
+        run_categorize = True
+
+    async def _safe_cover_letter():
+        try:
+            result = await generate_cover_letter(
+                cv_data=cv_data,
+                job_description=job_description,
+                region=region_config,
+                llm=llm,
+                attempt=attempt,
+                keyword_categories=keyword_categories,
+            )
+        except Exception:
+            logger.exception("Pipeline[%s] generate_cover_letter raised unexpectedly", attempt_id)
+            result = None
+        # Restore PII before persisting
+        if result and redactor:
+            result = redactor.restore(result)
+        # Render cover letter HTML
+        cl_html = None
+        if result:
+            cl_llm_usage = result.pop("_llm_usage", {})
+            try:
+                cl_html = templates.get_template(
+                    "cover_letter_templates/formal.html"
+                ).render(**result)
+            except Exception:
+                logger.exception("Pipeline[%s] Cover letter template render failed", attempt_id)
+            result["_llm_usage"] = cl_llm_usage
+        update_attempt(attempt_id, cover_letter_data=result, cover_letter_html=cl_html)
+        return result, cl_html
+
+    async def _run_review():
+        result = await review_cv_quality(
             cv_data, job_description,
             region_name=region_config.name, llm=llm_fast,
         )
+        update_attempt(
+            attempt_id,
+            quality_review=result,
+            quality_review_flags=result.get("flags", []) if result else [],
+        )
+        return result
 
-    ats_generated, quality_review = await asyncio.gather(_ats(), _review())
-    timings["ats_generated"] = round(time.monotonic() - t0, 2)
-    logger.info("Pipeline[%s] step=ats_review duration=%.2fs ats_score=%d review=%s", attempt_id, timings["ats_generated"], ats_generated.score, "ok" if quality_review else "failed")
+    async def _run_categorize():
+        result = await categorize_missing_keywords(
+            ats_generated.missing_keywords[:30],
+            cv_data.get("skills_grouped") or [],
+            llm_fast,
+        )
+        update_attempt(attempt_id, missing_keyword_groups=result)
+        return result
+
+    # Build task list from only the steps that still need to run
+    parallel_tasks = []
+    task_keys = []
+    if run_cover_letter:
+        parallel_tasks.append(_timed("cover_letter", _safe_cover_letter()))
+        task_keys.append("cover_letter")
+    if run_review:
+        parallel_tasks.append(_timed("quality_review", _run_review()))
+        task_keys.append("quality_review")
+    if run_categorize:
+        parallel_tasks.append(_timed("categorize_missing", _run_categorize()))
+        task_keys.append("categorize_missing")
+
+    parallel_t0 = time.monotonic()
+    if parallel_tasks:
+        gather_results = await asyncio.gather(*parallel_tasks)
+        # Unpack results back to named variables
+        result_iter = iter(gather_results)
+        if run_cover_letter:
+            cover_letter_data, cover_letter_html = next(result_iter)
+        if run_review:
+            quality_review = next(result_iter)
+        if run_categorize:
+            missing_keyword_groups = next(result_iter)
+    timings["parallel_block"] = round(time.monotonic() - parallel_t0, 2)
+
+    if run_cover_letter:
+        logger.info(
+            "Pipeline[%s] step=cover_letter duration=%.2fs success=%s",
+            attempt_id, timings["cover_letter"], cover_letter_data is not None,
+        )
+    if run_review:
+        logger.info(
+            "Pipeline[%s] step=quality_review duration=%.2fs review=%s",
+            attempt_id, timings["quality_review"], "ok" if quality_review else "failed",
+        )
+    if run_categorize:
+        logger.info(
+            "Pipeline[%s] step=categorize_missing duration=%.2fs mapped=%d",
+            attempt_id, timings["categorize_missing"], len(missing_keyword_groups),
+        )
+    logger.info(
+        "Pipeline[%s] step=parallel_block wall_time=%.2fs", attempt_id, timings["parallel_block"],
+    )
 
     # Log generation
     log_generation(
@@ -289,20 +425,10 @@ async def run_generation_pipeline(
         "duration_sec": sum(timings.values()),
     })
 
-    # Cache results
-    review_flags = quality_review.get("flags", []) if quality_review else []
-    update_attempt(
-        attempt_id,
-        cv_data=cv_data,
-        rendered_cv=rendered_cv,
-        cover_letter_data=cover_letter_data,
-        cover_letter_html=cover_letter_html,
-        cv_text_preview=cv_text[:500],
-        quality_review_flags=review_flags,
-    )
+    # Persist cv_text_preview (the only field not written by an inline step above)
+    update_attempt(attempt_id, cv_text_preview=cv_text[:500])
 
     # Backfill PII vault with values from generated CV data that are missing.
-    # This ensures <<PHONE_1>>, <<EMAIL_1>> etc. tokens can be restored on load.
     if pii and user_id:
         backfill_map = {
             "phone": "phone",
@@ -338,6 +464,9 @@ async def run_generation_pipeline(
                 rendered_html=rendered_cv,
                 cv_data=cv_data,
                 user_id=user_id,
+                self_description=attempt.get("self_description", "") or "",
+                values_text=attempt.get("values", "") or "",
+                offer_appeal=attempt.get("offer_appeal", "") or "",
             )
     except Exception:
         logger.exception("Failed to save CV to database (attempt=%s)", attempt_id)
@@ -354,4 +483,5 @@ async def run_generation_pipeline(
         "region": region_code,
         "region_rules": region_rules,
         "quality_review": quality_review,
+        "missing_keyword_groups": missing_keyword_groups,
     }

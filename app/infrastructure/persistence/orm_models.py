@@ -30,7 +30,17 @@ class User(Base):
     provider_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     role: Mapped[str] = mapped_column(String(20), default="consumer")  # consumer, admin
+    tier: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="public",
+        server_default="public",
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Admin-gated flag — when True, the user sees a prompt-logging consent
+    # toggle in account settings. Without this flag the toggle is hidden and no
+    # prompts are captured for the user. Set/unset via /admin/users/{id}.
+    prompt_logging_eligible: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -50,6 +60,7 @@ class Credit(Base):
     user_id: Mapped[str] = mapped_column(String(32), ForeignKey("users.id"), nullable=False, index=True)
     balance: Mapped[int] = mapped_column(Integer, default=0)
     total_purchased: Mapped[int] = mapped_column(Integer, default=0)
+    total_granted: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     total_used: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
@@ -101,6 +112,12 @@ class SavedCV(Base):
     template_id: Mapped[str] = mapped_column(String(50), nullable=False)
     markdown: Mapped[str] = mapped_column(Text, nullable=False)  # sanitized markdown content
     cv_data_json: Mapped[str] = mapped_column(Text, nullable=False)  # structured CV data as JSON
+    # Per-CV professional voice — the values used at generation time so the
+    # voice survives a re-run from this saved CV. Plaintext (matches
+    # ``Job.offer_appeal`` precedent).
+    self_description: Mapped[str] = mapped_column(Text, default="")
+    values_text: Mapped[str] = mapped_column(Text, default="")
+    offer_appeal: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
@@ -264,6 +281,46 @@ class PasswordResetToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
+
+
+class PromptLog(Base):
+    """Captured prompt + response for users who have granted prompt_logging consent.
+
+    Only written when BOTH conditions hold:
+        1. ``users.prompt_logging_eligible`` is True (admin granted)
+        2. The user has an active ConsentRecord(consent_type='prompt_logging', granted=True)
+           that has not been revoked by a subsequent granted=False record.
+
+    ``kind`` distinguishes which pipeline stage produced the prompt
+    (e.g. ``cv``, ``cover_letter``, ``review``, ``keywords``).
+
+    Every consented call is logged regardless of outcome: ``status`` records
+    whether the call succeeded or failed and ``error_message`` carries the
+    failure detail when relevant, so timeouts and API errors stay visible
+    alongside successful prompts.
+    """
+    __tablename__ = "prompt_logs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    transaction_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    attempt_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    user_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("users.id"), nullable=True, index=True)
+
+    service: Mapped[str] = mapped_column(String(50), nullable=False)
+    kind: Mapped[str] = mapped_column(String(30), nullable=False, default="cv")
+    model: Mapped[str] = mapped_column(String(100), default="")
+
+    prompt_text: Mapped[str] = mapped_column(Text, nullable=False)
+    response_text: Mapped[str] = mapped_column(Text, default="")
+
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="success")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
 
 
 class APIRequestLog(Base):

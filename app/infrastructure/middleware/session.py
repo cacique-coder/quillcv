@@ -1,9 +1,12 @@
 """SQLite-backed server-side session middleware for QuillCV.
 
 Replaces Starlette's cookie-based SessionMiddleware with server-side sessions
-stored in a SQLite file at data/sessions.db.  Session data is attached to
-``request.state.session`` as a plain dict — the same access pattern as
-Starlette's ``request.session``.
+stored in a SQLite file. The path is controlled by ``SESSION_DB_PATH``;
+default lives outside the project directory (``$XDG_STATE_HOME`` /
+``~/.local/state/quillcv/sessions.db``) so the file is never bind-mounted
+into a container — host and container processes therefore can't fight over
+file ownership. Session data is attached to ``request.state.session`` as a
+plain dict — the same access pattern as Starlette's ``request.session``.
 
 Session lifecycle:
 - Read session_id from a httponly cookie named "session".
@@ -34,7 +37,17 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 
-_DB_PATH = Path(__file__).parent.parent.parent.parent / "data" / "sessions.db"
+def _default_db_path() -> Path:
+    # Stay outside the bind-mounted project directory by default so a host
+    # uvicorn (uid=1000) and a container uvicorn (uid=0) can't poison each
+    # other's writes. Container runs should override SESSION_DB_PATH to
+    # something container-local (e.g. /tmp/quillcv-sessions.db) or use a
+    # named volume.
+    state_home = os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local" / "state")
+    return Path(state_home) / "quillcv" / "sessions.db"
+
+
+_DB_PATH = Path(os.environ["SESSION_DB_PATH"]) if os.environ.get("SESSION_DB_PATH") else _default_db_path()
 _SESSION_TTL_DAYS = 30
 _COOKIE_NAME = "session"
 _IS_PRODUCTION = os.environ.get("APP_ENV", "development") == "production"

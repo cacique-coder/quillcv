@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block body_layout %}app{% endblock %}
+{% block title %}Top up · QuillCV{% endblock %}
+
+{% block head_extra %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
+{% block content %}
+
+{# ── Header strip ── #}
+<div class="topup-header">
+  <div>
+    <h1 style="font-size:28px;font-weight:440;font-family:var(--display);margin-bottom:4px;">Top up credits</h1>
+    <p style="color:var(--ink-3);font-size:14px;">Add credits to your account. They never expire.</p>
+  </div>
+  <div class="topup-balance">
+    <div class="credits-num">{{ balance|default(0) }}</div>
+    <div class="credits-lbl">credits remaining</div>
+  </div>
+</div>
+
+{# ── Error banner ── #}
+{% if error_message %}
+<div class="topup-notice topup-notice--error" role="alert">
+  <div class="topup-notice__body">{{ error_message }}</div>
+</div>
+{% endif %}
+
+{# ── Stripe offline banner ── #}
+{% if not stripe_enabled %}
+<div class="topup-offline-banner" role="alert">
+  Payments are temporarily offline. Please check back shortly or email
+  <a href="mailto:hello@quillcv.com">hello@quillcv.com</a> if you need credits urgently.
+</div>
+{% endif %}
+
+{# ── Pack grid ── #}
+<div class="topup-grid">
+  {% for pack_id, pack in topup_packs.items() %}
+  {% set is_featured = pack_id == 'standard' %}
+  <div class="topup-card{% if is_featured %} topup-card--featured{% endif %}">
+    {% if is_featured %}
+    <div class="topup-pack-pill">Best value</div>
+    {% endif %}
+    <div class="topup-pack-name">{{ pack.name }}</div>
+    <div class="topup-pack-price">${{ "%.2f"|format(pack.price_cents / 100) }}</div>
+    <div class="topup-pack-rate">{{ pack.per_credit }} / credit</div>
+    <form method="post" action="/checkout/topup/{{ pack_id }}">
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+      {% if stripe_enabled %}
+      <button type="submit" class="btn-primary btn-full" aria-label="Buy {{ pack.name }}">Buy</button>
+      {% else %}
+      <button type="button" class="btn-disabled btn-full" disabled aria-label="Payments offline for {{ pack.name }}">Payments offline</button>
+      {% endif %}
+    </form>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Footer copy ── #}
+<p class="hint">Credits never expire. Refunds available within 30 days if you have spent fewer than 3 credits.</p>
+
+{% endblock %}

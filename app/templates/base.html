@@ -171,6 +171,9 @@
                         My Vault
                     </a>
                     <a href="/account" class="nav-link">My Account</a>
+                    {% if request.state.user.role == "admin" %}
+                        <a href="/admin" class="nav-link" title="Admin dashboard">Admin</a>
+                    {% endif %}
                     <a href="/logout" class="nav-link nav-link--muted">Sign Out</a>
                 {% else %}
                     <a href="/login" class="btn btn-primary btn-sm" rel="nofollow">Sign In</a>

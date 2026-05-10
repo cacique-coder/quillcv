@@ -140,7 +140,10 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="QuillCV", lifespan=lifespan)
+# debug=True wires Starlette's ServerErrorMiddleware to render a full
+# traceback page on unhandled 500s in dev. In prod (debug=False) clients
+# still get the bare "Internal Server Error" response.
+app = FastAPI(title="QuillCV", lifespan=lifespan, debug=_dev_mode_for_logging)
 
 # Dev mode: enabled when using the default session secret (i.e. local development)
 app.state.dev_mode = _dev_mode_for_logging

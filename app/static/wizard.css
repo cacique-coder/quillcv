@@ -1077,14 +1077,33 @@
 }
 .ats-keyword-detail {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: 1fr;
+    gap: 0;
     margin-top: 1.2rem;
     padding-top: 1rem;
     border-top: 1px solid var(--border);
 }
-@media (max-width: 600px) {
-    .ats-keyword-detail { grid-template-columns: 1fr; }
+.ats-kw-col + .ats-kw-col {
+    margin-top: 1.2rem;
+    padding-top: 1.2rem;
+    border-top: 1px dashed var(--border);
+}
+.ats-kw-group {
+    margin-top: 0.6rem;
+}
+.ats-kw-group:first-child {
+    margin-top: 0;
+}
+.ats-kw-subhead {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin: 0 0 0.3rem 0;
+}
+.ats-kw-col .hint {
+    font-size: 0.8rem;
 }
 
 /* Clickable missing-keyword tag — single-click adds it to the CV's
@@ -1807,6 +1826,39 @@
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+}
+
+/* Grouped variant — used when pills are split into named categories.
+   Outer container becomes a vertical stack so each category gets its own row
+   of bubbles under a small monospace label. JS still scopes "active" reset
+   to the outer .voice-pills, so groups don't fight each other. */
+.voice-pills--grouped {
+    display: grid;
+    gap: 14px;
+    margin: 0 0 8px;
+}
+.voice-pill-group {
+    display: grid;
+    gap: 6px;
+}
+.voice-pill-group__label {
+    font-size: 11px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-3);
+}
+.voice-pill-group__hint {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--ink-3);
+    opacity: 0.75;
+    margin-left: 6px;
+}
+.voice-pill-group__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 /* ── Profile page — Professional Voice section prominence ─────── */

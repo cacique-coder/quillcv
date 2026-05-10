@@ -34,6 +34,49 @@ def _clean_text(text: str) -> str:
     return text.strip()
 
 
+# Phrases that strongly indicate the page is an anti-bot challenge, login wall,
+# or other interstitial — not the actual job description. Match case-insensitively.
+# Be conservative: only add phrases that are extremely unlikely to appear inside
+# a legitimate job posting.
+_BLOCKED_SIGNATURES = (
+    "just a moment",                       # Cloudflare interstitial title
+    "ray id for this request",             # Cloudflare error pages
+    "additional verification required",    # Indeed / Cloudflare
+    "checking your browser before",        # Cloudflare DDoS challenge
+    "enable javascript and cookies to continue",  # Cloudflare
+    "attention required! | cloudflare",    # Cloudflare 1020
+    "please verify you are a human",       # generic captcha
+    "press & hold to confirm you are",     # Datadome / PerimeterX
+    "access denied",                       # generic block (Akamai / others)
+    "you have been blocked",               # Cloudflare / Sucuri
+    "sign in to continue to indeed",       # Indeed login wall
+    "join linkedin to see this job",       # LinkedIn login wall
+    "sign in to view this job",            # LinkedIn login wall
+)
+
+
+def _blocked_signature(text: str) -> str | None:
+    """Return the matched sentinel phrase if the text looks like a block page."""
+    haystack = text.lower()
+    for phrase in _BLOCKED_SIGNATURES:
+        if phrase in haystack:
+            return phrase
+    return None
+
+
+def _blocked_error_for(url: str) -> str:
+    """Return a user-facing error message for a blocked page, tailored per host."""
+    host = urlparse(url).netloc.lower()
+    if "indeed." in host:
+        return ("Indeed blocked the request with a Cloudflare challenge. "
+                "Please copy the job description from Indeed and paste it below.")
+    if "linkedin." in host:
+        return ("LinkedIn blocked the request. "
+                "Please copy the job description from LinkedIn and paste it below.")
+    return ("The site blocked our automated request (anti-bot challenge). "
+            "Please copy the job description and paste it below.")
+
+
 async def scrape_job_url(url: str) -> dict:
     """Scrape a job posting URL using headless Chromium.
 
@@ -86,6 +129,14 @@ async def scrape_job_url(url: str) -> dict:
 
         raw = output_file.read_text(encoding="utf-8", errors="replace")
         text = _clean_text(raw)
+
+        # Reject anti-bot / login-wall pages even when they're long enough to
+        # have slipped past the min-length check. Cloudflare's "Just a moment…"
+        # interstitial on Indeed is ~200 chars, well above 50.
+        signature = _blocked_signature(text)
+        if signature:
+            logger.info("Job scrape blocked by interstitial (%r) for %s", signature, url)
+            return {"success": False, "text": "", "title": "", "error": _blocked_error_for(url)}
 
         if len(text) < 50:
             # Provide a LinkedIn-specific hint when the site blocks the request

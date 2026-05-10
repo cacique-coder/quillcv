@@ -10,9 +10,10 @@ from app.billing.entities import (
     ALPHA_PACK_CREDITS,
     ALPHA_PACK_PRICE_CENTS,
     TOPUP_PACKS,
+    user_can_see_pack,
 )
+from app.billing.use_cases.grant_purchase_credits import grant_purchase_credits
 from app.billing.use_cases.manage_credits import (
-    add_credits,
     get_balance,
 )
 from app.identity.adapters.fastapi_deps import require_auth
@@ -39,12 +40,50 @@ def _get_stripe():
     return stripe
 
 
+# Friendly messages for ?error=… and ?status=… query params on /pricing.
+# Kept in code (not just template) so the strings are easy to grep and
+# adjust without round-tripping through Jinja.
+_PRICING_ERROR_MESSAGES = {
+    "payments_not_configured": (
+        "Payments aren't configured yet — please email hello@quillcv.com "
+        "and we'll sort you out."
+    ),
+    "sold_out": (
+        "Alpha is sold out for the moment. Top-up packs below are still available."
+    ),
+    "invalid_pack": (
+        "That top-up pack doesn't exist. Pick one of the packs below."
+    ),
+    "tier_locked": (
+        "That pack is reserved for founders. Pick one of the packs below."
+    ),
+}
+
+
 @router.get("/pricing")
-async def pricing_page(request: Request):
+async def pricing_page(
+    request: Request,
+    error: str = "",
+    status: str = "",
+    pack: str = "",
+):
     async with async_session() as db:
         alpha_count = await count_alpha_users(db)
 
     spots_remaining = max(0, 200 - alpha_count)
+
+    error_message = _PRICING_ERROR_MESSAGES.get(error) if error else None
+
+    # Cancelled-checkout banner needs to know which pack to retry. "alpha"
+    # routes back to /checkout/alpha; anything in TOPUP_PACKS routes to
+    # /checkout/topup/{pack}. Anything else, we drop the retry button and
+    # just show a plain cancel notice.
+    cancel_retry_url = None
+    if status == "cancelled":
+        if pack == "alpha":
+            cancel_retry_url = "/checkout/alpha"
+        elif pack in TOPUP_PACKS:
+            cancel_retry_url = f"/checkout/topup/{pack}"
 
     return templates.TemplateResponse(
         "pricing.html",
@@ -55,6 +94,38 @@ async def pricing_page(request: Request):
             "stripe_enabled": bool(STRIPE_SECRET_KEY),
             "topup_packs": TOPUP_PACKS,
             "page_description": "QuillCV pricing — $29 for 40 ATS-optimized CV generations during alpha. Credits never expire. No subscriptions.",
+            "error_code": error or None,
+            "error_message": error_message,
+            "checkout_status": status or None,
+            "cancel_pack": pack or None,
+            "cancel_retry_url": cancel_retry_url,
+        },
+    )
+
+
+@router.get("/account/topup")
+async def topup_page(
+    request: Request,
+    error: str = "",
+    user: User = Depends(require_auth),
+):
+    """In-app credit top-up page."""
+    user_tier = getattr(user, "tier", "public")
+    visible_packs = {
+        pack_id: pack
+        for pack_id, pack in TOPUP_PACKS.items()
+        if user_can_see_pack(pack, user_tier)
+    }
+    error_message = _PRICING_ERROR_MESSAGES.get(error) if error else None
+    return templates.TemplateResponse(
+        "topup.html",
+        {
+            "request": request,
+            "topup_packs": visible_packs,
+            "stripe_enabled": bool(STRIPE_SECRET_KEY),
+            "balance": request.state.balance,
+            "page_title": "Top up credits",
+            "error_message": error_message,
         },
     )
 
@@ -75,6 +146,12 @@ async def create_alpha_checkout(request: Request, user: User = Depends(require_a
     stripe = _get_stripe()
 
     base_url = str(request.base_url).rstrip("/")
+    # NOTE: automatic_tax requires Stripe Tax to be enabled in the dashboard
+    # with at least one tax registration (start with AU GST). Until then
+    # Stripe will simply collect $0 tax. See docs/ops/stripe-tax-setup.md.
+    # invoice_creation makes Stripe send the customer a hosted PDF receipt
+    # (legal/tax document). Our own confirmation email is still sent —
+    # they're complementary, not duplicates.
     session = stripe.checkout.Session.create(
         mode="payment",
         customer_email=user.email,
@@ -99,8 +176,10 @@ async def create_alpha_checkout(request: Request, user: User = Depends(require_a
                 "quantity": 1,
             }
         ],
+        invoice_creation={"enabled": True},
+        automatic_tax={"enabled": True},
         success_url=f"{base_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{base_url}/pricing",
+        cancel_url=f"{base_url}/pricing?status=cancelled&pack=alpha",
     )
 
     # Record pending payment
@@ -129,9 +208,17 @@ async def create_topup_checkout(request: Request, pack_id: str, user: User = Dep
     if not pack:
         return RedirectResponse("/pricing?error=invalid_pack", status_code=303)
 
+    if not user_can_see_pack(pack, getattr(user, "tier", "public")):
+        logger.info(
+            "TopupBlocked user_id=%s pack=%s required_tier=%s user_tier=%s",
+            user.id, pack_id, pack.get("tier"), getattr(user, "tier", "public"),
+        )
+        return RedirectResponse("/account/topup?error=tier_locked", status_code=303)
+
     stripe = _get_stripe()
 
     base_url = str(request.base_url).rstrip("/")
+    # See alpha route comment re: automatic_tax + invoice_creation.
     session = stripe.checkout.Session.create(
         mode="payment",
         customer_email=user.email,
@@ -149,8 +236,10 @@ async def create_topup_checkout(request: Request, pack_id: str, user: User = Dep
                 "quantity": 1,
             }
         ],
+        invoice_creation={"enabled": True},
+        automatic_tax={"enabled": True},
         success_url=f"{base_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{base_url}/pricing",
+        cancel_url=f"{base_url}/pricing?status=cancelled&pack={pack_id}",
     )
 
     # Record pending payment
@@ -174,7 +263,13 @@ async def checkout_success(
     session_id: str = "",
     user: User = Depends(require_auth),
 ):
-    """Post-checkout success page. Verify with Stripe and grant credits."""
+    """Post-checkout success page. Verify with Stripe and grant credits.
+
+    Concurrent webhook + success-redirect hits are safe: the credit grant
+    runs inside grant_purchase_credits() which uses an atomic
+    UPDATE ... WHERE status != 'completed' RETURNING ... — only one caller
+    wins the transition and grants credits.
+    """
     if not session_id:
         return RedirectResponse("/", status_code=303)
 
@@ -192,17 +287,18 @@ async def checkout_success(
                     credits_granted = ALPHA_PACK_CREDITS
 
                 async with async_session() as db:
-                    # Check if we already processed this
-                    from sqlalchemy import select
+                    grant = await grant_purchase_credits(
+                        db,
+                        stripe_session_id=session_id,
+                        stripe_payment_intent=session.payment_intent,
+                        pack_id=pack_id,
+                    )
 
-                    result = await db.execute(select(Payment).where(Payment.stripe_session_id == session_id))
-                    payment = result.scalar_one_or_none()
-                    if payment and payment.status != "completed":
-                        payment.status = "completed"
-                        payment.stripe_payment_intent = session.payment_intent
-                        await db.commit()
-
-                        await add_credits(db, user.id, credits_granted)
+                    if grant.granted:
+                        # We won the race — record analytics + email.
+                        # Use credits_granted from the DB row (source of
+                        # truth) rather than the locally-computed value.
+                        credits_granted = grant.credits_granted or credits_granted
 
                         from app.infrastructure.instrumentation import record_custom_event
 
@@ -210,9 +306,9 @@ async def checkout_success(
                             "CreditPurchase",
                             {
                                 "user_id": user.id,
-                                "credits_granted": credits_granted,
-                                "amount_cents": payment.amount_cents,
-                                "currency": payment.currency or "aud",
+                                "credits_granted": grant.credits_granted,
+                                "amount_cents": grant.amount_cents,
+                                "currency": grant.currency or "aud",
                                 "stripe_session_id": session_id,
                             },
                         )
@@ -226,12 +322,18 @@ async def checkout_success(
                             await send_payment_confirmation_email(
                                 to_email=user.email,
                                 name=getattr(user, "name", "") or "",
-                                credits=credits_granted,
-                                amount_cents=payment.amount_cents,
-                                currency=payment.currency.upper() if payment.currency else "AUD",
+                                credits=grant.credits_granted,
+                                amount_cents=grant.amount_cents,
+                                currency=(grant.currency or "aud").upper(),
                             )
                         except Exception:
                             logger.exception("Failed to send payment confirmation email to %s", user.email)
+                    else:
+                        # Already granted (likely by webhook). Refresh
+                        # the cached balance so the success page still
+                        # renders correct numbers in the nav bar.
+                        new_balance = await get_balance(db, user.id)
+                        request.state.session["cached_balance"] = new_balance
         except Exception:
             logger.exception("Error verifying checkout session")
 
@@ -246,7 +348,12 @@ async def checkout_success(
 
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events (payment confirmation)."""
+    """Handle Stripe webhook events (payment confirmation).
+
+    See checkout_success() for a note on race-safety with the success
+    redirect path — both call grant_purchase_credits() which serialises
+    the status transition at the DB level.
+    """
     if not STRIPE_SECRET_KEY or not STRIPE_WEBHOOK_SECRET:
         return {"status": "not_configured"}
 
@@ -265,36 +372,30 @@ async def stripe_webhook(request: Request):
         session_id = session["id"]
         user_id = session.get("metadata", {}).get("user_id")
 
+        webhook_pack_id = session.get("metadata", {}).get("pack", "alpha")
         if user_id and session.get("payment_status") == "paid":
-            pack_id = session.get("metadata", {}).get("pack", "alpha")
-            if pack_id in TOPUP_PACKS:
-                credits_to_grant = TOPUP_PACKS[pack_id]["credits"]
-            else:
-                credits_to_grant = ALPHA_PACK_CREDITS
-
             async with async_session() as db:
                 from sqlalchemy import select
 
                 from app.infrastructure.persistence.orm_models import User as _User
 
-                result = await db.execute(select(Payment).where(Payment.stripe_session_id == session_id))
-                payment = result.scalar_one_or_none()
-                if payment and payment.status != "completed":
-                    payment.status = "completed"
-                    payment.stripe_payment_intent = session.get("payment_intent")
-                    await db.commit()
+                grant = await grant_purchase_credits(
+                    db,
+                    stripe_session_id=session_id,
+                    stripe_payment_intent=session.get("payment_intent"),
+                    pack_id=webhook_pack_id,
+                )
 
-                    await add_credits(db, user_id, credits_to_grant)
-
+                if grant.granted:
                     from app.infrastructure.instrumentation import record_custom_event
 
                     record_custom_event(
                         "CreditPurchase",
                         {
                             "user_id": user_id,
-                            "credits_granted": credits_to_grant,
-                            "amount_cents": payment.amount_cents,
-                            "currency": payment.currency or "aud",
+                            "credits_granted": grant.credits_granted,
+                            "amount_cents": grant.amount_cents,
+                            "currency": grant.currency or "aud",
                             "stripe_session_id": session_id,
                         },
                     )
@@ -307,9 +408,9 @@ async def stripe_webhook(request: Request):
                             await send_payment_confirmation_email(
                                 to_email=webhook_user.email,
                                 name=webhook_user.name or "",
-                                credits=credits_to_grant,
-                                amount_cents=payment.amount_cents,
-                                currency=payment.currency.upper() if payment.currency else "AUD",
+                                credits=grant.credits_granted,
+                                amount_cents=grant.amount_cents,
+                                currency=(grant.currency or "aud").upper(),
                             )
                     except Exception:
                         logger.exception(

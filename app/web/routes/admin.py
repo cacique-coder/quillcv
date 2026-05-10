@@ -1,4 +1,4 @@
-"""Super admin routes: API request logs, cost tracking, usage analytics."""
+"""Super admin routes: API request logs, cost tracking, usage analytics, user management."""
 
 import logging
 import secrets
@@ -6,12 +6,23 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
+from app.billing.use_cases.manage_credits import add_credits
+from app.consent.use_cases.record_consent import get_client_ip, get_user_agent, record_consent
 from app.identity.adapters.fastapi_deps import require_auth
 from app.infrastructure.email.smtp import send_invitation_email
 from app.infrastructure.persistence.database import async_session
-from app.infrastructure.persistence.orm_models import APIRequestLog, ExpressionOfInterest, Invitation, User
+from app.infrastructure.persistence.orm_models import (
+    APIRequestLog,
+    ConsentRecord,
+    Credit,
+    ExpressionOfInterest,
+    Invitation,
+    Payment,
+    PromptLog,
+    User,
+)
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
@@ -301,3 +312,303 @@ async def admin_create_invitation(
             logger.exception("Failed to send invitation email to %s", invitation.email)
 
     return RedirectResponse("/admin/invitations", status_code=303)
+
+
+# ── Admin: Users ───────────────────────────────────────────
+
+
+@router.get("/admin/users")
+async def admin_users_list(
+    request: Request,
+    q: str = "",
+    page: int = 1,
+    user: User = Depends(require_auth),
+):
+    """Paginated, searchable list of all users."""
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    page = max(1, page)
+    offset = (page - 1) * PAGE_SIZE
+    q = q.strip()
+
+    base = select(User)
+    count_base = select(func.count(User.id))
+    if q:
+        like = f"%{q.lower()}%"
+        cond = or_(func.lower(User.email).like(like), func.lower(User.name).like(like))
+        base = base.where(cond)
+        count_base = count_base.where(cond)
+
+    async with async_session() as db:
+        total = (await db.execute(count_base)).scalar() or 0
+        rows = await db.execute(
+            base.order_by(User.created_at.desc()).offset(offset).limit(PAGE_SIZE)
+        )
+        users = rows.scalars().all()
+
+        # Credit balances for the visible users
+        balance_map: dict[str, int] = {}
+        if users:
+            uids = [u.id for u in users]
+            credits_rows = await db.execute(
+                select(Credit.user_id, Credit.balance).where(Credit.user_id.in_(uids))
+            )
+            balance_map = {row.user_id: row.balance for row in credits_rows.all()}
+
+    total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
+
+    return templates.TemplateResponse(
+        "admin_users.html",
+        {
+            "request": request,
+            "user": user,
+            "users": users,
+            "balance_map": balance_map,
+            "q": q,
+            "page": page,
+            "total_pages": total_pages,
+            "total_count": total,
+            "has_prev": page > 1,
+            "has_next": page < total_pages,
+        },
+    )
+
+
+@router.get("/admin/users/{user_id}")
+async def admin_user_detail(
+    request: Request,
+    user_id: str,
+    user: User = Depends(require_auth),
+):
+    """Detail view for a single user — credits, payments, recent generations, consent state."""
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    async with async_session() as db:
+        target_row = await db.execute(select(User).where(User.id == user_id))
+        target = target_row.scalar_one_or_none()
+        if not target:
+            return HTMLResponse(status_code=404)
+
+        credits_row = await db.execute(select(Credit).where(Credit.user_id == user_id))
+        credits = credits_row.scalar_one_or_none()
+
+        payments_row = await db.execute(
+            select(Payment)
+            .where(Payment.user_id == user_id)
+            .order_by(Payment.created_at.desc())
+            .limit(20)
+        )
+        payments = payments_row.scalars().all()
+
+        recent_attempts = await db.execute(
+            select(
+                APIRequestLog.transaction_id,
+                APIRequestLog.attempt_id,
+                func.coalesce(func.sum(APIRequestLog.cost_usd), 0).label("total_cost"),
+                func.count(APIRequestLog.id).label("api_calls"),
+                func.min(APIRequestLog.created_at).label("started_at"),
+            )
+            .where(APIRequestLog.user_id == user_id)
+            .group_by(APIRequestLog.transaction_id, APIRequestLog.attempt_id)
+            .order_by(func.min(APIRequestLog.created_at).desc())
+            .limit(20)
+        )
+        attempts = recent_attempts.all()
+
+        consent_row = await db.execute(
+            select(ConsentRecord)
+            .where(
+                ConsentRecord.user_id == user_id,
+                ConsentRecord.consent_type == "prompt_logging",
+            )
+            .order_by(ConsentRecord.created_at.desc())
+            .limit(1)
+        )
+        last_prompt_consent = consent_row.scalar_one_or_none()
+
+        prompt_count_row = await db.execute(
+            select(func.count(PromptLog.id)).where(PromptLog.user_id == user_id)
+        )
+        prompt_count = prompt_count_row.scalar() or 0
+
+    return templates.TemplateResponse(
+        "admin_user_detail.html",
+        {
+            "request": request,
+            "user": user,
+            "target": target,
+            "credits": credits,
+            "payments": payments,
+            "attempts": attempts,
+            "last_prompt_consent": last_prompt_consent,
+            "prompt_count": prompt_count,
+        },
+    )
+
+
+@router.post("/admin/users/{user_id}/credits")
+async def admin_add_credits(
+    request: Request,
+    user_id: str,
+    amount: int = Form(...),
+    user: User = Depends(require_auth),
+):
+    """Grant credits to a user. ``amount`` may be negative to claw back."""
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    if amount == 0:
+        return RedirectResponse(f"/admin/users/{user_id}", status_code=303)
+
+    async with async_session() as db:
+        target_row = await db.execute(select(User).where(User.id == user_id))
+        if not target_row.scalar_one_or_none():
+            return HTMLResponse(status_code=404)
+        await add_credits(db, user_id, amount, as_grant=True)
+
+    logger.info("Admin %s granted %d credits to user %s", user.email, amount, user_id)
+    return RedirectResponse(f"/admin/users/{user_id}", status_code=303)
+
+
+@router.post("/admin/users/{user_id}/toggle-active")
+async def admin_toggle_active(
+    request: Request,
+    user_id: str,
+    user: User = Depends(require_auth),
+):
+    """Toggle the user's is_active flag — disables sign-in without deleting data."""
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    if user_id == user.id:
+        # Don't let an admin lock themselves out
+        return RedirectResponse(f"/admin/users/{user_id}", status_code=303)
+
+    async with async_session() as db:
+        row = await db.execute(select(User).where(User.id == user_id))
+        target = row.scalar_one_or_none()
+        if not target:
+            return HTMLResponse(status_code=404)
+        target.is_active = not target.is_active
+        await db.commit()
+
+    return RedirectResponse(f"/admin/users/{user_id}", status_code=303)
+
+
+@router.post("/admin/users/{user_id}/toggle-prompt-eligible")
+async def admin_toggle_prompt_eligible(
+    request: Request,
+    user_id: str,
+    user: User = Depends(require_auth),
+):
+    """Flip the user's prompt_logging_eligible flag.
+
+    Setting to False also writes a granted=False ConsentRecord so any future
+    prompt capture is blocked even if the user previously opted in.
+    """
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    async with async_session() as db:
+        row = await db.execute(select(User).where(User.id == user_id))
+        target = row.scalar_one_or_none()
+        if not target:
+            return HTMLResponse(status_code=404)
+        target.prompt_logging_eligible = not target.prompt_logging_eligible
+        if not target.prompt_logging_eligible:
+            await record_consent(
+                db,
+                consent_type="prompt_logging",
+                granted=False,
+                user_id=target.id,
+                email=target.email,
+                ip_address=get_client_ip(request),
+                user_agent=get_user_agent(request),
+            )
+        await db.commit()
+
+    return RedirectResponse(f"/admin/users/{user_id}", status_code=303)
+
+
+# ── Admin: Captured prompt logs ────────────────────────────
+
+
+PROMPTS_DISPLAY_LIMIT = 100
+
+
+@router.get("/admin/prompts")
+async def admin_prompts_list(
+    request: Request,
+    user: User = Depends(require_auth),
+):
+    """List the most recent captured prompts (consenting users only).
+
+    Capped at PROMPTS_DISPLAY_LIMIT — older entries stay in the database
+    but are not surfaced here; deep dives go through /admin/prompts/{id}.
+    """
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    async with async_session() as db:
+        rows = await db.execute(
+            select(PromptLog)
+            .order_by(PromptLog.created_at.desc())
+            .limit(PROMPTS_DISPLAY_LIMIT)
+        )
+        logs = rows.scalars().all()
+
+        email_map: dict[str, str] = {}
+        uids = [log.user_id for log in logs if log.user_id]
+        if uids:
+            user_rows = await db.execute(
+                select(User.id, User.email).where(User.id.in_(uids))
+            )
+            email_map = {row.id: row.email for row in user_rows.all()}
+
+    return templates.TemplateResponse(
+        "admin_prompts.html",
+        {
+            "request": request,
+            "user": user,
+            "logs": logs,
+            "email_map": email_map,
+            "display_limit": PROMPTS_DISPLAY_LIMIT,
+            "shown_count": len(logs),
+        },
+    )
+
+
+@router.get("/admin/prompts/{log_id}")
+async def admin_prompt_detail(
+    request: Request,
+    log_id: str,
+    user: User = Depends(require_auth),
+):
+    """View the full prompt + response for a single captured log entry."""
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    async with async_session() as db:
+        row = await db.execute(select(PromptLog).where(PromptLog.id == log_id))
+        log = row.scalar_one_or_none()
+        if not log:
+            return HTMLResponse(status_code=404)
+
+        target_email = ""
+        if log.user_id:
+            email_row = await db.execute(
+                select(User.email).where(User.id == log.user_id)
+            )
+            target_email = email_row.scalar_one_or_none() or ""
+
+    return templates.TemplateResponse(
+        "admin_prompt_detail.html",
+        {
+            "request": request,
+            "user": user,
+            "log": log,
+            "target_email": target_email,
+        },
+    )

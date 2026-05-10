@@ -1,4 +1,4 @@
-"""Static content pages: about, privacy policy, terms of service, CCPA opt-out."""
+"""Static content pages: about, privacy policy, terms of service, refund policy, CCPA opt-out."""
 
 import logging
 
@@ -44,6 +44,13 @@ async def privacidade_page(request: Request):
 @router.get("/terms")
 async def terms_page(request: Request):
     response = templates.TemplateResponse("terms.html", {"request": request})
+    response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
+    return response
+
+
+@router.get("/refund-policy")
+async def refund_policy_page(request: Request):
+    response = templates.TemplateResponse("refund_policy.html", {"request": request})
     response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=3600"
     return response
 
