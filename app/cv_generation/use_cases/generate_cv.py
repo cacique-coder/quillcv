@@ -38,6 +38,44 @@ from app.scoring.adapters.keyword_matcher import analyze_ats
 
 logger = logging.getLogger(__name__)
 
+
+def _derive_cv_label(attempt: dict, cover_letter_data: dict | None) -> tuple[str, str]:
+    """Derive (label, job_title) for the SavedCV row from job context.
+
+    Priority:
+      1. company_name from cover letter (most reliable when CL was generated)
+      2. first non-empty line of job_description (cleaned of common prefixes)
+      3. fall back to a generic "Tailored CV" label
+    """
+    company = ""
+    if cover_letter_data:
+        company = (cover_letter_data.get("company_name") or "").strip()
+
+    job_desc = (attempt.get("job_description") or "").strip()
+    first_line = ""
+    for line in job_desc.splitlines():
+        s = line.strip()
+        if s:
+            first_line = s
+            break
+    for prefix in ("Job Title:", "Job:", "Role:", "Position:", "Page:", "Title:"):
+        if first_line.lower().startswith(prefix.lower()):
+            first_line = first_line[len(prefix):].strip()
+            break
+    first_line = first_line[:80]
+
+    if company and first_line:
+        label = f"{company} — {first_line[:60]}"
+    elif company:
+        label = company
+    elif first_line:
+        label = first_line
+    else:
+        label = "Tailored CV"
+
+    return label[:255], first_line[:255]
+
+
 import sys as _sys
 _tpl_dir = Path(__file__).parent.parent.parent / "templates"
 templates = Jinja2Templates(directory=_tpl_dir)
@@ -454,6 +492,7 @@ async def run_generation_pipeline(
 
     # Persist CV as sanitized markdown for reuse
     try:
+        label, job_title = _derive_cv_label(attempt, cover_letter_data)
         async with async_session() as db:
             await save_cv(
                 db,
@@ -464,6 +503,8 @@ async def run_generation_pipeline(
                 rendered_html=rendered_cv,
                 cv_data=cv_data,
                 user_id=user_id,
+                label=label,
+                job_title=job_title,
                 self_description=attempt.get("self_description", "") or "",
                 values_text=attempt.get("values", "") or "",
                 offer_appeal=attempt.get("offer_appeal", "") or "",

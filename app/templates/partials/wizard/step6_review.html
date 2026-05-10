@@ -1,10 +1,10 @@
 {% from "macros/ui.html" import region_warnings %}
-{% set step = 5 %}
+{% set step = 6 %}
 {% include "partials/wizard/progress.html" %}
 
 <div class="wiz-body">
 <div id="generate-area" class="wizard-panel active wiz-main">
-    <div id="step5-review">
+    <div id="step6-review">
         <div class="panel-header">
             <h2>Review & Generate</h2>
             <p class="hint">Check your selections, then generate your tailored CV. You'll be able to fine-tune the result after.</p>
@@ -96,8 +96,8 @@
 
         <div class="wiz-footer" style="margin-top:20px;padding-top:18px;border-top:1px solid var(--rule,var(--border));">
             <button type="button" class="btn btn-ghost btn-sm"
-                    hx-get="/wizard/step/4" hx-target="#wizard-container" hx-swap="innerHTML">← Back</button>
-            <span class="step-counter">Step 5 of 5</span>
+                    hx-get="/wizard/step/5" hx-target="#wizard-container" hx-swap="innerHTML">← Back</button>
+            <span class="step-counter">Step 6 of 6</span>
             <div class="right">
                 <button type="button" class="btn btn-accent" id="btn-generate"
                         onclick="startGenerate()" {% if pii_incomplete %}disabled title="Complete your profile first"{% endif %}>
@@ -144,7 +144,7 @@
 var _generateWs = null;
 
 function showProgressUI() {
-    var panel = document.getElementById('step5-review');
+    var panel = document.getElementById('step6-review');
     panel.innerHTML = '\
         <div class="gen-progress">\
             <div class="gen-progress-header">\

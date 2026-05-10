@@ -302,6 +302,16 @@
                     <a href="/download-docx" class="btn-download btn-download--secondary" download>
                         <span class="download-icon">&#8681;</span> Download DOCX
                     </a>
+                    {% if cover_letter %}
+                    <a href="/download-all-pdf" class="btn-download btn-download--bundle" download
+                       title="Download CV + Cover Letter as a ZIP of two PDFs">
+                        <span class="download-icon">&#8681;</span> Both as PDF (.zip)
+                    </a>
+                    <a href="/download-all-docx" class="btn-download btn-download--bundle btn-download--secondary" download
+                       title="Download CV + Cover Letter as a ZIP of two DOCX files">
+                        <span class="download-icon">&#8681;</span> Both as DOCX (.zip)
+                    </a>
+                    {% endif %}
                 </div>
             </div>
             <div class="cv-preview">
@@ -312,7 +322,7 @@
         <!-- CV Actions -->
         <div class="results-actions">
             <button type="button" class="btn btn-ghost btn-sm results-action-back"
-                    hx-get="/wizard/step/3" hx-target="#wizard-container" hx-swap="innerHTML"
+                    hx-get="/wizard/step/5" hx-target="#wizard-container" hx-swap="innerHTML"
                     onclick="document.getElementById('generate-area').remove();">
                 <span aria-hidden="true">←</span> Change template
             </button>
@@ -362,6 +372,14 @@
                     <a href="/download-cover-letter-docx" class="btn-download btn-download--secondary" download>
                         <span class="download-icon">&#8681;</span> Download DOCX
                     </a>
+                    <a href="/download-all-pdf" class="btn-download btn-download--bundle" download
+                       title="Download CV + Cover Letter as a ZIP of two PDFs">
+                        <span class="download-icon">&#8681;</span> Both as PDF (.zip)
+                    </a>
+                    <a href="/download-all-docx" class="btn-download btn-download--bundle btn-download--secondary" download
+                       title="Download CV + Cover Letter as a ZIP of two DOCX files">
+                        <span class="download-icon">&#8681;</span> Both as DOCX (.zip)
+                    </a>
                 </div>
             </div>
             <div class="cv-preview">
@@ -372,7 +390,7 @@
         <!-- Cover Letter Actions -->
         <div class="results-actions">
             <button type="button" class="btn btn-ghost btn-sm results-action-back"
-                    hx-get="/wizard/step/3" hx-target="#wizard-container" hx-swap="innerHTML"
+                    hx-get="/wizard/step/5" hx-target="#wizard-container" hx-swap="innerHTML"
                     onclick="document.getElementById('generate-area').remove();">
                 <span aria-hidden="true">←</span> Change template
             </button>

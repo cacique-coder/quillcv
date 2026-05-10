@@ -599,20 +599,8 @@ async def download_cover_letter_pdf(request: Request):
     )
 
 
-@router.get("/download-cover-letter-docx")
-async def download_cover_letter_docx(request: Request):
-    """Generate and download the cover letter as DOCX."""
-    attempt_id = request.state.session.get("attempt_id")
-    if not attempt_id:
-        return Response("No active session", status_code=400)
-    attempt = get_attempt(attempt_id)
-    cl = attempt.get("cover_letter_data") if attempt else None
-    if not cl:
-        return Response("No cover letter found. Please generate first.", status_code=400)
-
-    cv_name = attempt.get("cv_data", {}).get("name", "Cover Letter") or "Cover Letter"
-    safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "Cover Letter"
-
+def _build_cover_letter_docx_bytes(cl: dict) -> bytes:
+    """Render a cover-letter dict into a DOCX byte string."""
     from io import BytesIO
 
     from docx import Document
@@ -649,12 +637,115 @@ async def download_cover_letter_docx(request: Request):
 
     buf = BytesIO()
     doc.save(buf)
-    docx_bytes = buf.getvalue()
+    return buf.getvalue()
+
+
+@router.get("/download-cover-letter-docx")
+async def download_cover_letter_docx(request: Request):
+    """Generate and download the cover letter as DOCX."""
+    attempt_id = request.state.session.get("attempt_id")
+    if not attempt_id:
+        return Response("No active session", status_code=400)
+    attempt = get_attempt(attempt_id)
+    cl = attempt.get("cover_letter_data") if attempt else None
+    if not cl:
+        return Response("No cover letter found. Please generate first.", status_code=400)
+
+    cv_name = attempt.get("cv_data", {}).get("name", "Cover Letter") or "Cover Letter"
+    safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "Cover Letter"
 
     return Response(
-        content=docx_bytes,
+        content=_build_cover_letter_docx_bytes(cl),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={
             "Content-Disposition": f'attachment; filename="{safe_name} - Cover Letter - QuillCV.docx"',
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Combined CV + cover letter ZIP downloads
+# ---------------------------------------------------------------------------
+
+
+@router.get("/download-all-pdf")
+async def download_all_pdf(request: Request):
+    """Bundle the CV PDF and cover-letter PDF into a single ZIP download."""
+    attempt_id = request.state.session.get("attempt_id")
+    if not attempt_id:
+        return Response("No active session", status_code=400)
+
+    attempt = get_attempt(attempt_id)
+    if not attempt or not attempt.get("rendered_cv"):
+        return Response("No generated CV found. Please generate your CV first.", status_code=400)
+    if not attempt.get("cover_letter_html"):
+        return Response("No cover letter found. Generate one to use the bundle download.", status_code=400)
+
+    cv_name = attempt.get("cv_data", {}).get("name", "CV") or "CV"
+    safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "CV"
+
+    cv_pdf = await generate_pdf(attempt["rendered_cv"])
+    cl_pdf = await generate_pdf(attempt["cover_letter_html"])
+    if cv_pdf is None or cl_pdf is None:
+        return Response("PDF generation failed. Please try again.", status_code=500)
+
+    import zipfile
+    from io import BytesIO
+
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"{safe_name} - QuillCV.pdf", cv_pdf)
+        zf.writestr(f"{safe_name} - Cover Letter - QuillCV.pdf", cl_pdf)
+
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name} - QuillCV.zip"',
+        },
+    )
+
+
+@router.get("/download-all-docx")
+async def download_all_docx(request: Request):
+    """Bundle the CV DOCX and cover-letter DOCX into a single ZIP download."""
+    attempt_id = request.state.session.get("attempt_id")
+    if not attempt_id:
+        return Response("No active session", status_code=400)
+
+    attempt = get_attempt(attempt_id)
+    if not attempt or not attempt.get("cv_data"):
+        return Response("No generated CV found. Please generate your CV first.", status_code=400)
+    cl = attempt.get("cover_letter_data")
+    if not cl:
+        return Response("No cover letter found. Generate one to use the bundle download.", status_code=400)
+
+    cv_data = attempt["cv_data"]
+    region_code = attempt.get("region", "AU") or "AU"
+    template_id = attempt.get("template_id", "classic") or "classic"
+    cv_name = cv_data.get("name", "CV") or "CV"
+    safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "CV"
+
+    try:
+        cv_docx = generate_docx(cv_data, region_code=region_code, template_id=template_id)
+    except Exception:
+        logger.exception("DOCX generation failed for attempt=%s", attempt_id)
+        return Response("DOCX generation failed. Please try again.", status_code=500)
+
+    cl_docx = _build_cover_letter_docx_bytes(cl)
+
+    import zipfile
+    from io import BytesIO
+
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"{safe_name} - QuillCV.docx", cv_docx)
+        zf.writestr(f"{safe_name} - Cover Letter - QuillCV.docx", cl_docx)
+
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name} - QuillCV.zip"',
         },
     )

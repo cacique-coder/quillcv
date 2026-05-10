@@ -19,6 +19,11 @@ Disallow: /app
 Disallow: /wizard/
 Disallow: /apply-fixes
 Disallow: /download-pdf
+Disallow: /download-docx
+Disallow: /download-cover-letter-pdf
+Disallow: /download-cover-letter-docx
+Disallow: /download-all-pdf
+Disallow: /download-all-docx
 Disallow: /checkout/
 Disallow: /photos/
 Disallow: /account

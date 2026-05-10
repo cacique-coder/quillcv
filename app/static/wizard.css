@@ -1218,6 +1218,15 @@
     margin-bottom: 0;
 }
 
+/* Results tab panels — give consistent vertical rhythm between the
+   stacked cards (quality review, ATS comparison, region notes,
+   generated CV) so they don't sit flush against each other. */
+.results-tab-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
 /* Results tabs */
 .results-tabs {
     display: flex;
@@ -1859,6 +1868,43 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+/* Starter panel — sits BELOW its textarea so the input is the primary
+   action and the pills clearly read as helpers. The dashed top edge and
+   soft tint visually attach the panel to the field above. */
+.voice-starters {
+    margin-top: 6px;
+    padding: 10px 12px 12px;
+    border: 1px dashed var(--border);
+    border-top: 2px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 0 0 8px 8px;
+    background: color-mix(in srgb, var(--paper) 50%, transparent);
+}
+.voice-starters__lead {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.voice-starters__icon {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.95rem;
+    line-height: 1;
+}
+.voice-starters__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* When the starter panel is also a grouped pills container, drop the
+   default top margin from the inner grid so the lead sits flush. */
+.voice-starters.voice-pills--grouped {
+    margin: 6px 0 0;
 }
 
 /* ── Profile page — Professional Voice section prominence ─────── */

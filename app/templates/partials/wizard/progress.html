@@ -1,13 +1,14 @@
 {% set steps = [
     (1, "i", "Region"),
     (2, "ii", "Details"),
-    (3, "iii", "Job & CV"),
-    (4, "iv", "Template"),
-    (5, "v", "Generate"),
+    (3, "iii", "Voice"),
+    (4, "iv", "Job & CV"),
+    (5, "v", "Template"),
+    (6, "vi", "Generate"),
 ] %}
 
-{# Wizard header — shown from step 3+ when job or region info is available #}
-{% if step >= 3 and (attempt is defined and attempt) %}
+{# Wizard header — shown from step 4+ when job or region info is available #}
+{% if step >= 4 and (attempt is defined and attempt) %}
 <div class="wiz-head">
     <div>
         <div class="overline">✦ Per-job tailoring &middot; 1 credit</div>

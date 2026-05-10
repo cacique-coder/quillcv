@@ -15,9 +15,13 @@
     <div class="my-cvs-grid">
         {% for cv in saved_cvs %}
         {% set missing = (cv_status or {}).get(cv.id, []) %}
+        {% set cl = (cover_letters or {}).get(cv.id) %}
         <div class="cv-card{% if missing %} cv-card--incomplete{% endif %}">
             <div class="cv-card-header">
-                <h3 class="cv-card-label">{{ cv.label or "Untitled CV" }}</h3>
+                <h3 class="cv-card-label">
+                    {{ cv.label or "Untitled CV" }}
+                    {% if cl %}<span class="cv-card-cl-badge" title="Includes a tailored cover letter">+ Cover letter</span>{% endif %}
+                </h3>
                 {% if cv.job_title %}
                 <span class="cv-card-job">{{ cv.job_title }}</span>
                 {% endif %}
@@ -53,11 +57,14 @@
                 <a href="/my-cvs/{{ cv.id }}/preview" class="btn-secondary" target="_blank">Preview</a>
                 <a href="/my-cvs/{{ cv.id }}/download" class="btn-primary">Download PDF</a>
                 <a href="/my-cvs/{{ cv.id }}/download-docx" class="btn-secondary">Download DOCX</a>
+                {% if cl %}
+                <a href="/my-cvs/{{ cv.id }}/cover-letter/download" class="btn-secondary">Cover letter PDF</a>
+                <a href="/my-cvs/{{ cv.id }}/all/download-pdf" class="btn-secondary" title="ZIP with both PDFs">Both (ZIP)</a>
+                {% endif %}
             </div>
-            {% set cl = (cover_letters or {}).get(cv.id) %}
             {% if cl %}
             <details class="cv-card-cover-letter">
-                <summary>Cover letter</summary>
+                <summary>Preview cover letter</summary>
                 <div class="cv-card-cover-letter-body">
                     {{ cl.html | safe }}
                 </div>

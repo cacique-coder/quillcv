@@ -373,3 +373,202 @@ async def my_cv_download_docx(request: Request, cv_id: str):
             "Content-Disposition": f'attachment; filename="{safe_name}{label_part} - QuillCV.docx"',
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# Cover letter + bundled downloads (linked Job's cover_letter_html / _json)
+# ---------------------------------------------------------------------------
+
+
+async def _load_saved_cv_with_cl(
+    db, cv_id: str, pii: dict, *, need_html: bool, need_json: bool,
+):
+    """Fetch the SavedCV plus decrypted cover-letter html/json from its Job.
+
+    Returns ``(saved, cl_html, cl_data)`` or ``None`` if anything required is
+    missing (caller should 404).
+    """
+    saved = await get_saved_cv(db, cv_id, pii=pii)
+    if not saved or not saved.job_id:
+        return None
+
+    result = await db.execute(select(Job).where(Job.id == saved.job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        return None
+
+    from cryptography.fernet import InvalidToken
+
+    cl_html: str | None = None
+    cl_data: dict | None = None
+    if need_html:
+        if not job.cover_letter_html:
+            return None
+        try:
+            cl_html = decrypt_data(job.cover_letter_html)
+        except (InvalidToken, Exception):
+            cl_html = job.cover_letter_html  # legacy unencrypted
+        if not cl_html:
+            return None
+    if need_json:
+        if not job.cover_letter_json:
+            return None
+        try:
+            cl_json_raw = decrypt_data(job.cover_letter_json)
+        except (InvalidToken, Exception):
+            cl_json_raw = job.cover_letter_json
+        try:
+            cl_data = json.loads(cl_json_raw) if cl_json_raw else None
+        except (json.JSONDecodeError, TypeError):
+            cl_data = None
+        if not cl_data:
+            return None
+
+    return saved, cl_html, cl_data
+
+
+def _safe_name_from_cv_data(cv_data: dict, default: str = "CV") -> str:
+    cv_name = cv_data.get("name", default) or default
+    return "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or default
+
+
+@router.get("/my-cvs/{cv_id}/cover-letter/download")
+async def my_cv_cover_letter_pdf(request: Request, cv_id: str):
+    """Download the linked job's cover letter as PDF."""
+    pii = request.state.session.get("pii") or {}
+    async with async_session() as db:
+        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=True, need_json=False)
+
+    if not bundle:
+        return Response("Cover letter not found", status_code=404)
+    saved, cl_html, _ = bundle
+
+    cv_data = _resolve_cv_with_pii(json.loads(saved.cv_data_json), pii)
+    safe_name = _safe_name_from_cv_data(cv_data, default="Cover Letter")
+
+    pdf_bytes = await generate_pdf(cl_html)
+    if pdf_bytes is None:
+        return Response("PDF generation failed", status_code=500)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name} - Cover Letter - QuillCV.pdf"',
+        },
+    )
+
+
+@router.get("/my-cvs/{cv_id}/cover-letter/download-docx")
+async def my_cv_cover_letter_docx(request: Request, cv_id: str):
+    """Download the linked job's cover letter as DOCX."""
+    from app.web.routes.cv import _build_cover_letter_docx_bytes
+
+    pii = request.state.session.get("pii") or {}
+    async with async_session() as db:
+        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=False, need_json=True)
+
+    if not bundle:
+        return Response("Cover letter not found", status_code=404)
+    saved, _, cl_data = bundle
+
+    cv_data = _resolve_cv_with_pii(json.loads(saved.cv_data_json), pii)
+    safe_name = _safe_name_from_cv_data(cv_data, default="Cover Letter")
+
+    try:
+        docx_bytes = _build_cover_letter_docx_bytes(cl_data)
+    except Exception:
+        logger.exception("Cover letter DOCX generation failed for cv_id=%s", cv_id)
+        return Response("DOCX generation failed", status_code=500)
+
+    return Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name} - Cover Letter - QuillCV.docx"',
+        },
+    )
+
+
+@router.get("/my-cvs/{cv_id}/all/download-pdf")
+async def my_cv_all_pdf(request: Request, cv_id: str):
+    """Bundle the CV PDF and cover-letter PDF into a single ZIP download."""
+    pii = request.state.session.get("pii") or {}
+    async with async_session() as db:
+        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=True, need_json=False)
+
+    if not bundle:
+        return Response("Cover letter not found", status_code=404)
+    saved, cl_html, _ = bundle
+
+    cv_data = _resolve_cv_with_pii(json.loads(saved.cv_data_json), pii)
+    rendered = templates.get_template(f"cv_templates/{saved.template_id}.html").render(**cv_data)
+    safe_name = _safe_name_from_cv_data(cv_data)
+
+    cv_pdf = await generate_pdf(rendered)
+    cl_pdf = await generate_pdf(cl_html)
+    if cv_pdf is None or cl_pdf is None:
+        return Response("PDF generation failed", status_code=500)
+
+    import zipfile
+    from io import BytesIO
+
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"{safe_name} - QuillCV.pdf", cv_pdf)
+        zf.writestr(f"{safe_name} - Cover Letter - QuillCV.pdf", cl_pdf)
+
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name} - QuillCV.zip"',
+        },
+    )
+
+
+@router.get("/my-cvs/{cv_id}/all/download-docx")
+async def my_cv_all_docx(request: Request, cv_id: str):
+    """Bundle the CV DOCX and cover-letter DOCX into a single ZIP download."""
+    from app.web.routes.cv import _build_cover_letter_docx_bytes
+
+    pii = request.state.session.get("pii") or {}
+    async with async_session() as db:
+        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=False, need_json=True)
+
+    if not bundle:
+        return Response("Cover letter not found", status_code=404)
+    saved, _, cl_data = bundle
+
+    cv_data = _resolve_cv_with_pii(json.loads(saved.cv_data_json), pii)
+    region_code = saved.region or "AU"
+    template_id = saved.template_id or "classic"
+    safe_name = _safe_name_from_cv_data(cv_data)
+
+    try:
+        cv_docx = generate_docx(cv_data, region_code=region_code, template_id=template_id)
+    except Exception:
+        logger.exception("DOCX generation failed for cv_id=%s", cv_id)
+        return Response("DOCX generation failed", status_code=500)
+
+    try:
+        cl_docx = _build_cover_letter_docx_bytes(cl_data)
+    except Exception:
+        logger.exception("Cover letter DOCX generation failed for cv_id=%s", cv_id)
+        return Response("DOCX generation failed", status_code=500)
+
+    import zipfile
+    from io import BytesIO
+
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"{safe_name} - QuillCV.docx", cv_docx)
+        zf.writestr(f"{safe_name} - Cover Letter - QuillCV.docx", cl_docx)
+
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name} - QuillCV.zip"',
+        },
+    )

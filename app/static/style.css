@@ -356,6 +356,18 @@ select.input-field {
     font-size: 1.05rem;
     margin: 0;
 }
+.cv-card-cl-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 1px 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--accent);
+    background: rgba(108, 99, 255, 0.1);
+    border: 1px solid rgba(108, 99, 255, 0.25);
+    border-radius: 99px;
+    vertical-align: middle;
+}
 .cv-card-job {
     font-size: 0.85rem;
     color: var(--text-muted);

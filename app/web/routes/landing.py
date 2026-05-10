@@ -91,7 +91,7 @@ async def dashboard(request: Request, user: User = Depends(require_auth)):
     attempt_id = request.state.session.get("attempt_id")
     if attempt_id:
         attempt = get_attempt(attempt_id)
-        if attempt and 2 <= attempt.get("step", 0) <= 5:
+        if attempt and 2 <= attempt.get("step", 0) <= 6:
             has_details = any(attempt.get(k) for k in ("job_description", "full_name", "email", "cv_text"))
             if has_details:
                 jd = (attempt.get("job_description") or "").strip()

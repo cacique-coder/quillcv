@@ -142,7 +142,7 @@
    Usage: {{ wizard_nav(back_step=1, next_label="Continue", loading_text="Analyzing...") }}
    Pass back_step=0 for no back button (step 1).
 #}
-{% macro wizard_nav(back_step=0, next_label="Continue →", next_type="submit", loading_text="", hx_indicator="", step=0, total_steps=5) %}
+{% macro wizard_nav(back_step=0, next_label="Continue →", next_type="submit", loading_text="", hx_indicator="", step=0, total_steps=6) %}
 <div class="wiz-footer">
     {% if back_step > 0 %}
     <button type="button" class="btn btn-ghost btn-sm"

@@ -144,7 +144,7 @@ def _get_or_create_attempt(request: Request) -> dict:
 @router.get("/")
 async def wizard_shell(request: Request):
     attempt = _get_or_create_attempt(request)
-    step = max(1, min(5, attempt.get("step", 1)))
+    step = max(1, min(6, attempt.get("step", 1)))
     return _wizard_shell(request, step)
 
 
@@ -355,9 +355,6 @@ async def step2_save(
     visa_status: str = Form(""),
     nationality: str = Form(""),
     marital_status: str = Form(""),
-    self_description: str = Form(""),
-    values: str = Form(""),
-    offer_appeal: str = Form(""),
     ref_name_1: str = Form(""),
     ref_title_1: str = Form(""),
     ref_company_1: str = Form(""),
@@ -429,9 +426,6 @@ async def step2_save(
             "nationality": nationality,
             "marital_status": marital_status,
             "visa_status": visa_status,
-            "self_description": self_description,
-            "values": values,
-            "offer_appeal": offer_appeal,
             "references": references,
         }
         pii_complete, pii_missing = _check_pii_completeness(attempt_with_overrides, pii, region)
@@ -555,26 +549,18 @@ async def step2_save(
         visa_status=visa_status,
         nationality=nationality.strip(),
         marital_status=marital_status,
-        self_description=self_description,
-        values=values,
-        offer_appeal=offer_appeal,
         references=references,
         step=3,
     )
 
     # ------------------------------------------------------------------
-    # Persist voice fields + references to the PII vault so they
-    # pre-fill on future wizard runs.
-    # `offer_appeal` is intentionally excluded — it is role-specific.
+    # Persist references to the PII vault so they pre-fill on future
+    # wizard runs. Voice fields move to step 3 (Personalization).
     # ------------------------------------------------------------------
     if user_id:
         from app.pii.adapters.vault import upsert_vault
         pii = request.state.session.get("pii") or {}
         pii["references"] = references
-        if self_description:
-            pii["self_description"] = self_description
-        if values:
-            pii["values"] = values
         password = request.state.session.get("_pii_password")
         async with async_session() as db:
             await upsert_vault(db, user_id=user_id, pii=pii, password=password or None)
@@ -603,7 +589,7 @@ async def scrape_job(request: Request, job_url: str = Form("")):
 
 
 # ------------------------------------------------------------------
-# Step 3: Documents
+# Step 3: Personalization (Professional Voice)
 # ------------------------------------------------------------------
 
 @router.get("/step/3")
@@ -615,12 +601,79 @@ async def step3_get(request: Request):
 
 async def step3(request: Request):
     attempt = _get_or_create_attempt(request)
+    region = attempt.get("region", "AU")
+    region_config = REGIONS.get(region, REGIONS["AU"])
+
+    # Voice fields fall back vault → empty when the attempt has no value,
+    # so a per-CV voice seeded from a saved CV is preserved.
+    pii = request.state.session.get("pii") or {}
+    for key in ("self_description", "values"):
+        if not attempt.get(key) and pii.get(key):
+            attempt[key] = pii[key]
+
+    return templates.TemplateResponse("partials/wizard/step3_personalization.html", {
+        "request": request,
+        "attempt": attempt,
+        "region": region,
+        "region_config": region_config,
+        "dev_mode": request.app.state.dev_mode,
+    })
+
+
+@router.post("/step/3/save")
+async def step3_save(
+    request: Request,
+    self_description: str = Form(""),
+    values: str = Form(""),
+    offer_appeal: str = Form(""),
+):
+    """Save voice fields and move to step 4 (Job & CV)."""
+    attempt = _get_or_create_attempt(request)
+    update_attempt(
+        attempt["id"],
+        self_description=self_description,
+        values=values,
+        offer_appeal=offer_appeal,
+        step=4,
+    )
+
+    # Persist voice → PII vault so they pre-fill on future wizard runs.
+    # `offer_appeal` is intentionally excluded — it is role-specific.
+    current_user = await get_current_user(request)
+    if current_user:
+        from app.pii.adapters.vault import upsert_vault
+        pii = request.state.session.get("pii") or {}
+        if self_description:
+            pii["self_description"] = self_description
+        if values:
+            pii["values"] = values
+        password = request.state.session.get("_pii_password")
+        async with async_session() as db:
+            await upsert_vault(db, user_id=current_user.id, pii=pii, password=password or None)
+        request.state.session["pii"] = pii
+
+    return RedirectResponse(url="/wizard/step/4", status_code=303)
+
+
+# ------------------------------------------------------------------
+# Step 4: Documents (job description + CV)
+# ------------------------------------------------------------------
+
+@router.get("/step/4")
+async def step4_get(request: Request):
+    if not _is_htmx(request):
+        return _wizard_shell(request, 4)
+    return await step4(request)
+
+
+async def step4(request: Request):
+    attempt = _get_or_create_attempt(request)
     cv_filename = get_document_filename(attempt["id"], "cv_file")
     region = attempt.get("region", "AU")
     region_config = REGIONS.get(region, REGIONS["AU"])
     pii = request.state.session.get("pii") or {}
     warnings = region_warnings_dicts(attempt, pii, region)
-    return templates.TemplateResponse("partials/wizard/step3_documents.html", {
+    return templates.TemplateResponse("partials/wizard/step4_documents.html", {
         "request": request,
         "attempt": attempt,
         "cv_filename": cv_filename,
@@ -629,15 +682,15 @@ async def step3(request: Request):
     })
 
 
-@router.post("/step/3/save")
-async def step3_save(
+@router.post("/step/4/save")
+async def step4_save(
     request: Request,
     job_description: str = Form(""),
     cv_file: UploadFile = File(None),
     cv_text: str = Form(""),
     extra_docs: list[UploadFile] = File(None),
 ):
-    """Save step 3 (documents + job description) and move to step 4 (template picker)."""
+    """Save step 4 (documents + job description) and move to step 5 (template picker)."""
     attempt = _get_or_create_attempt(request)
 
     # Save CV file if provided, or fall back to pasted text
@@ -657,7 +710,7 @@ async def step3_save(
         region_config = REGIONS.get(region, REGIONS["AU"])
         pii = request.state.session.get("pii") or {}
         warnings = region_warnings_dicts(attempt, pii, region)
-        return templates.TemplateResponse("partials/wizard/step3_documents.html", {
+        return templates.TemplateResponse("partials/wizard/step4_documents.html", {
             "request": request,
             "attempt": attempt,
             "cv_filename": None,
@@ -675,23 +728,23 @@ async def step3_save(
                     save_document(attempt["id"], f"extra_doc_{i}", doc.filename, doc_bytes)
 
     job_description = job_description or attempt.get("job_description", "")
-    update_attempt(attempt["id"], job_description=job_description, step=4)
+    update_attempt(attempt["id"], job_description=job_description, step=5)
 
-    return await step4(request)
+    return await step5(request)
 
 
 # ------------------------------------------------------------------
-# Step 4: Template picker
+# Step 5: Template picker
 # ------------------------------------------------------------------
 
-@router.get("/step/4")
-async def step4_get(request: Request):
+@router.get("/step/5")
+async def step5_get(request: Request):
     if not _is_htmx(request):
-        return _wizard_shell(request, 4)
-    return await step4(request)
+        return _wizard_shell(request, 5)
+    return await step5(request)
 
 
-async def step4(request: Request):
+async def step5(request: Request):
     attempt = _get_or_create_attempt(request)
     region = attempt.get("region", "AU")
     region_config = REGIONS.get(region, REGIONS["AU"])
@@ -709,7 +762,7 @@ async def step4(request: Request):
         recommended = [t.id for t in templates_list[:3]]
         recommendation_reason = ""
 
-    return templates.TemplateResponse("partials/wizard/step4_template.html", {
+    return templates.TemplateResponse("partials/wizard/step5_template.html", {
         "request": request,
         "attempt": attempt,
         "region_config": region_config,
@@ -720,25 +773,25 @@ async def step4(request: Request):
     })
 
 
-@router.post("/step/4/save")
-async def step4_save(request: Request, template_id: str = Form("modern")):
+@router.post("/step/5/save")
+async def step5_save(request: Request, template_id: str = Form("modern")):
     attempt = _get_or_create_attempt(request)
-    update_attempt(attempt["id"], template_id=template_id, step=5)
-    return await step5(request)
+    update_attempt(attempt["id"], template_id=template_id, step=6)
+    return await step6(request)
 
 
 # ------------------------------------------------------------------
-# Step 5: Review & Generate
+# Step 6: Review & Generate
 # ------------------------------------------------------------------
 
-@router.get("/step/5")
-async def step5_get(request: Request):
+@router.get("/step/6")
+async def step6_get(request: Request):
     if not _is_htmx(request):
-        return _wizard_shell(request, 5)
-    return await step5(request)
+        return _wizard_shell(request, 6)
+    return await step6(request)
 
 
-async def step5(request: Request):
+async def step6(request: Request):
     attempt = _get_or_create_attempt(request)
     region = attempt.get("region", "AU")
     region_config = REGIONS.get(region, REGIONS["AU"])
@@ -751,7 +804,7 @@ async def step5(request: Request):
     warnings = region_warnings_dicts(attempt, pii, region)
     job_keywords = _extract_keywords(attempt.get("job_description", ""))
 
-    return templates.TemplateResponse("partials/wizard/step5_review.html", {
+    return templates.TemplateResponse("partials/wizard/step6_review.html", {
         "request": request,
         "attempt": attempt,
         "region_config": region_config,

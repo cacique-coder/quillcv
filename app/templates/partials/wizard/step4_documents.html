@@ -1,9 +1,9 @@
 {% from "macros/ui.html" import form_group, file_input, text_area, section_divider, wizard_nav, region_warnings %}
-{% set step = 3 %}
+{% set step = 4 %}
 {% include "partials/wizard/progress.html" %}
 
 <div class="wiz-body">
-<form class="wizard-panel active wiz-main" hx-post="/wizard/step/3/save" hx-target="#wizard-container" hx-swap="innerHTML" hx-indicator="#step3-loader" enctype="multipart/form-data">
+<form class="wizard-panel active wiz-main" hx-post="/wizard/step/4/save" hx-target="#wizard-container" hx-swap="innerHTML" hx-indicator="#step4-loader" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
     <div class="panel-header">
@@ -69,7 +69,7 @@
         {{ text_area("job_description", rows=10, placeholder="Paste the job description here...", value=attempt.get('job_description', ''), required=true) }}
     {% endcall %}
 
-    {{ wizard_nav(back_step=2, next_label="Continue →", loading_text="Saving…", hx_indicator="step3-loader", step=3, total_steps=5) }}
+    {{ wizard_nav(back_step=3, next_label="Continue →", loading_text="Saving…", hx_indicator="step4-loader", step=4, total_steps=6) }}
 </form>
 
 <aside class="wiz-aside">
