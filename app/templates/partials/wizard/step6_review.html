@@ -109,19 +109,6 @@
 </div>
 
 <aside class="wiz-aside">
-    {% if attempt.get('job_url') or attempt.get('job_description') %}
-    <h4>Job target</h4>
-    <div class="job-mini">
-        {% if attempt.get('job_url') %}
-        <div class="co">{{ attempt.get('job_url') | truncate(40, killwords=true, end='…') }}</div>
-        {% else %}
-        <div class="co">Pasted description</div>
-        {% endif %}
-        <div class="title">{{ region_config.flag }} {{ region_config.name }}</div>
-        {% if attempt.get('job_description') %}
-        <div class="meta">{{ attempt.get('job_description')[:80] | truncate(80, killwords=true, end='…') }}</div>
-        {% endif %}
-    </div>
     {% if job_keywords %}
     <h4>Keywords detected</h4>
     <div class="kw-list">
@@ -129,7 +116,6 @@
         <span class="kw">{{ kw }}</span>
         {% endfor %}
     </div>
-    {% endif %}
     {% endif %}
     <h4>What happens next</h4>
     <p class="aside-tip">We'll parse your CV, match keywords from the job posting, and generate an ATS-optimized version. You'll see a live progress stream as each section is crafted.</p>

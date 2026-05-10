@@ -56,13 +56,6 @@
 <aside class="wiz-aside">
     <h4>Why templates matter</h4>
     <p class="aside-tip">Template choice affects how ATS systems parse your CV. All templates here are ATS-safe — no tables, no text boxes, no images in the content area.</p>
-    {% if attempt.get('job_description') %}
-    <h4>Your job target</h4>
-    <div class="job-mini">
-        <div class="co">{{ region_config.flag }} {{ region_config.name }}</div>
-        <div class="title" style="font-size:14px;">{{ attempt.get('job_description', '')[:60] | truncate(60, killwords=true, end='…') }}</div>
-    </div>
-    {% endif %}
     <h4>Tip</h4>
     <p class="aside-tip">For most industries, <strong>Modern</strong> or <strong>Classic</strong> perform best. Executive suits finance and law. Tech suits engineering and product roles.</p>
 </aside>

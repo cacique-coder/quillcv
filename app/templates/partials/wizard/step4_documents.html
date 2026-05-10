@@ -73,20 +73,8 @@
 </form>
 
 <aside class="wiz-aside">
-    {% if attempt.get('job_url') or attempt.get('job_description') %}
-    <h4>Job target</h4>
-    <div class="job-mini">
-        {% if attempt.get('job_url') %}
-        <div class="co">{{ attempt.get('job_url') | truncate(40, killwords=true, end='…') }}</div>
-        {% else %}
-        <div class="co">Pasted description</div>
-        {% endif %}
-        <div class="title">{{ region_config.flag }} {{ region_config.name }}</div>
-    </div>
-    {% else %}
     <h4>Tips for best results</h4>
     <p class="aside-tip">Paste or fetch the full job description. The more context you provide, the better the keyword matching and tone calibration.</p>
-    {% endif %}
     <h4>What we extract</h4>
     <p class="aside-tip">We parse required skills, seniority signals, culture keywords, and phrasing patterns from the posting — then match them against your CV.</p>
 </aside>
