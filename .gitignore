@@ -33,3 +33,8 @@ nginx/ssl/
 
 # Local dev artifacts (screenshots, feature-discovery scratch, etc.)
 tmp/
+
+# Coverage artifacts
+.coverage
+.coverage.*
+htmlcov/

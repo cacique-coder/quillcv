@@ -18,7 +18,7 @@ def clean_test_attempts(tmp_path, monkeypatch):
     """Use a temp directory for attempts during tests."""
     test_dir = tmp_path / "attempts"
     test_dir.mkdir()
-    monkeypatch.setattr("app.services.attempt_store.ATTEMPTS_DIR", test_dir)
+    monkeypatch.setattr("app.infrastructure.persistence.attempt_store.ATTEMPTS_DIR", test_dir)
     return test_dir
 
 

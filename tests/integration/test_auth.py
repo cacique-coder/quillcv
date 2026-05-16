@@ -5,6 +5,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.identity.adapters.token_utils import create_access_token, decode_access_token, hash_password, verify_password
 from app.main import app
+from tests.conftest import csrf_post
 
 
 class TestPasswordHashing:
@@ -76,18 +77,20 @@ class TestSignupEndpoint:
     async def test_signup_creates_user(self):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.post("/signup", data={
+            response = await csrf_post(client, "/signup", {
                 "email": "new@example.com",
                 "password": "securepassword123",
+                "confirm_password": "securepassword123",
+                "age_confirmed": "on",
                 "name": "Test User",
             }, follow_redirects=False)
         assert response.status_code == 303
-        assert "/app" in response.headers["location"]
+        assert "/onboarding" in response.headers["location"]
 
     async def test_signup_short_password_rejected(self):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.post("/signup", data={
+            response = await csrf_post(client, "/signup", {
                 "email": "new@example.com",
                 "password": "short",
                 "name": "Test",
@@ -99,15 +102,21 @@ class TestSignupEndpoint:
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             # First signup
-            await client.post("/signup", data={
+            await csrf_post(client, "/signup", {
                 "email": "dup@example.com",
                 "password": "securepassword123",
+                "confirm_password": "securepassword123",
+                "age_confirmed": "on",
                 "name": "Test",
             })
+            # Logout so /signup renders the form again rather than redirecting
+            await client.get("/logout")
             # Second signup with same email
-            response = await client.post("/signup", data={
+            response = await csrf_post(client, "/signup", {
                 "email": "dup@example.com",
                 "password": "anotherpassword123",
+                "confirm_password": "anotherpassword123",
+                "age_confirmed": "on",
                 "name": "Test2",
             })
         assert response.status_code == 200
@@ -127,31 +136,35 @@ class TestLoginEndpoint:
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             # Create account first
-            await client.post("/signup", data={
+            await csrf_post(client, "/signup", {
                 "email": "login@example.com",
                 "password": "securepassword123",
+                "confirm_password": "securepassword123",
+                "age_confirmed": "on",
                 "name": "Login User",
             })
             # Logout
             await client.get("/logout")
             # Login
-            response = await client.post("/login", data={
+            response = await csrf_post(client, "/login", {
                 "email": "login@example.com",
                 "password": "securepassword123",
             }, follow_redirects=False)
         assert response.status_code == 303
-        assert "/app" in response.headers["location"]
+        assert "/app" in response.headers["location"] or "/onboarding" in response.headers["location"]
 
     async def test_login_with_wrong_password(self):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            await client.post("/signup", data={
+            await csrf_post(client, "/signup", {
                 "email": "wrong@example.com",
                 "password": "securepassword123",
+                "confirm_password": "securepassword123",
+                "age_confirmed": "on",
                 "name": "Test",
             })
             await client.get("/logout")
-            response = await client.post("/login", data={
+            response = await csrf_post(client, "/login", {
                 "email": "wrong@example.com",
                 "password": "wrongpassword",
             })

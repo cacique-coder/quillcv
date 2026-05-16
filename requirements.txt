@@ -38,6 +38,7 @@ ruff>=0.15.10
 bandit>=1.9.4
 pip-audit>=2.10.0
 pytest-cov>=7.1.0
+freezegun>=1.5.0
 # LLM response validation
 pydantic>=2.9
 # Dev process orchestration — Procfile.dev runner, foreman-style

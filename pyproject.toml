@@ -37,3 +37,34 @@ skips = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+  "unit: fast, pure-Python tests with no DB or HTTP",
+  "integration: route-level tests that wire up the ASGI app + in-memory DB",
+  "e2e: full-stack browser tests requiring a running uvicorn server",
+]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+omit = [
+  "app/main.py",
+  "app/static/*",
+  "app/templates/*",
+  "alembic/*",
+  "app/web/routes/dev.py",
+  "tests/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:",
+  "\\.\\.\\.",
+]
+
+[tool.coverage.html]
+directory = "tmp/htmlcov"

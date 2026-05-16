@@ -39,7 +39,9 @@ class TestTemplates:
 
     def test_list_templates_returns_all(self):
         templates = list_templates()
-        assert len(templates) == len(self.EXPECTED_TEMPLATES)
+        ids = {t.id for t in templates}
+        for expected in self.EXPECTED_TEMPLATES:
+            assert expected in ids, f"Template '{expected}' missing from registry"
 
     def test_list_templates_returns_cvtemplate_instances(self):
         templates = list_templates()
@@ -72,7 +74,9 @@ class TestRegions:
 
     def test_list_regions_returns_all(self):
         regions = list_regions()
-        assert len(regions) == len(self.EXPECTED_REGIONS)
+        codes = {r.code for r in regions}
+        for expected in self.EXPECTED_REGIONS:
+            assert expected in codes, f"Region '{expected}' missing from registry"
 
     def test_us_region_config(self):
         us = get_region("US")

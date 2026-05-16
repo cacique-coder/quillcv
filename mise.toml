@@ -47,8 +47,20 @@ description = "Check dependencies for known CVEs"
 run = "python -m pip_audit -r requirements.txt"
 
 [tasks.test]
-description = "Run tests with coverage"
-run = "python -m pytest --cov=app --cov-report=term-missing"
+description = "Run unit + integration tests with branch coverage"
+run = "python -m pytest tests/unit tests/integration --cov=app --cov-branch --cov-report=term-missing --cov-report=html"
+
+[tasks."test:unit"]
+description = "Run only unit tests (fast, no DB/HTTP)"
+run = "python -m pytest tests/unit -q --no-cov"
+
+[tasks."test:integration"]
+description = "Run only integration tests (ASGI + in-memory DB)"
+run = "python -m pytest tests/integration -q --no-cov"
+
+[tasks."test:e2e"]
+description = "Run end-to-end tests against a running uvicorn server"
+run = "python -m pytest tests/e2e -q --no-cov"
 
 [tasks.check]
 description = "Run all quality checks (lint + security + audit)"
