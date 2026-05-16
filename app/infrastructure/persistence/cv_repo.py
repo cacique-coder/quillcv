@@ -312,13 +312,21 @@ async def get_saved_cv(
     saved_cv_id: str,
     *,
     pii: dict | None = None,
+    user_id: str | None = None,
 ) -> SavedCV | None:
     """Retrieve a saved CV by ID, decrypt it, and optionally restore PII.
 
+    ``user_id``: when provided, scope the lookup to that owner — the
+                 query returns None if the CV exists but belongs to a
+                 different user. User-facing routes MUST pass this to
+                 prevent IDOR; admin tooling may omit it.
     ``pii``: pass ``request.session.get("pii")`` for user requests.
              Omit (or pass None) for admin requests — placeholders remain.
     """
-    result = await db.execute(select(SavedCV).where(SavedCV.id == saved_cv_id))
+    query = select(SavedCV).where(SavedCV.id == saved_cv_id)
+    if user_id is not None:
+        query = query.where(SavedCV.user_id == user_id)
+    result = await db.execute(query)
     saved = result.scalar_one_or_none()
     if not saved:
         return None

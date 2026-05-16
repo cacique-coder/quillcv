@@ -158,8 +158,10 @@ async def builder_page(request: Request):
 async def builder_edit(cv_id: str, request: Request):
     """Load a saved CV into the builder for editing."""
     pii = request.state.session.get("pii") or {}
+    user = getattr(request.state, "user", None)
+    user_id = user.id if user else None
     async with async_session() as db:
-        saved = await get_saved_cv(db, cv_id, pii=pii)
+        saved = await get_saved_cv(db, cv_id, pii=pii, user_id=user_id)
 
     if not saved:
         from fastapi.responses import RedirectResponse

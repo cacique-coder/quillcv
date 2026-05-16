@@ -300,8 +300,10 @@ async def my_cvs_page(request: Request):
 async def my_cv_preview(request: Request, cv_id: str):
     """Return rendered CV HTML for preview."""
     pii = request.state.session.get("pii") or {}
+    user = getattr(request.state, "user", None)
+    user_id = user.id if user else None
     async with async_session() as db:
-        saved = await get_saved_cv(db, cv_id, pii=pii)
+        saved = await get_saved_cv(db, cv_id, pii=pii, user_id=user_id)
 
     if not saved:
         return Response("CV not found", status_code=404)
@@ -317,8 +319,10 @@ async def my_cv_preview(request: Request, cv_id: str):
 async def my_cv_download(request: Request, cv_id: str):
     """Download a saved CV as PDF."""
     pii = request.state.session.get("pii") or {}
+    user = getattr(request.state, "user", None)
+    user_id = user.id if user else None
     async with async_session() as db:
-        saved = await get_saved_cv(db, cv_id, pii=pii)
+        saved = await get_saved_cv(db, cv_id, pii=pii, user_id=user_id)
 
     if not saved:
         return Response("CV not found", status_code=404)
@@ -347,8 +351,10 @@ async def my_cv_download(request: Request, cv_id: str):
 async def my_cv_download_docx(request: Request, cv_id: str):
     """Download a saved CV as DOCX."""
     pii = request.state.session.get("pii") or {}
+    user = getattr(request.state, "user", None)
+    user_id = user.id if user else None
     async with async_session() as db:
-        saved = await get_saved_cv(db, cv_id, pii=pii)
+        saved = await get_saved_cv(db, cv_id, pii=pii, user_id=user_id)
 
     if not saved:
         return Response("CV not found", status_code=404)
@@ -382,13 +388,14 @@ async def my_cv_download_docx(request: Request, cv_id: str):
 
 async def _load_saved_cv_with_cl(
     db, cv_id: str, pii: dict, *, need_html: bool, need_json: bool,
+    user_id: str | None = None,
 ):
     """Fetch the SavedCV plus decrypted cover-letter html/json from its Job.
 
     Returns ``(saved, cl_html, cl_data)`` or ``None`` if anything required is
-    missing (caller should 404).
+    missing (caller should 404). Pass ``user_id`` to scope to one owner.
     """
-    saved = await get_saved_cv(db, cv_id, pii=pii)
+    saved = await get_saved_cv(db, cv_id, pii=pii, user_id=user_id)
     if not saved or not saved.job_id:
         return None
 
@@ -436,8 +443,10 @@ def _safe_name_from_cv_data(cv_data: dict, default: str = "CV") -> str:
 async def my_cv_cover_letter_pdf(request: Request, cv_id: str):
     """Download the linked job's cover letter as PDF."""
     pii = request.state.session.get("pii") or {}
+    user = getattr(request.state, "user", None)
+    user_id = user.id if user else None
     async with async_session() as db:
-        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=True, need_json=False)
+        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=True, need_json=False, user_id=user_id)
 
     if not bundle:
         return Response("Cover letter not found", status_code=404)
@@ -465,8 +474,10 @@ async def my_cv_cover_letter_docx(request: Request, cv_id: str):
     from app.web.routes.cv import _build_cover_letter_docx_bytes
 
     pii = request.state.session.get("pii") or {}
+    user = getattr(request.state, "user", None)
+    user_id = user.id if user else None
     async with async_session() as db:
-        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=False, need_json=True)
+        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=False, need_json=True, user_id=user_id)
 
     if not bundle:
         return Response("Cover letter not found", status_code=404)
@@ -494,8 +505,10 @@ async def my_cv_cover_letter_docx(request: Request, cv_id: str):
 async def my_cv_all_pdf(request: Request, cv_id: str):
     """Bundle the CV PDF and cover-letter PDF into a single ZIP download."""
     pii = request.state.session.get("pii") or {}
+    user = getattr(request.state, "user", None)
+    user_id = user.id if user else None
     async with async_session() as db:
-        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=True, need_json=False)
+        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=True, need_json=False, user_id=user_id)
 
     if not bundle:
         return Response("Cover letter not found", status_code=404)
@@ -533,8 +546,10 @@ async def my_cv_all_docx(request: Request, cv_id: str):
     from app.web.routes.cv import _build_cover_letter_docx_bytes
 
     pii = request.state.session.get("pii") or {}
+    user = getattr(request.state, "user", None)
+    user_id = user.id if user else None
     async with async_session() as db:
-        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=False, need_json=True)
+        bundle = await _load_saved_cv_with_cl(db, cv_id, pii, need_html=False, need_json=True, user_id=user_id)
 
     if not bundle:
         return Response("Cover letter not found", status_code=404)
