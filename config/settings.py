@@ -53,15 +53,10 @@ def database_config() -> dict:
 def open_signups_enabled() -> bool:
     """Whether the public /signup form may create new accounts.
 
-    When False, the open-signup branch (no invite code) records an
-    Expression of Interest instead of creating an account, and OAuth
-    callbacks reject new users (existing users can still sign in).
-    Invited signups always work regardless of this flag.
-
-    Default: True in development/test, False in production unless the
-    operator explicitly sets ``OPEN_SIGNUPS_ENABLED=true``.
+    Delegates to the runtime feature flag registry so admins can toggle
+    this from /admin/features without a redeploy. The registry default
+    is env-driven: True in development/test, False in production unless
+    ``OPEN_SIGNUPS_ENABLED=true`` is explicitly set.
     """
-    raw = os.environ.get("OPEN_SIGNUPS_ENABLED")
-    if raw is not None:
-        return raw.lower() in {"1", "true", "yes", "on"}
-    return APP_ENV != "production"
+    from app.features import is_enabled
+    return is_enabled("open_signups")

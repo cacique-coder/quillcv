@@ -1,8 +1,9 @@
-{# Shared admin top-nav. Pass `active` (one of: dashboard, requests, users, prompts, invitations). #}
+{# Shared admin top-nav. Pass `active` (one of: dashboard, requests, users, prompts, invitations, features). #}
 <div class="admin-nav">
   <a href="/admin" class="{% if active == 'dashboard' %}active{% endif %}">Dashboard</a>
   <a href="/admin/requests" class="{% if active == 'requests' %}active{% endif %}">All Requests</a>
   <a href="/admin/users" class="{% if active == 'users' %}active{% endif %}">Users</a>
   <a href="/admin/prompts" class="{% if active == 'prompts' %}active{% endif %}">Prompts</a>
   <a href="/admin/invitations" class="{% if active == 'invitations' %}active{% endif %}">Invitations</a>
+  <a href="/admin/features" class="{% if active == 'features' %}active{% endif %}">Features</a>
 </div>

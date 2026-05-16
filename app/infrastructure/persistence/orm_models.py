@@ -355,3 +355,17 @@ class APIRequestLog(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+
+
+class FeatureFlag(Base):
+    """Runtime feature toggle, editable from /admin/features.
+
+    Presence of a row overrides the registry default for ``key``; absence
+    means the registry default applies (often env-driven).
+    """
+    __tablename__ = "feature_flags"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    updated_by: Mapped[str | None] = mapped_column(String(32), nullable=True)

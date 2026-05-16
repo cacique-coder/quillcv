@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block body_layout %}app{% endblock %}
+{% block title %}Admin — Features | QuillCV{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block app_nav %}{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .admin-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+  .admin-sub {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  .admin-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .admin-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .admin-nav a:hover, .admin-nav a.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .flag-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1.5rem;
+    align-items: center;
+  }
+  .flag-key {
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+  .flag-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+  .flag-desc {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 0.6rem;
+  }
+  .flag-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .flag-meta strong { color: var(--text); font-weight: 600; }
+
+  .flag-state {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    min-width: 140px;
+  }
+  .state-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .state-on  { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .state-off { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+
+  .toggle-form { display: inline-flex; gap: 0.4rem; }
+  .toggle-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+  }
+  .toggle-btn.on  { border-color: var(--green); color: var(--green); }
+  .toggle-btn.off { border-color: var(--red);   color: var(--red); }
+  .toggle-btn:hover { opacity: 0.85; }
+</style>
+
+<div class="admin-wrap">
+  {% set active = "features" %}
+  {% include "partials/admin_nav.html" %}
+
+  <h1 class="admin-heading">Admin — Feature Flags</h1>
+  <p class="admin-sub">Toggle features at runtime. Changes apply immediately to new requests.</p>
+
+  {% for flag in flags %}
+    <div class="flag-card">
+      <div>
+        <div class="flag-key">{{ flag.key }}</div>
+        <div class="flag-label">{{ flag.label }}</div>
+        <p class="flag-desc">{{ flag.description }}</p>
+        <div class="flag-meta">
+          <span>Default: <strong>{{ "on" if flag.default else "off" }}</strong></span>
+          {% if flag.override is not none %}
+            <span>Override: <strong>{{ "on" if flag.override else "off" }}</strong></span>
+          {% else %}
+            <span>Override: <strong>none</strong></span>
+          {% endif %}
+          {% if flag.updated_at %}
+            <span>Updated: <strong>{{ flag.updated_at.strftime("%Y-%m-%d %H:%M UTC") }}</strong></span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="flag-state">
+        <span class="state-badge {{ 'state-on' if flag.enabled else 'state-off' }}">
+          {{ "ENABLED" if flag.enabled else "DISABLED" }}
+        </span>
+        <form method="post" action="/admin/features/{{ flag.key }}" class="toggle-form">
+          <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+          <input type="hidden" name="enabled" value="{{ 'false' if flag.enabled else 'true' }}">
+          <button type="submit" class="toggle-btn {{ 'off' if flag.enabled else 'on' }}">
+            {% if flag.enabled %}Disable{% else %}Enable{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

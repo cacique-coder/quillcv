@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import func, or_, select
 
+from app import features as feature_flags
 from app.billing.use_cases.manage_credits import add_credits
 from app.consent.use_cases.record_consent import get_client_ip, get_user_agent, record_consent
 from app.identity.adapters.fastapi_deps import require_auth
@@ -612,3 +613,43 @@ async def admin_prompt_detail(
             "target_email": target_email,
         },
     )
+
+
+# ── Admin: Feature flags ───────────────────────────────────
+
+
+@router.get("/admin/features")
+async def admin_features(request: Request, user: User = Depends(require_auth)):
+    """List registered feature flags with their effective state and override."""
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    flags = await feature_flags.list_flags()
+    return templates.TemplateResponse(
+        "admin_features.html",
+        {
+            "request": request,
+            "user": user,
+            "flags": flags,
+        },
+    )
+
+
+@router.post("/admin/features/{key}")
+async def admin_toggle_feature(
+    request: Request,
+    key: str,
+    enabled: str = Form(...),
+    user: User = Depends(require_auth),
+):
+    """Set a feature flag on or off. ``enabled`` is "true" or "false"."""
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    if key not in feature_flags.REGISTRY:
+        return HTMLResponse(status_code=404)
+
+    new_value = enabled.lower() in {"1", "true", "yes", "on"}
+    await feature_flags.set_flag(key, new_value, updated_by=user.id)
+    logger.info("Admin %s set feature flag %s=%s", user.email, key, new_value)
+    return RedirectResponse("/admin/features", status_code=303)

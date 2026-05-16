@@ -132,11 +132,13 @@ async def _cleanup_stale_payments() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.features import refresh_cache as refresh_feature_flags
     from app.infrastructure.persistence.database import init_db
 
     await init_db()
     await init_session_db()
     await _cleanup_stale_payments()
+    await refresh_feature_flags()
     yield
 
 
@@ -239,3 +241,9 @@ app.include_router(cv.router)
 app.include_router(demo.router)
 app.include_router(photos.router)
 app.include_router(pages_router.router)
+
+# Dev-only routes (component catalogue). Mounted only in local dev so the
+# /dev/* surface never reaches production.
+if app.state.dev_mode:
+    from app.web.routes import dev as dev_router
+    app.include_router(dev_router.router)
