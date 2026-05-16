@@ -303,7 +303,7 @@ async def generate_tailored_cv(
 Rules:
 - Incorporate relevant keywords from the job description naturally
 - Quantify achievements where possible (numbers, percentages, scale)
-- Do NOT fabricate experience — only rephrase and reorganize existing content
+- Do NOT fabricate experience. Only rephrase and reorganize existing content.
 - Tailor the summary to the specific job description
 - Use the candidate's personal voice and values to shape the tone of the summary
 - If references are provided by the candidate, include them exactly as given
@@ -311,7 +311,25 @@ Rules:
 - Use the XYZ formula for bullet points: "Accomplished [X], measured by [Y], by doing [Z]"
 - Prioritize these metric types: revenue impact > cost savings > growth % > time saved > scale/volume > team size
 - Remove red flags: unexplained employment gaps (smooth transitions), outdated tools (10+ years old unless still industry-standard), irrelevant filler roles from early career
-- Eliminate filler phrases — NEVER start bullets with: "Responsible for", "Helped with", "Assisted in", "Worked on", "Involved in". Lead with strong action verbs and measurable impact.
+- Eliminate filler phrases. NEVER start bullets with: "Responsible for", "Helped with", "Assisted in", "Worked on", "Involved in". Lead with strong action verbs and measurable impact.
+
+PUNCTUATION
+- EM-DASHES ARE FORBIDDEN in summary, bullets, and any free-text field. Do not output the em-dash character (—, U+2014). Do not output double-hyphens (--) as a substitute. Use a comma, period, colon, or parentheses instead. (Date ranges in experience entries use the region-specified separator and are not affected by this rule.)
+
+COMPRESSION (anti-bloat — these rules override verbose phrasing in the source CV)
+- Collapse compound spec chains into the canonical umbrella term. Examples:
+    "OAuth 2.0/2.1 + OpenID Connect + PKCE, with RFC-compliant discovery endpoints (RFC 8414/9728)"
+      → "OAuth 2.1 + OIDC" (or "modern OAuth/OIDC stack")
+    "Kubernetes + Helm + Kustomize + ArgoCD" → "Kubernetes (Helm/ArgoCD)"
+    "PostgreSQL + Redis + Elasticsearch + Kafka" → keep all only if each is independently load-bearing in the bullet
+- Maximum TWO technical specs or acronyms per phrase. If the source CV stacks more, pick the two highest-signal ones for the role.
+- Never quote RFC numbers, version pairs ("2.0/2.1"), or implementation details ("PKCE", "discovery endpoints") in the Summary. They belong in at most one Experience bullet, and only if directly matching a JD requirement.
+- The source CV's phrasing is UNTRUSTED for style. Treat its content as facts to be paraphrased, not phrases to be echoed.
+
+NAME ONCE (anti-repetition across sections)
+- Each named technical accomplishment (e.g., "OAuth migration on KiteTimer", "MCP server", "Janus platform") should appear in AT MOST ONE place in the CV — either Summary OR a single Experience bullet, not both verbatim.
+- Summary references the accomplishment abstractly ("identity-layer rebuild on production SaaS"); the matching Experience bullet names it concretely ("OAuth 2.1 migration on KiteTimer, replacing static API keys").
+- If a Skills section lists "OAuth", do not also list "OpenID Connect", "PKCE", "OIDC discovery" as separate items. Pick the most-recognized umbrella term.
 
 OUTPUT CONSTRAINT: Keep your JSON response concise. Limit experience to the 5-6 most relevant roles, \
 3-5 bullets per role (1-2 lines each), and cap skills at 20 items. \
@@ -454,56 +472,39 @@ async def categorize_missing_keywords(
     )
 
     try:
+        from app.cv_generation.schemas import KeywordCategorizationSchema
+        from app.infrastructure.llm.parsing import parse_llm_json
+
         result = await llm.generate(prompt)
-        data = _extract_json_object(result.text or "")
-        if not isinstance(data, dict):
-            logger.warning("categorize_missing_keywords: LLM returned non-dict — falling back to {}")
+        parsed = parse_llm_json(result.text or "", KeywordCategorizationSchema, context="categorize_missing_keywords")
+        if parsed is None:
             return {}
         # Normalise category names back to canonical casing
-        return {
-            kw: canonical.get(cat.strip().lower(), cat)
-            for kw, cat in data.items()
-            if isinstance(kw, str) and isinstance(cat, str)
-        }
+        return {kw: canonical.get(cat.strip().lower(), cat) for kw, cat in parsed.root.items()}
     except Exception:
         logger.warning("categorize_missing_keywords: failed", exc_info=True)
         return {}
 
 
 def _parse_cv_json(raw: str) -> dict | None:
-    """Parse the AI response into structured CV data."""
+    """Parse the AI response into structured CV data via Pydantic."""
+    from app.cv_generation.schemas import CVDataSchema
+    from app.infrastructure.llm.parsing import parse_llm_json
+
     logger.info("Parsing CV JSON raw_len=%d", len(raw))
-    data = _extract_json_object(raw)
-    if data is None:
-        logger.error(
-            "Failed to parse CV JSON: head=%r tail=%r",
-            raw[:200], raw[-200:],
-        )
+    parsed = parse_llm_json(raw, CVDataSchema, context="anthropic_generator.cv")
+    if parsed is None:
         return None
 
-    # Ensure required fields have defaults
-    data.setdefault("name", "")
-    data.setdefault("title", "")
-    data.setdefault("email", "")
-    data.setdefault("phone", "")
-    data.setdefault("location", "")
-    data.setdefault("linkedin", "")
-    data.setdefault("github", "")
-    data.setdefault("portfolio", "")
-    data.setdefault("summary", "")
-    data.setdefault("experience", [])
-    data.setdefault("skills", [])
-    data.setdefault("skills_grouped", [])
+    data = parsed.model_dump()
 
     # Safety check: empty skills tanks ATS scores
-    if not data["skills"]:
+    if not data.get("skills"):
         logger.warning("LLM returned empty skills array — ATS score will suffer")
-    data.setdefault("education", [])
-    data.setdefault("certifications", [])
-    data.setdefault("projects", [])
-    data.setdefault("references", [])
 
-    # Defaults for extra section fields (lists default to [], strings to "")
+    # Defaults for extra section fields the prompt may dynamically include.
+    # CVDataSchema has extra="allow" so any present extras are preserved; we
+    # only need to seed defaults for the ones the LLM omitted.
     _list_extras = [
         "publications", "grants", "teaching", "conferences", "licenses",
         "clinical_experience", "continuing_education", "bar_admissions",
@@ -522,4 +523,23 @@ def _parse_cv_json(raw: str) -> dict | None:
     for key in _string_extras:
         data.setdefault(key, "")
 
-    return data
+    return _strip_em_dashes(data)
+
+
+_EM_DASH_PATTERN = re.compile(r"\s*—\s*|\s*--\s*")
+
+
+def _strip_em_dashes(value):
+    """Recursively replace em-dashes (—) and ASCII double-hyphens (--) with ", ".
+
+    Em-dashes are the strongest AI-prose tell; the prompt forbids them but we
+    sanitise as a safety net. Collapses surrounding whitespace. En-dashes (–) are
+    LEFT INTACT so date ranges like "Jan 2020 – Dec 2022" survive untouched.
+    """
+    if isinstance(value, str):
+        return _EM_DASH_PATTERN.sub(", ", value)
+    if isinstance(value, list):
+        return [_strip_em_dashes(item) for item in value]
+    if isinstance(value, dict):
+        return {k: _strip_em_dashes(v) for k, v in value.items()}
+    return value

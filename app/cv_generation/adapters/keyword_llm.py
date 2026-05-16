@@ -3,10 +3,11 @@
 Replaces regex heuristics with a single Claude call that understands
 job description structure and returns categorized, CV-relevant keywords.
 """
-import json
 import logging
 
+from app.cv_generation.schemas import KeywordCategoriesSchema
 from app.infrastructure.llm.client import LLMClient, set_llm_context
+from app.infrastructure.llm.parsing import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -57,23 +58,15 @@ async def extract_keywords_llm(
 
     try:
         result = await llm.generate(prompt)
-        raw = result.text.strip()
-
-        # Strip markdown fences if present
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[1]
-            if "```" in raw:
-                raw = raw[:raw.rfind("```")]
-            raw = raw.strip()
-
-        categories = json.loads(raw)
+        parsed = parse_llm_json(result.text, KeywordCategoriesSchema, context="keyword_extractor")
+        if parsed is None:
+            return None
+        categories = parsed.root
 
         # Build flat keyword list for ATS matching
         all_keywords = []
         seen = set()
-        for _category, keywords in categories.items():
-            if not isinstance(keywords, list):
-                continue
+        for keywords in categories.values():
             for kw in keywords:
                 kw_lower = kw.lower().strip()
                 if kw_lower and kw_lower not in seen:

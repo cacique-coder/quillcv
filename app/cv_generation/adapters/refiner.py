@@ -139,15 +139,14 @@ async def apply_review_fixes(
     )
 
     try:
-        result = await llm.generate(prompt)
-        raw = result.text.strip()
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[1]
-            if "```" in raw:
-                raw = raw[:raw.rfind("```")]
-            raw = raw.strip()
+        from app.cv_generation.schemas import CVDataSchema
+        from app.infrastructure.llm.parsing import parse_llm_json
 
-        updated = json.loads(raw)
+        result = await llm.generate(prompt)
+        parsed = parse_llm_json(result.text or "", CVDataSchema, context="refiner")
+        if parsed is None:
+            return None
+        updated = parsed.model_dump()
 
         # Restore PII tokens with real values before returning
         updated = redactor.restore(updated)

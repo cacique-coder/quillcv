@@ -100,17 +100,14 @@ async def review_cv_quality(
     )
 
     try:
-        result = await llm.generate(prompt)
-        raw = result.text.strip()
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[1]
-            if "```" in raw:
-                raw = raw[:raw.rfind("```")]
-            raw = raw.strip()
+        from app.cv_generation.schemas import QualityReviewSchema
+        from app.infrastructure.llm.parsing import parse_llm_json
 
-        data = json.loads(raw)
-        data.setdefault("flags", [])
-        data.setdefault("summary", "")
+        result = await llm.generate(prompt)
+        parsed = parse_llm_json(result.text, QualityReviewSchema, context="quality_reviewer")
+        if parsed is None:
+            return None
+        data = parsed.model_dump()
 
         # Restore tokens in flags so downstream consumers see real CV text
         data = redactor.restore(data)

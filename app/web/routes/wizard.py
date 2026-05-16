@@ -554,12 +554,19 @@ async def step2_save(
     )
 
     # ------------------------------------------------------------------
-    # Persist references to the PII vault so they pre-fill on future
-    # wizard runs. Voice fields move to step 3 (Personalization).
+    # Persist identity fields + references to the PII vault so they
+    # pre-fill on future wizard runs. step2() declares the vault is
+    # authoritative for these fields, so writes here close the loop.
+    # Voice fields move to step 3 (Personalization).
     # ------------------------------------------------------------------
     if user_id:
         from app.pii.adapters.vault import upsert_vault
         pii = request.state.session.get("pii") or {}
+        pii["full_name"] = full_name.strip()
+        pii["email"] = email.strip()
+        pii["phone"] = normalize_phone(phone)
+        pii["nationality"] = nationality.strip()
+        pii["marital_status"] = marital_status
         pii["references"] = references
         password = request.state.session.get("_pii_password")
         async with async_session() as db:
@@ -626,6 +633,7 @@ async def step3_save(
     self_description: str = Form(""),
     values: str = Form(""),
     offer_appeal: str = Form(""),
+    featured_achievement: str = Form(""),
 ):
     """Save voice fields and move to step 4 (Job & CV)."""
     attempt = _get_or_create_attempt(request)
@@ -634,6 +642,7 @@ async def step3_save(
         self_description=self_description,
         values=values,
         offer_appeal=offer_appeal,
+        featured_achievement=featured_achievement,
         step=4,
     )
 
@@ -889,18 +898,16 @@ Respond with ONLY valid JSON, no markdown fences, no extra text:
 Pick exactly 3 templates. The first should be the best match. Consider the candidate's likely industry and experience level based on the job description."""
 
     try:
-        raw = (await llm.generate(prompt)).text.strip()
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[1]
-            if raw.endswith("```"):
-                raw = raw[:raw.rfind("```")]
-            raw = raw.strip()
-        result = json.loads(raw)
-        valid_ids = {t.id for t in available}
-        recommended = [tid for tid in result.get("recommended", []) if tid in valid_ids]
-        reason = result.get("reason", "")
-        if recommended:
-            return recommended[:3], reason
+        from app.cv_generation.schemas import TemplateRecommendationSchema
+        from app.infrastructure.llm.parsing import parse_llm_json
+
+        raw = (await llm.generate(prompt)).text
+        parsed = parse_llm_json(raw, TemplateRecommendationSchema, context="wizard.template_rec")
+        if parsed is not None:
+            valid_ids = {t.id for t in available}
+            recommended = [tid for tid in parsed.recommended if tid in valid_ids]
+            if recommended:
+                return recommended[:3], parsed.reason
     except Exception:
         logger.exception("AI template recommendation failed, using fallback")
 
