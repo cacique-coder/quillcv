@@ -10,7 +10,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 
-from app.billing.use_cases.manage_credits import add_credits, get_balance
+from app.billing.use_cases.manage_credits import add_credits
 from app.identity.adapters.fastapi_deps import get_current_user
 from app.identity.adapters.token_utils import create_access_token, hash_password
 from app.identity.use_cases.authenticate import (
@@ -216,11 +216,6 @@ async def signup_submit(
         request.state.session["_pii_password"] = password
         request.state.session["pii_onboarded"] = False  # New user — needs onboarding
 
-        # Seed credit balance in session so the nav bar reflects the granted credits
-        # without an extra DB hit on every request.
-        async with async_session() as db:
-            request.state.session["cached_balance"] = await get_balance(db, new_user.id)
-
         logger.info("Invited signup: user %s created via invitation %s", new_user.id, invite_code)
 
         from app.infrastructure.instrumentation import record_custom_event
@@ -358,9 +353,6 @@ async def signup_submit(
     request.state.session["_pii_password"] = password
     request.state.session["pii_onboarded"] = False
 
-    async with async_session() as db:
-        request.state.session["cached_balance"] = await get_balance(db, new_user.id)
-
     logger.info("Open signup: user %s created", new_user.id)
 
     from app.infrastructure.instrumentation import record_custom_event
@@ -443,10 +435,6 @@ async def login_submit(
     # Mark whether onboarding has already been completed.
     # vault_existed == True means they completed onboarding in a prior session.
     request.state.session["pii_onboarded"] = vault_existed
-
-    # Seed credit balance in session to avoid a DB hit on every request.
-    async with async_session() as db:
-        request.state.session["cached_balance"] = await get_balance(db, user.id)
 
     # Auto-redeem invite if one was passed through the login flow.
     if invite_code:
@@ -565,10 +553,6 @@ async def google_callback(request: Request):
             },
         )
 
-    # Seed credit balance in session.
-    async with async_session() as db:
-        request.state.session["cached_balance"] = await get_balance(db, user.id)
-
     if not vault_existed:
         return RedirectResponse("/wizard/step/1", status_code=303)
     return RedirectResponse("/app", status_code=303)
@@ -666,10 +650,6 @@ async def github_callback(request: Request):
                 "method": "github",
             },
         )
-
-    # Seed credit balance in session.
-    async with async_session() as db:
-        request.state.session["cached_balance"] = await get_balance(db, user.id)
 
     if not vault_existed:
         return RedirectResponse("/wizard/step/1", status_code=303)

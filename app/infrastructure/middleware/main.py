@@ -132,11 +132,14 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 class AuthContextMiddleware(BaseHTTPMiddleware):
     """Inject authenticated user and credit balance into request.state for every request.
 
-    This eliminates the need for each router to call get_current_user() and
-    get_balance() solely for populating nav template variables.  Routers that
-    need the user for *business logic* (auth guards, redirects, DB writes) may
-    still call get_current_user() directly — the result is cheap because the
-    session is already loaded by SessionMiddleware at this point.
+    Balance is read directly from the DB on every authenticated request — one
+    indexed PK lookup per request.  There is no session cache: this guarantees
+    that admin grants, webhook credits, and any out-of-band balance change are
+    visible to the user immediately without requiring a re-login.
+
+    Routers that need the user for *business logic* (auth guards, redirects,
+    DB writes) may still call get_current_user() directly — the result is cheap
+    because the session is already loaded by SessionMiddleware at this point.
     """
 
     async def dispatch(self, request: Request, call_next):
@@ -150,7 +153,14 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
             user = await get_current_user(request)
             request.state.user = user
             if user:
-                request.state.balance = request.state.session.get("cached_balance", 0)
+                try:
+                    from app.billing.use_cases.manage_credits import get_balance
+                    from app.infrastructure.persistence.database import async_session
+
+                    async with async_session() as db:
+                        request.state.balance = await get_balance(db, user.id)
+                except Exception:
+                    logger.exception("Failed to read credit balance for user %s", user.id)
                 user_id_var.set(user.id)
                 from app.infrastructure.instrumentation import add_custom_attributes
                 add_custom_attributes({"user_id": user.id})

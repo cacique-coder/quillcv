@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
-from app.billing.use_cases.manage_credits import add_credits, get_balance
+from app.billing.use_cases.manage_credits import add_credits
 from app.identity.adapters.fastapi_deps import get_current_user, require_auth
 from app.infrastructure.persistence.database import async_session
 from app.infrastructure.persistence.orm_models import Invitation, User
@@ -89,10 +89,6 @@ async def invite_redeem(request: Request, code: str, user: User = Depends(requir
                 "invitation_code": code,
             },
         )
-
-        # Refresh cached balance in session so the nav bar updates immediately.
-        new_balance = await get_balance(db, user.id)
-        request.state.session["cached_balance"] = new_balance
 
     logger.info("Invitation %s redeemed by user %s — %d credits granted", code, user.id, invitation.credits)
 
