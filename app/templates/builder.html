@@ -5,11 +5,16 @@
 
 {% block head_extra %}
 <meta name="robots" content="noindex, nofollow">
-<link rel="stylesheet" href="/static/builder.css?v=9">
+<link rel="stylesheet" href="/static/builder.css?v=10">
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     var c = document.getElementById('main');
     if (c) c.classList.add('wide');
+    {% if is_final_review | default(false) %}
+    /* Final Review mode: suppress edit affordances on the canvas */
+    var sheet = document.getElementById('builder-sheet');
+    if (sheet) sheet.classList.add('final-review-mode');
+    {% endif %}
   });
 </script>
 {% endblock %}
@@ -95,53 +100,46 @@
 {# ── Final Review banner ──────────────────────────────────────────── #}
 {% if is_final_review | default(false) %}
 <div class="final-review-banner" role="alert" aria-live="polite">
-  <div class="final-review-banner__body">
-    {% if flash %}
-    <div class="final-review-banner__flash" role="status">{{ flash }}</div>
-    {% endif %}
-    <div class="final-review-banner__head">
-      <svg class="final-review-banner__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 2 C8 2.2, 4.5 4.5, 3 8 C1.5 11.5, 2 15.5, 4.5 18.5 C7 21.5, 11 22.8, 15 21.5 C19 20.2, 21.8 16.5, 22 12.5 C22.2 8.5, 20 4.8, 16.5 3 C15 2.2, 13.5 2.3, 12 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        <path d="M12 8 L12 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
-      </svg>
-      <h2 class="final-review-banner__title">Final Review — required before download</h2>
-    </div>
-    <p class="final-review-banner__text">
-      AI gave you a strong draft tailored to the job. This last pass is where it becomes <em>yours</em>.
-      We require it because this is the step that creates the biggest impact — the difference between
-      a generic AI CV and one that actually represents you.
-      <strong>Read every line. Edit anything that doesn't sound like you. Confirm when it's ready.</strong>
-    </p>
-  </div>
-
-  {# Confirm gate — unlocks download. Only shown before confirmation. #}
-  {% if not (final_review_completed | default(false)) %}
-  <div class="final-review-confirm" id="final-review-confirm">
-    <form method="post" action="/confirm-review">
-      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-      <label class="final-review-confirm__label">
-        <input type="checkbox" name="review_confirmed" value="1"
-               id="review-confirm-check"
-               class="final-review-confirm__check"
-               onchange="document.getElementById('confirm-review-btn').disabled = !this.checked;">
-        <span class="final-review-confirm__text">
-          I've reviewed every section and this CV represents me — ready to export
-        </span>
-      </label>
-      <button type="submit" id="confirm-review-btn"
-              class="btn btn-accent final-review-confirm__btn"
-              disabled>
-        Confirm &amp; unlock download
-      </button>
-    </form>
-  </div>
-  {% else %}
-  <div class="final-review-confirm final-review-confirm--done">
-    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8 L6 12 L14 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span>Review confirmed. Your downloads are now unlocked.</span>
-  </div>
+  {% if flash %}
+  <div class="final-review-banner__flash" role="status">{{ flash }}</div>
   {% endif %}
+  <div class="final-review-banner__body">
+    <div class="final-review-banner__copy">
+      <p class="final-review-banner__title">Final Review — required before download</p>
+      <p class="final-review-banner__text">
+        AI gave you a strong draft. This last pass is where it becomes <em>yours</em> — and it's the step that makes the biggest difference.
+        <strong>Read every line. Edit anything that doesn't sound like you. Confirm when ready.</strong>
+      </p>
+    </div>
+
+    {# Confirm gate — right column at desktop, bottom row on mobile #}
+    {% if not (final_review_completed | default(false)) %}
+    <div class="final-review-confirm" id="final-review-confirm">
+      <form method="post" action="/confirm-review">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+        <label class="final-review-confirm__label">
+          <input type="checkbox" name="review_confirmed" value="1"
+                 id="review-confirm-check"
+                 class="final-review-confirm__check"
+                 onchange="document.getElementById('confirm-review-btn').disabled = !this.checked;">
+          <span class="final-review-confirm__text">
+            I've reviewed every section and this CV represents me — ready to export
+          </span>
+        </label>
+        <button type="submit" id="confirm-review-btn"
+                class="btn btn-accent final-review-confirm__btn"
+                disabled>
+          Confirm &amp; unlock download
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <div class="final-review-confirm final-review-confirm--done">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8 L6 12 L14 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Review confirmed. Your downloads are now unlocked.</span>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endif %}
 {# /Final Review banner #}

@@ -908,3 +908,24 @@
   .sheet { padding: 24px 16px; }
   .exp-zone, .edu-zone { padding-top: 32px; }
 }
+
+/* ── Final Review mode — suppress edit affordances ──────────────────────
+ * When the page carries .is-final-review on <body> (or the builder root),
+ * hide all "+" insert/add markers so the canvas looks close to the final
+ * output. The inline inputs remain — the user can still edit, but the
+ * chrome doesn't make the CV look broken in screenshots / review.
+ * Applied via the .final-review-mode class set on #builder-sheet by JS
+ * (or directly on the body when is_final_review=True from the server).
+ */
+.final-review-mode .add-handle,
+.final-review-mode .role-toolbar,
+.final-review-mode .sheet ul.bullets li[data-empty="1"],
+.final-review-mode .sheet-photo[data-empty="1"] {
+  display: none !important;
+}
+/* Hide the empty-sentinel "+" placeholder text */
+.final-review-mode .sheet ul.bullets li[data-empty="1"]::before {
+  content: none;
+}
+/* Hide the bullet remove buttons — review mode is read-friendly, not edit-heavy */
+.final-review-mode .bullet-remove { display: none !important; }
