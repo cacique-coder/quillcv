@@ -5,6 +5,7 @@ Covers:
 - Download endpoints redirect to Final Review when final_review_completed=False.
 - POST /confirm-review flips the flag and unlocks downloads.
 - After confirmation, download endpoints proceed normally.
+- Banner markup: correct element tags, copy, and absence of legacy h2/icon.
 """
 
 from __future__ import annotations
@@ -158,6 +159,68 @@ class TestFinalReviewPage:
         # Without attempt_id in session, redirects — that's the expected safe behaviour.
         assert resp.status_code in (200, 302, 303)
         assert resp.status_code != 500
+
+
+# ---------------------------------------------------------------------------
+# Banner markup assertions
+# ---------------------------------------------------------------------------
+
+
+class TestFinalReviewBannerMarkup:
+    """Static analysis of banner HTML structure.
+
+    These tests parse the builder.html template string directly so they run
+    without a running server — they verify the markup decisions made in the
+    polish/final-review-banner change and will catch regressions if someone
+    accidentally reverts to an <h2> or reintroduces the icon.
+    """
+
+    def _banner_html(self) -> str:
+        """Return the raw Jinja source of builder.html as a string for pattern checks."""
+        import pathlib
+        path = pathlib.Path(__file__).parent.parent.parent / "app" / "templates" / "builder.html"
+        return path.read_text()
+
+    def test_banner_title_uses_p_not_h2(self):
+        """Title must be a <p> so the global h2 font-size rule cannot override it."""
+        html = self._banner_html()
+        assert '<p class="final-review-banner__title">' in html, (
+            "Banner title must be a <p> element to avoid base.css h2 cascade conflict"
+        )
+        assert '<h2 class="final-review-banner__title">' not in html, (
+            "Banner title must NOT be an h2 — base.css sets h2 to clamp(28px, …) which dominates"
+        )
+
+    def test_banner_icon_removed(self):
+        """The decorative SVG icon inside .final-review-banner__head must be gone."""
+        html = self._banner_html()
+        assert 'final-review-banner__icon' not in html, (
+            "Banner icon was removed in the polish pass — do not re-add it"
+        )
+
+    def test_banner_copy_is_two_sentences(self):
+        """Tightened copy: two sentences max, ending with 'Confirm when ready.'"""
+        html = self._banner_html()
+        assert "Confirm when ready." in html, (
+            "Banner copy must end with 'Confirm when ready.' (tightened wording)"
+        )
+        assert "We require it because this is the step that creates the biggest impact" not in html, (
+            "Old verbose body copy must be removed"
+        )
+
+    def test_confirm_form_present(self):
+        """Confirm form must still be present for the gate to work."""
+        html = self._banner_html()
+        assert 'action="/confirm-review"' in html
+        assert 'class="final-review-confirm__check"' in html
+        assert 'id="confirm-review-btn"' in html
+
+    def test_final_review_mode_class_injected_by_js(self):
+        """JS must add .final-review-mode to #builder-sheet in final-review context."""
+        html = self._banner_html()
+        assert "final-review-mode" in html, (
+            "builder.html must inject .final-review-mode on #builder-sheet via JS"
+        )
 
 
 # ---------------------------------------------------------------------------
