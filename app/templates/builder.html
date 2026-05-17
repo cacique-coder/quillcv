@@ -5,7 +5,7 @@
 
 {% block head_extra %}
 <meta name="robots" content="noindex, nofollow">
-<link rel="stylesheet" href="/static/builder.css?v=10">
+<link rel="stylesheet" href="/static/builder.css?v=11">
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     var c = document.getElementById('main');
@@ -99,6 +99,7 @@
 
 {# ── Final Review banner ──────────────────────────────────────────── #}
 {% if is_final_review | default(false) %}
+<div class="final-review-banner-row">
 <div class="final-review-banner" role="alert" aria-live="polite">
   {% if flash %}
   <div class="final-review-banner__flash" role="status">{{ flash }}</div>
@@ -146,6 +147,7 @@
     {% endif %}
   </div>
 </div>
+</div>{# /final-review-banner-row #}
 {% endif %}
 {# /Final Review banner #}
 
