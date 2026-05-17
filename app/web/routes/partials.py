@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 async def nav_partial(request: Request):
     """Return the auth-aware nav links fragment. Never cached."""
     user = await get_current_user(request)
-    balance = 0
-    if user:
-        balance = request.state.session.get("cached_balance", 0)
+    # AuthContextMiddleware reads credit balance directly from the DB on every
+    # request — no session cache, always current.
+    balance = getattr(request.state, "balance", 0)
 
     html = templates.TemplateResponse(
         "partials/nav_links.html",

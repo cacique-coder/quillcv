@@ -13,9 +13,6 @@ from app.billing.entities import (
     user_can_see_pack,
 )
 from app.billing.use_cases.grant_purchase_credits import grant_purchase_credits
-from app.billing.use_cases.manage_credits import (
-    get_balance,
-)
 from app.billing.use_cases.reverse_purchase_credits import reverse_purchase_credits
 from app.identity.adapters.fastapi_deps import require_auth
 from app.identity.use_cases.authenticate import count_alpha_users
@@ -314,10 +311,6 @@ async def checkout_success(
                             },
                         )
 
-                        # Refresh cached balance in session so nav bar updates immediately.
-                        new_balance = await get_balance(db, user.id)
-                        request.state.session["cached_balance"] = new_balance
-
                         # Send payment confirmation email — non-fatal on failure
                         try:
                             await send_payment_confirmation_email(
@@ -329,12 +322,6 @@ async def checkout_success(
                             )
                         except Exception:
                             logger.exception("Failed to send payment confirmation email to %s", user.email)
-                    else:
-                        # Already granted (likely by webhook). Refresh
-                        # the cached balance so the success page still
-                        # renders correct numbers in the nav bar.
-                        new_balance = await get_balance(db, user.id)
-                        request.state.session["cached_balance"] = new_balance
         except Exception:
             logger.exception("Error verifying checkout session")
 
