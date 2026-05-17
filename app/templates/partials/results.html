@@ -277,29 +277,17 @@
 
         <!-- Generated CV Preview -->
         <div class="generated-cv">
-            <div class="download-actions">
-                <a href="/download-pdf" class="btn-download" download>
-                    <span class="download-icon">&#8681;</span> Download PDF
+            {# Final Review CTA — the only path to download. No skip affordance. #}
+            <div class="final-review-cta">
+                <a href="/final-review" class="btn btn-accent btn-lg btn-full final-review-cta__btn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M2 8 L7 13 L14 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Final Review (required) &rarr;
                 </a>
-                <a href="/download-docx" class="btn-download btn-download--secondary" download>
-                    <span class="download-icon">&#8681;</span> Download DOCX
-                </a>
-                {% if cover_letter %}
-                <a href="/download-cover-letter-pdf" class="btn-download" download>
-                    <span class="download-icon">&#8681;</span> Cover letter PDF
-                </a>
-                <a href="/download-cover-letter-docx" class="btn-download btn-download--secondary" download>
-                    <span class="download-icon">&#8681;</span> Cover letter DOCX
-                </a>
-                <a href="/download-all-pdf" class="btn-download btn-download--bundle" download
-                   title="Download CV + Cover Letter as a ZIP of two PDFs">
-                    <span class="download-icon">&#8681;</span> Both as PDF (.zip)
-                </a>
-                <a href="/download-all-docx" class="btn-download btn-download--bundle btn-download--secondary" download
-                   title="Download CV + Cover Letter as a ZIP of two DOCX files">
-                    <span class="download-icon">&#8681;</span> Both as DOCX (.zip)
-                </a>
-                {% endif %}
+                <p class="final-review-cta__hint">
+                    Review and confirm your CV before downloading. This is the step that makes the biggest difference.
+                </p>
             </div>
             <div class="cv-preview">
                 {{ generated_cv | safe }}
@@ -314,29 +302,9 @@
                 <span aria-hidden="true">←</span> Change template
             </button>
             <div class="results-action-downloads">
-                <a href="/download-pdf" class="btn btn-accent" download>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                        <path d="M8 2 L8 11 M4 7 L8 11 L12 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M3 13 L13 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                    </svg>
-                    Download PDF
+                <a href="/final-review" class="btn btn-accent">
+                    Final Review (required) &rarr;
                 </a>
-                <a href="/download-docx" class="btn" download>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                        <path d="M8 2 L8 11 M4 7 L8 11 L12 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M3 13 L13 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                    </svg>
-                    DOCX
-                </a>
-                {% if cover_letter %}
-                <a href="/download-cover-letter-pdf" class="btn" download>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                        <rect x="3" y="2" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/>
-                        <path d="M5 6 L11 6 M5 9 L11 9 M5 12 L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                    </svg>
-                    Cover letter
-                </a>
-                {% endif %}
             </div>
         </div>
 
@@ -353,19 +321,8 @@
                     </span>
                 </h2>
                 <div class="download-actions">
-                    <a href="/download-cover-letter-pdf" class="btn-download" download>
-                        <span class="download-icon">&#8681;</span> Download PDF
-                    </a>
-                    <a href="/download-cover-letter-docx" class="btn-download btn-download--secondary" download>
-                        <span class="download-icon">&#8681;</span> Download DOCX
-                    </a>
-                    <a href="/download-all-pdf" class="btn-download btn-download--bundle" download
-                       title="Download CV + Cover Letter as a ZIP of two PDFs">
-                        <span class="download-icon">&#8681;</span> Both as PDF (.zip)
-                    </a>
-                    <a href="/download-all-docx" class="btn-download btn-download--bundle btn-download--secondary" download
-                       title="Download CV + Cover Letter as a ZIP of two DOCX files">
-                        <span class="download-icon">&#8681;</span> Both as DOCX (.zip)
+                    <a href="/final-review" class="btn-download">
+                        <span class="download-icon">&#8627;</span> Final Review (required) &rarr;
                     </a>
                 </div>
             </div>
@@ -382,19 +339,8 @@
                 <span aria-hidden="true">←</span> Change template
             </button>
             <div class="results-action-downloads">
-                <a href="/download-cover-letter-pdf" class="btn btn-accent" download>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                        <path d="M8 2 L8 11 M4 7 L8 11 L12 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M3 13 L13 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                    </svg>
-                    Download PDF
-                </a>
-                <a href="/download-cover-letter-docx" class="btn" download>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                        <path d="M8 2 L8 11 M4 7 L8 11 L12 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M3 13 L13 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                    </svg>
-                    DOCX
+                <a href="/final-review" class="btn btn-accent">
+                    Final Review (required) &rarr;
                 </a>
             </div>
         </div>

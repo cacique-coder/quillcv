@@ -2904,3 +2904,159 @@ select.input-field {
 .profile-check .hint {
     margin: 0;
 }
+
+/* ─── Final Review — banner + confirm gate ────────────────────────────────
+ * Used in builder.html when is_final_review=True.
+ * Positioned above the builder form, full-width within the content area.
+ * Tokens: --accent / --accent-wash / --ink / --text-muted / --rule
+ */
+.final-review-banner {
+    border: 2px solid var(--accent);
+    border-radius: var(--r-2, 8px);
+    background: var(--accent-wash, rgba(107, 78, 49, 0.06));
+    padding: 20px 24px 16px;
+    margin-bottom: 24px;
+}
+.final-review-banner__flash {
+    background: var(--warn-wash, rgba(230, 150, 50, 0.12));
+    border: 1px solid var(--warn, #c87837);
+    border-radius: var(--r-1, 6px);
+    padding: 8px 12px;
+    margin-bottom: 14px;
+    font-size: 0.875rem;
+    color: var(--ink);
+}
+.final-review-banner__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.final-review-banner__icon {
+    flex-shrink: 0;
+    color: var(--accent);
+    opacity: 0.85;
+}
+.final-review-banner__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--display, var(--serif, serif));
+    color: var(--ink);
+    line-height: 1.3;
+}
+.final-review-banner__text {
+    margin: 0 0 16px;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+}
+.final-review-banner__text em {
+    color: var(--ink);
+    font-style: italic;
+}
+.final-review-banner__text strong {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+/* Confirm gate panel */
+.final-review-confirm {
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.final-review-confirm__label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+}
+.final-review-confirm__check {
+    flex-shrink: 0;
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+}
+.final-review-confirm__text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--ink);
+    font-weight: 500;
+}
+.final-review-confirm__btn {
+    align-self: flex-start;
+    min-width: 220px;
+}
+.final-review-confirm--done {
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--green, #22c55e);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Results page CTA — replaces the old download buttons */
+.final-review-cta {
+    padding: 20px 0 16px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 20px;
+}
+.final-review-cta__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    max-width: 380px;
+    width: 100%;
+}
+.final-review-cta__hint {
+    margin: 10px 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Topbar badges */
+.final-review-locked-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-1, 6px);
+    background: var(--surface-2, rgba(0,0,0,0.03));
+}
+.final-review-confirmed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--green, #16a34a);
+    padding: 4px 10px;
+    border: 1px solid rgba(22, 163, 74, 0.3);
+    border-radius: var(--r-1, 6px);
+    background: rgba(22, 163, 74, 0.06);
+}
+
+/* Wizard step — Final Review critical variant */
+.wiz-tab--final-review {
+    border-left: 2px solid var(--accent) !important;
+}
+.wiz-tab--final-review.on {
+    background: var(--accent-wash, rgba(107, 78, 49, 0.07)) !important;
+    font-weight: 700;
+}
+.wiz-tab--final-review .t {
+    font-weight: 600;
+    color: var(--accent);
+}

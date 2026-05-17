@@ -5,6 +5,7 @@
     (4, "iv", "Job & CV"),
     (5, "v", "Template"),
     (6, "vi", "Generate"),
+    (7, "vii", "Final Review (required)"),
 ] %}
 
 {# Wizard header — shown from step 4+ when job or region info is available #}
@@ -37,7 +38,28 @@
 <div class="wiz-tabs">
     {% for num, roman, label in steps %}
     {% set state = "done" if step > num else ("on" if step == num else "") %}
-    {% if state == "done" %}
+    {% set is_final_review_step = (num == 7) %}
+    {% if is_final_review_step %}
+        {# Final Review step — always rendered as a special CTA, never a back-nav link #}
+        {% if state == "done" %}
+        <a class="wiz-tab wiz-tab--final-review done"
+           href="/final-review"
+           title="Return to Final Review">
+            <div class="n">{{ roman }}.</div>
+            <div class="t">{{ label }}</div>
+        </a>
+        {% elif state == "on" %}
+        <div class="wiz-tab wiz-tab--final-review on" aria-current="step">
+            <div class="n">{{ roman }}.</div>
+            <div class="t">{{ label }}</div>
+        </div>
+        {% else %}
+        <div class="wiz-tab wiz-tab--final-review">
+            <div class="n">{{ roman }}.</div>
+            <div class="t">{{ label }}</div>
+        </div>
+        {% endif %}
+    {% elif state == "done" %}
     <a class="wiz-tab {{ state }}"
        href="/wizard/step/{{ num }}"
        hx-get="/wizard/step/{{ num }}"

@@ -1,14 +1,16 @@
+import json
 import logging
 import re
 import time
 
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from app.billing.use_cases.manage_credits import add_credits, deduct_credit, has_credits
+from app.cv_builder.use_cases.build_cv import cv_data_from_attempt as builder_cv_data_from_attempt
 from app.cv_export.adapters.docx_export import generate_docx
 from app.cv_export.adapters.puppeteer_pdf import generate_pdf
-from app.cv_export.adapters.template_registry import REGION_RULES, get_template
+from app.cv_export.adapters.template_registry import REGION_RULES, get_template, list_regions, list_templates
 from app.cv_generation.adapters.pdfplumber_parser import parse_cv
 from app.cv_generation.adapters.refiner import apply_review_fixes
 from app.cv_generation.use_cases.generate_cv import run_generation_pipeline
@@ -676,6 +678,134 @@ async def add_skills(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Final Review — mandatory human-review step before any download/save
+# ---------------------------------------------------------------------------
+
+_FINAL_REVIEW_REDIRECT_URL = "/final-review"
+_FINAL_REVIEW_FLASH_MSG = (
+    "Almost there — please complete Final Review before downloading. "
+    "This step is required."
+)
+
+
+def _final_review_required_response(request: Request) -> RedirectResponse:
+    """Return a redirect to Final Review with a flash message in the session.
+
+    Called by every download endpoint when ``final_review_completed`` is False.
+    """
+    session = request.state.session
+    session["flash"] = _FINAL_REVIEW_FLASH_MSG
+    return RedirectResponse(_FINAL_REVIEW_REDIRECT_URL, status_code=303)
+
+
+@router.get("/final-review", include_in_schema=True)
+async def final_review_page(request: Request):
+    """Hydrate the Builder with AI-generated cv_data for mandatory human review.
+
+    This is the required step between AI results and any download/save action.
+    The builder renders with ``is_final_review=True`` so the top banner is shown
+    and the download controls are gated behind the confirm checkbox.
+    """
+    attempt_id = request.state.session.get("attempt_id")
+    if not attempt_id:
+        return RedirectResponse("/wizard/step/1", status_code=303)
+
+    attempt = get_attempt(attempt_id)
+    if not attempt:
+        return RedirectResponse("/wizard/step/1", status_code=303)
+
+    cv_data = attempt.get("cv_data")
+    if not cv_data:
+        # No generated CV — send back to wizard
+        session = request.state.session
+        session["flash"] = "Please generate your CV first before proceeding to Final Review."
+        return RedirectResponse("/wizard/step/1", status_code=303)
+
+    # Build the builder-compatible cv_data from the AI-generated attempt.
+    # The AI pipeline stores cv_data directly on the attempt (not in builder_data),
+    # so we adapt it here by injecting it as builder_data for cv_data_from_attempt.
+    region = attempt.get("region", "US")
+    template_id = attempt.get("template_id", "modern")
+
+    # Adapt AI cv_data → builder_data shape (both share the same field names)
+    adapted_attempt = {"builder_data": {**cv_data, "region": region, "template_id": template_id}}
+    builder_cv = builder_cv_data_from_attempt(adapted_attempt)
+
+    # Pre-fill PII vault values if available
+    pii = request.state.session.get("pii") or {}
+    if pii:
+        from app.cv_builder.use_cases.build_cv import apply_pii_prefill
+        apply_pii_prefill(builder_cv, pii)
+
+    template_options = [(t.id, t.name) for t in list_templates()]
+    region_options = [(r.code, f"{r.flag} {r.name}") for r in list_regions()]
+    from app.cv_builder.use_cases.build_cv import region_fields_map
+    region_fields = region_fields_map()
+
+    # Pop flash message if present
+    flash = request.state.session.pop("flash", None)
+
+    final_review_completed = bool(attempt.get("final_review_completed"))
+
+    return templates.TemplateResponse(
+        "builder.html",
+        {
+            "request": request,
+            "cv_data": builder_cv,
+            "template_options": template_options,
+            "region_options": region_options,
+            "selected_region": region,
+            "selected_template": template_id,
+            "region_fields_json": json.dumps(region_fields),
+            "dev_mode": request.app.state.dev_mode,
+            "editing_cv_id": None,
+            "editing_label": "",
+            "editing_job_title": "",
+            # Final Review context
+            "is_final_review": True,
+            "final_review_completed": final_review_completed,
+            "flash": flash,
+            "page_crumbs": [
+                {"label": "Create", "href": "/dashboard"},
+                {"label": "Generate", "href": "/wizard/step/6"},
+                {"label": "Final Review (required)"},
+            ],
+        },
+    )
+
+
+@router.post("/confirm-review", include_in_schema=True)
+async def confirm_review(request: Request):
+    """Mark the current attempt's final_review_completed flag as True.
+
+    Called when the user checks the confirm checkbox and clicks the confirm
+    button in the Final Review builder. After confirming, download endpoints
+    are unlocked for this attempt.
+    """
+    attempt_id = request.state.session.get("attempt_id")
+    if not attempt_id:
+        return RedirectResponse(_FINAL_REVIEW_REDIRECT_URL, status_code=303)
+
+    attempt = get_attempt(attempt_id)
+    if not attempt or not attempt.get("cv_data"):
+        return RedirectResponse(_FINAL_REVIEW_REDIRECT_URL, status_code=303)
+
+    form = await request.form()
+    confirmed = form.get("review_confirmed") == "1"
+
+    if confirmed:
+        update_attempt(attempt_id, final_review_completed=True)
+        logger.info("FinalReview[%s] confirmed — download gate unlocked", attempt_id)
+        # Redirect back to Final Review page so user sees unlocked downloads
+        # (the page will re-render with final_review_completed=True)
+        return RedirectResponse(_FINAL_REVIEW_REDIRECT_URL, status_code=303)
+
+    # Not confirmed — redirect back with a message
+    request.state.session["flash"] = "Please check the confirmation box to continue."
+    return RedirectResponse(_FINAL_REVIEW_REDIRECT_URL, status_code=303)
+
+
+# ---------------------------------------------------------------------------
 # PDF download (unchanged)
 # ---------------------------------------------------------------------------
 
@@ -690,6 +820,10 @@ async def download_pdf(request: Request):
     attempt = get_attempt(attempt_id)
     if not attempt or not attempt.get("rendered_cv"):
         return Response("No generated CV found. Please generate your CV first.", status_code=400)
+
+    # Final Review gate — redirect if not yet confirmed
+    if not attempt.get("final_review_completed"):
+        return _final_review_required_response(request)
 
     rendered_cv = attempt["rendered_cv"]
     cv_name = attempt.get("cv_data", {}).get("name", "CV") or "CV"
@@ -718,6 +852,10 @@ async def download_docx(request: Request):
     attempt = get_attempt(attempt_id)
     if not attempt or not attempt.get("cv_data"):
         return Response("No generated CV found. Please generate your CV first.", status_code=400)
+
+    # Final Review gate
+    if not attempt.get("final_review_completed"):
+        return _final_review_required_response(request)
 
     cv_data = attempt["cv_data"]
     region_code = attempt.get("region", "AU") or "AU"
@@ -754,6 +892,10 @@ async def download_cover_letter_pdf(request: Request):
     attempt = get_attempt(attempt_id)
     if not attempt or not attempt.get("cover_letter_html"):
         return Response("No cover letter found. Please generate first.", status_code=400)
+
+    # Final Review gate
+    if not attempt.get("final_review_completed"):
+        return _final_review_required_response(request)
 
     cover_letter_html = attempt["cover_letter_html"]
     cv_name = attempt.get("cv_data", {}).get("name", "Cover Letter") or "Cover Letter"
@@ -824,6 +966,10 @@ async def download_cover_letter_docx(request: Request):
     if not cl:
         return Response("No cover letter found. Please generate first.", status_code=400)
 
+    # Final Review gate
+    if not attempt.get("final_review_completed"):
+        return _final_review_required_response(request)
+
     cv_name = attempt.get("cv_data", {}).get("name", "Cover Letter") or "Cover Letter"
     safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "Cover Letter"
 
@@ -853,6 +999,10 @@ async def download_all_pdf(request: Request):
         return Response("No generated CV found. Please generate your CV first.", status_code=400)
     if not attempt.get("cover_letter_html"):
         return Response("No cover letter found. Generate one to use the bundle download.", status_code=400)
+
+    # Final Review gate
+    if not attempt.get("final_review_completed"):
+        return _final_review_required_response(request)
 
     cv_name = attempt.get("cv_data", {}).get("name", "CV") or "CV"
     safe_name = "".join(c for c in cv_name if c.isalnum() or c in " -_").strip() or "CV"
@@ -892,6 +1042,10 @@ async def download_all_docx(request: Request):
     cl = attempt.get("cover_letter_data")
     if not cl:
         return Response("No cover letter found. Generate one to use the bundle download.", status_code=400)
+
+    # Final Review gate
+    if not attempt.get("final_review_completed"):
+        return _final_review_required_response(request)
 
     cv_data = attempt["cv_data"]
     region_code = attempt.get("region", "AU") or "AU"
