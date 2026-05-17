@@ -202,15 +202,31 @@
 
     <h4>Template</h4>
     <input type="hidden" name="template_id" id="template-id-field" value="{{ selected_template }}">
-    {# Per-id visual hints for the picker thumbnail. New templates fall back to defaults. #}
+    {# Per-id visual hints for the picker thumbnail.
+     * Every registered template has an entry so no two thumbnails look alike.
+     * Keys: bg (card fill), accent (stripe color), center (name alignment). #}
+    {# Per-id visual hints for the picker thumbnail.
+     * Every registered template has an entry so no two thumbnails look alike.
+     * Keys: bg (card fill), accent (stripe + rule color), center (name alignment),
+     *       dark (true = light text for dark-background cards). #}
     {% set tmpl_visuals = {
-      'classic':    {'bg': '#fbf7ee', 'center': true},
-      'executive':  {'bg': '#f1d6c4', 'center': false},
-      'creative':   {'bg': '#f3e8d8', 'center': false},
-      'tech':       {'bg': '#eef3f0', 'center': false},
-      'academic':   {'bg': '#fbf7ee', 'center': true},
-      'federal':    {'bg': '#eef0f6', 'center': false},
-      'minimal':    {'bg': '#fbf7ee', 'center': false},
+      'classic':      {'bg': '#fdf8f0', 'accent': '#8b7355', 'center': true,  'dark': false},
+      'modern':       {'bg': '#e8f0fb', 'accent': '#3b6fd4', 'center': false, 'dark': false},
+      'minimal':      {'bg': '#f8f8f8', 'accent': '#555555', 'center': false, 'dark': false},
+      'executive':    {'bg': '#1c2a3a', 'accent': '#c9a96e', 'center': false, 'dark': true},
+      'tech':         {'bg': '#e8f4ee', 'accent': '#2e7d4f', 'center': false, 'dark': false},
+      'compact':      {'bg': '#f0f4f8', 'accent': '#4a6280', 'center': false, 'dark': false},
+      'academic':     {'bg': '#fdf5e6', 'accent': '#7b5c2e', 'center': true,  'dark': false},
+      'healthcare':   {'bg': '#e6f4f4', 'accent': '#1a8c8c', 'center': false, 'dark': false},
+      'legal':        {'bg': '#f4f0e8', 'accent': '#5c3d1e', 'center': false, 'dark': false},
+      'creative':     {'bg': '#f3e8f5', 'accent': '#8b2fc9', 'center': false, 'dark': false},
+      'sales':        {'bg': '#e8f5eb', 'accent': '#1e7c3b', 'center': false, 'dark': false},
+      'engineering':  {'bg': '#e8edf5', 'accent': '#2b4d8c', 'center': false, 'dark': false},
+      'education':    {'bg': '#fdf3e3', 'accent': '#c47a1e', 'center': false, 'dark': false},
+      'consulting':   {'bg': '#1a2433', 'accent': '#a0b4c8', 'center': false, 'dark': true},
+      'nonprofit':    {'bg': '#f0ebe3', 'accent': '#7a5c3a', 'center': false, 'dark': false},
+      'federal':      {'bg': '#eef0f6', 'accent': '#374a6b', 'center': false, 'dark': false},
+      'hoja-de-vida': {'bg': '#fff8e6', 'accent': '#c48c1e', 'center': true,  'dark': false},
     } %}
     {# Paginate the rail: 4 thumbnails per page. Compute the page that holds
      * the current selection so the picker opens on the right page. #}
@@ -225,7 +241,7 @@
     {% endfor %}
     <div class="tmpl-pick" id="tmpl-pick" data-per-page="{{ tmpl_per_page }}" data-page="{{ ns.start_page }}" data-pages="{{ tmpl_pages }}">
       {% for tid, tname in template_options %}
-      {% set v = tmpl_visuals.get(tid, {'bg': '#fbf7ee', 'center': false}) %}
+      {% set v = tmpl_visuals.get(tid, {'bg': '#fbf7ee', 'accent': '#8b7355', 'center': false, 'dark': false}) %}
       {% set page_num = loop.index0 // tmpl_per_page + 1 %}
       <div class="t {% if tid == selected_template %}on{% endif %}"
            data-tmpl="{{ tid }}"
@@ -234,12 +250,14 @@
            style="background:{{ v.bg }}"
            onclick="selectTemplate('{{ tid }}')"
            title="{{ tname }}">
-        <div style="font-family:var(--display);font-size:6px;font-weight:500;{% if v.center %}text-align:center;{% endif %}">{{ tname }}</div>
-        <div style="height:.5px;background:#1c1a17;opacity:.3;margin:3px 0;"></div>
-        <div class="t-line" style="width:85%;"></div>
-        <div class="t-line" style="width:65%;"></div>
-        <div class="t-line" style="width:75%;"></div>
-        <span class="lbl">{{ tname }}</span>
+        {# Accent stripe at top — makes every thumbnail instantly distinguishable #}
+        <div class="t-stripe" style="background:{{ v.accent }};"></div>
+        <div style="font-family:var(--display);font-size:6px;font-weight:500;margin-top:3px;color:{% if v.dark %}rgba(255,255,255,.85){% else %}inherit{% endif %};{% if v.center %}text-align:center;{% endif %}">{{ tname }}</div>
+        <div style="height:.5px;background:{{ v.accent }};opacity:.4;margin:3px 0;"></div>
+        <div class="t-line" style="width:85%;background:{{ v.accent }};opacity:.25;"></div>
+        <div class="t-line" style="width:65%;background:{% if v.dark %}rgba(255,255,255,.15){% else %}#d9cfb9{% endif %};"></div>
+        <div class="t-line" style="width:75%;background:{% if v.dark %}rgba(255,255,255,.15){% else %}#d9cfb9{% endif %};"></div>
+        <span class="lbl" style="color:{% if v.dark %}rgba(255,255,255,.7){% else %}#6b6356{% endif %};">{{ tname }}</span>
       </div>
       {% endfor %}
     </div>
