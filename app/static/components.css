@@ -622,15 +622,14 @@ main:has(.plan-rail) {
 /* ─── Final Review banner + confirm gate ─────────────────────────────────────
  * Shown in builder.html when is_final_review=True.
  * A paper-raised card with an accent left-bar signalling importance.
- * Constrained to builder content width; does NOT bleed to viewport edges.
+ * Sits inside .final-review-banner-row (builder.css) which aligns it with
+ * the Builder content column — matching the left edge of the form rail.
  * Desktop (≥920px): two-column flex — copy left | confirm gate right.
  * Mobile: single column, divider becomes border-top.
  * Architecture note: lives here (components.css) alongside .pricing-notice
  * and .region-warning because it is the same callout-card pattern.
  */
 .final-review-banner {
-  max-width: 1100px;
-  margin: 20px auto 24px;
   padding: 18px 22px;
   background: var(--paper-raised);
   border: 1px solid var(--rule);

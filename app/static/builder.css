@@ -7,6 +7,24 @@
 /* ── Shell override ─────────────────────────────────────────── */
 .content.wide { padding: 0; }
 
+/* ── Final Review banner row ────────────────────────────────── */
+/* Spans the same full width as the builder form so the banner's
+ * left edge aligns precisely with the left-rail below it.
+ * Horizontal padding creates breathing room without viewport bleed.
+ * Top margin separates from the topbar; bottom margin connects to form. */
+.final-review-banner-row {
+  padding: 16px 24px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.final-review-banner-row .final-review-banner {
+  margin: 0 0 16px;
+}
+@media (max-width: 900px) {
+  .final-review-banner-row {
+    padding: 12px 16px 0;
+  }
+}
+
 /* ── 2-column builder grid ──────────────────────────────────── */
 .builder {
   display: grid;
