@@ -24,70 +24,231 @@
     <!-- CV Tab Panel -->
     <div id="results-tab-cv" class="results-tab-panel results-tab-panel--active">
 
-        <!-- CV Quality Review -->
-        {% if quality_review and quality_review.flags %}
-        <form class="quality-review" hx-post="/apply-fixes" hx-target="#generate-area" hx-swap="outerHTML"
-              hx-indicator="#fixes-loader">
-            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-            <div class="quality-review-header">
-                <!-- Hand-drawn warning/info circle icon -->
-                <svg viewBox="0 0 24 24" width="22" height="22" class="quality-review-icon" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <!-- ================================================================
+             SUGGESTIONS HERO — "What we're suggesting to improve"
+             Visual focal point of step 6. Aggregates:
+               1. Quality-review flags (apply-fixes interaction preserved)
+               2. ATS recommendations from the scoring engine
+               3. Missing keywords grouped by category (tag-click preserved)
+             Personal-detail items (name, email, phone, etc.) are filtered
+             out server-side and never reach this panel.
+             ================================================================ -->
+        {% set has_quality_flags = quality_review and quality_review.flags %}
+        {% set has_ats_recs = ats_recommendations and ats_recommendations | length > 0 %}
+        {% set has_missing_kws = ats_generated.missing_keywords | length > 0 %}
+        {% set has_suggestions = has_quality_flags or has_ats_recs or has_missing_kws %}
+
+        {% if has_suggestions %}
+        <section class="suggestions-hero" aria-label="Improvement suggestions">
+            <div class="suggestions-hero-header">
+                <svg viewBox="0 0 24 24" width="22" height="22" class="suggestions-hero-icon" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M12 2.5 C8 2.3, 4.5 4.5, 3 8 C1.5 11.5, 2 15.5, 4.5 18.5 C7 21.5, 11 22.8, 15 21.5 C19 20.2, 21.8 16.5, 22 12.5 C22.2 8.5, 20 4.8, 16.5 3 C15 2.2, 13.5 2.4, 12 2.5" stroke="var(--warning)" stroke-width="1.8"/>
                     <path d="M12 7.5 C11.8 8.5, 12 10, 12 11 C12 11.8, 12 12.5, 12 13" stroke="var(--warning)" stroke-width="2"/>
                     <path d="M11.2 16.5 C11.2 16, 11.6 15.5, 12 15.5 C12.5 15.5, 12.8 16, 12.8 16.5 C12.8 17, 12.4 17.5, 12 17.5 C11.5 17.5, 11.2 17, 11.2 16.5" stroke="var(--warning)" stroke-width="1.5"/>
                 </svg>
                 <div>
-                    <h2>Items to Reconsider</h2>
-                    <p class="hint">{{ quality_review.summary }}</p>
+                    <h2 class="suggestions-hero-title">What we're suggesting to improve</h2>
+                    <p class="hint">
+                        {% if has_quality_flags %}
+                            {{ quality_review.summary }}
+                        {% else %}
+                            Review the items below and apply the ones that fit your profile.
+                        {% endif %}
+                    </p>
                 </div>
             </div>
-            <div class="quality-flags">
-                {% for flag in quality_review.flags %}
-                <div class="quality-flag quality-flag--{{ flag.severity }}">
-                    <label class="quality-flag-top">
-                        <input type="checkbox" name="selected" class="quality-flag-check"
-                               value="{{ loop.index0 }}" checked>
-                        <div class="quality-flag-body">
-                            <div class="quality-flag-header">
-                                {% if flag.severity == 'remove' %}
-                                <span class="quality-flag-severity quality-severity-remove">Remove</span>
-                                {% else %}
-                                <span class="quality-flag-severity quality-severity-improve">Improve</span>
+
+            <!-- Part 1: Quality-review flags with apply-fixes checkboxes -->
+            {% if has_quality_flags %}
+            <form class="quality-review suggestions-hero-flags" hx-post="/apply-fixes" hx-target="#generate-area" hx-swap="outerHTML"
+                  hx-indicator="#fixes-loader">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+                <h3 class="suggestions-section-label">Content improvements</h3>
+                <div class="quality-flags">
+                    {% for flag in quality_review.flags %}
+                    <div class="quality-flag quality-flag--{{ flag.severity }}">
+                        <label class="quality-flag-top">
+                            <input type="checkbox" name="selected" class="quality-flag-check"
+                                   value="{{ loop.index0 }}" checked>
+                            <div class="quality-flag-body">
+                                <div class="quality-flag-header">
+                                    {% if flag.severity == 'remove' %}
+                                    <span class="quality-flag-severity quality-severity-remove">Remove</span>
+                                    {% else %}
+                                    <span class="quality-flag-severity quality-severity-improve">Improve</span>
+                                    {% endif %}
+                                    {{ badge(flag.category | replace("_", " ") | title, flag.severity) }}
+                                    {% if flag.section %}<span class="quality-flag-section">in {{ flag.section }}</span>{% endif %}
+                                </div>
+                                <p class="quality-flag-item">"{{ flag.item }}"</p>
+                                <p class="quality-flag-reason">{{ flag.reason }}</p>
+                                {% if flag.suggestion %}
+                                <p class="quality-flag-suggestion">Suggestion: {{ flag.suggestion }}</p>
                                 {% endif %}
-                                {{ badge(flag.category | replace("_", " ") | title, flag.severity) }}
-                                {% if flag.section %}<span class="quality-flag-section">in {{ flag.section }}</span>{% endif %}
                             </div>
-                            <p class="quality-flag-item">"{{ flag.item }}"</p>
-                            <p class="quality-flag-reason">{{ flag.reason }}</p>
-                            {% if flag.suggestion %}
-                            <p class="quality-flag-suggestion">Suggestion: {{ flag.suggestion }}</p>
+                        </label>
+                        <input type="text" name="instruction_{{ loop.index0 }}"
+                               class="quality-flag-instruction"
+                               placeholder="Optional: tell the AI how to handle this (max 500 chars)"
+                               maxlength="500">
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="quality-actions">
+                    <button type="submit" class="btn-apply-fixes"
+                            hx-disabled-elt="this"
+                            hx-on::before-request="this.innerHTML='Applying fixes...'; this.classList.add('btn-generating');">
+                        Apply Selected Fixes
+                    </button>
+                    <span class="quality-actions-hint">This uses AI to refine your CV — counts as an extra credit</span>
+                </div>
+                <div class="ai-loading-hint htmx-indicator" id="fixes-loader">
+                    <div class="spinner"></div>
+                </div>
+            </form>
+            {% endif %}
+
+            <!-- Part 2: ATS recommendations -->
+            {% if has_ats_recs %}
+            <div class="suggestions-ats-recs">
+                <h3 class="suggestions-section-label">ATS recommendations</h3>
+                <ul class="suggestions-rec-list">
+                    {% for rec in ats_recommendations %}
+                    <li class="suggestions-rec-item">
+                        <span class="suggestions-rec-bullet" aria-hidden="true">&#8250;</span>
+                        {{ rec }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Part 3: Missing keywords — click to add to Skills (no AI) -->
+            {% if has_missing_kws %}
+            <div class="suggestions-missing-kws">
+                <h3 class="suggestions-section-label">Missing keywords</h3>
+                <p class="hint">Click a keyword to add it directly to your Skills section — no AI call needed.</p>
+                <div id="missing-keywords-tags">
+                    {#
+                      missing_keyword_groups: dict[keyword, category] passed from the route.
+                      If absent or empty, fall back to flat rendering (no regression).
+                      Cap total rendered keywords at 15; show "+N more" for the rest.
+                    #}
+                    {% set all_missing = ats_generated.missing_keywords %}
+                    {% set cap = 15 %}
+                    {% set overflow = (all_missing | length) - cap %}
+                    {% if missing_keyword_groups %}
+                        {#-- Build stable category order: CV-groups order first, then new, then uncategorised --#}
+                        {% set cat_order = missing_keyword_categories_order | default([]) %}
+                        {#-- Collect categories not already in cat_order (LLM-invented) --#}
+                        {% set extra_cats = [] %}
+                        {% for kw, cat in missing_keyword_groups.items() %}
+                            {% if cat not in cat_order and cat not in extra_cats %}
+                                {% set _ = extra_cats.append(cat) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% set ordered_cats = cat_order + extra_cats %}
+                        {#-- Group keywords: iterate ordered categories, then uncategorised --#}
+                        {% set ns = namespace(rendered=0) %}
+                        {% for cat in ordered_cats %}
+                            {% set kws_in_cat = [] %}
+                            {% for kw in all_missing %}
+                                {% if missing_keyword_groups.get(kw) == cat and ns.rendered < cap %}
+                                    {% set _ = kws_in_cat.append(kw) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if kws_in_cat %}
+                            <div class="ats-kw-group">
+                                <h4 class="ats-kw-subhead">{{ cat }}</h4>
+                                <div class="keyword-tags">
+                                    {% for kw in kws_in_cat %}
+                                        {% if ns.rendered < cap %}
+                                        <button type="button" class="tag tag-missing tag-clickable"
+                                                hx-post="/add-skills"
+                                                hx-vals='{"staged_keywords": {{ kw | tojson }} }'
+                                                hx-target="#generate-area"
+                                                hx-swap="outerHTML"
+                                                hx-indicator="#regenerate-loader"
+                                                title="Add to Skills">
+                                            <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
+                                        </button>
+                                        {% set ns.rendered = ns.rendered + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        {#-- Uncategorised / no mapping --#}
+                        {% set uncats = [] %}
+                        {% for kw in all_missing %}
+                            {% if not missing_keyword_groups.get(kw) and ns.rendered < cap %}
+                                {% set _ = uncats.append(kw) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if uncats %}
+                        <div class="ats-kw-group">
+                            <h4 class="ats-kw-subhead">Other</h4>
+                            <div class="keyword-tags">
+                                {% for kw in uncats %}
+                                    {% if ns.rendered < cap %}
+                                    <button type="button" class="tag tag-missing tag-clickable"
+                                            hx-post="/add-skills"
+                                            hx-vals='{"staged_keywords": {{ kw | tojson }} }'
+                                            hx-target="#generate-area"
+                                            hx-swap="outerHTML"
+                                            hx-indicator="#regenerate-loader"
+                                            title="Add to Skills">
+                                        <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
+                                    </button>
+                                    {% set ns.rendered = ns.rendered + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if overflow > 0 %}
+                        <div class="keyword-tags">
+                            {{ badge("+" ~ overflow ~ " more", "more") }}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        {#-- Flat fallback: no grouping data available --#}
+                        <div class="keyword-tags">
+                            {% for kw in all_missing[:cap] %}
+                            <button type="button" class="tag tag-missing tag-clickable"
+                                    hx-post="/add-skills"
+                                    hx-vals='{"staged_keywords": {{ kw | tojson }} }'
+                                    hx-target="#generate-area"
+                                    hx-swap="outerHTML"
+                                    hx-indicator="#regenerate-loader"
+                                    title="Add to Skills">
+                                <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
+                            </button>
+                            {% endfor %}
+                            {% if overflow > 0 %}
+                            {{ badge("+" ~ overflow ~ " more", "more") }}
                             {% endif %}
                         </div>
-                    </label>
-                    <input type="text" name="instruction_{{ loop.index0 }}"
-                           class="quality-flag-instruction"
-                           placeholder="Optional: tell the AI how to handle this (max 500 chars)"
-                           maxlength="500">
+                    {% endif %}
                 </div>
-                {% endfor %}
             </div>
-            <div class="quality-actions">
-                <button type="submit" class="btn-apply-fixes"
-                        hx-disabled-elt="this"
-                        hx-on::before-request="this.innerHTML='Applying fixes...'; this.classList.add('btn-generating');">
-                    Apply Selected Fixes
-                </button>
-                <span class="quality-actions-hint">This uses AI to refine your CV — counts as an extra credit</span>
-            </div>
-            <div class="ai-loading-hint htmx-indicator" id="fixes-loader">
-                <div class="spinner"></div>
-            </div>
-        </form>
+            {% endif %}
+
+        </section>
+        {% else %}
+        <!-- No suggestions: clean affirmation -->
+        <div class="suggestions-none">
+            <span class="suggestions-none-icon" aria-hidden="true">&#10003;</span>
+            <p>No improvements to suggest — your CV looks well-optimised for this role.</p>
+        </div>
         {% endif %}
 
-        <!-- ATS Score Comparison -->
-        <div class="ats-comparison">
-            <h2>ATS Score Comparison</h2>
+        <!-- ================================================================
+             ATS SCORE DELTA — "What we improved already"
+             ================================================================ -->
+        <section class="ats-comparison" aria-label="ATS score comparison">
+            <h2>What we improved already</h2>
             <p class="hint">How your original CV compares to the generated one against this job description.</p>
 
             <div class="ats-compare-grid">
@@ -137,7 +298,7 @@
                 </div>
             </div>
 
-            <!-- Keyword improvement detail -->
+            <!-- Keywords gained -->
             <div class="ats-keyword-detail">
                 <div class="ats-kw-col">
                     <h3>Keywords gained</h3>
@@ -149,117 +310,9 @@
                         {% endfor %}
                     </div>
                 </div>
-                <div class="ats-kw-col">
-                    <h3>Still missing</h3>
-                    <p class="hint">Click a keyword to add it directly to the Skills section — no AI call.</p>
-                    <div id="missing-keywords-tags">
-                        {#
-                          missing_keyword_groups: dict[keyword, category] passed from the route.
-                          If absent or empty, fall back to flat rendering (no regression).
-                          Cap total rendered keywords at 15; show "+N more" for the rest.
-                        #}
-                        {% set all_missing = ats_generated.missing_keywords %}
-                        {% set cap = 15 %}
-                        {% set overflow = (all_missing | length) - cap %}
-                        {% if missing_keyword_groups %}
-                            {#-- Build stable category order: CV-groups order first, then new, then uncategorised --#}
-                            {% set cat_order = missing_keyword_categories_order | default([]) %}
-                            {#-- Collect categories not already in cat_order (LLM-invented) --#}
-                            {% set extra_cats = [] %}
-                            {% for kw, cat in missing_keyword_groups.items() %}
-                                {% if cat not in cat_order and cat not in extra_cats %}
-                                    {% set _ = extra_cats.append(cat) %}
-                                {% endif %}
-                            {% endfor %}
-                            {% set ordered_cats = cat_order + extra_cats %}
-                            {#-- Group keywords: iterate ordered categories, then uncategorised --#}
-                            {% set ns = namespace(rendered=0) %}
-                            {% for cat in ordered_cats %}
-                                {% set kws_in_cat = [] %}
-                                {% for kw in all_missing %}
-                                    {% if missing_keyword_groups.get(kw) == cat and ns.rendered < cap %}
-                                        {% set _ = kws_in_cat.append(kw) %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if kws_in_cat %}
-                                <div class="ats-kw-group">
-                                    <h4 class="ats-kw-subhead">{{ cat }}</h4>
-                                    <div class="keyword-tags">
-                                        {% for kw in kws_in_cat %}
-                                            {% if ns.rendered < cap %}
-                                            <button type="button" class="tag tag-missing tag-clickable"
-                                                    hx-post="/add-skills"
-                                                    hx-vals='{"staged_keywords": {{ kw | tojson }} }'
-                                                    hx-target="#generate-area"
-                                                    hx-swap="outerHTML"
-                                                    hx-indicator="#regenerate-loader"
-                                                    title="Add to Skills">
-                                                <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
-                                            </button>
-                                            {% set ns.rendered = ns.rendered + 1 %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                            {#-- Uncategorised / no mapping --#}
-                            {% set uncats = [] %}
-                            {% for kw in all_missing %}
-                                {% if not missing_keyword_groups.get(kw) and ns.rendered < cap %}
-                                    {% set _ = uncats.append(kw) %}
-                                {% endif %}
-                            {% endfor %}
-                            {% if uncats %}
-                            <div class="ats-kw-group">
-                                <h4 class="ats-kw-subhead">Other</h4>
-                                <div class="keyword-tags">
-                                    {% for kw in uncats %}
-                                        {% if ns.rendered < cap %}
-                                        <button type="button" class="tag tag-missing tag-clickable"
-                                                hx-post="/add-skills"
-                                                hx-vals='{"staged_keywords": {{ kw | tojson }} }'
-                                                hx-target="#generate-area"
-                                                hx-swap="outerHTML"
-                                                hx-indicator="#regenerate-loader"
-                                                title="Add to Skills">
-                                            <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
-                                        </button>
-                                        {% set ns.rendered = ns.rendered + 1 %}
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% if overflow > 0 %}
-                            <div class="keyword-tags">
-                                {{ badge("+" ~ overflow ~ " more", "more") }}
-                            </div>
-                            {% endif %}
-                        {% else %}
-                            {#-- Flat fallback: no grouping data available --#}
-                            <div class="keyword-tags">
-                                {% for kw in all_missing[:cap] %}
-                                <button type="button" class="tag tag-missing tag-clickable"
-                                        hx-post="/add-skills"
-                                        hx-vals='{"staged_keywords": {{ kw | tojson }} }'
-                                        hx-target="#generate-area"
-                                        hx-swap="outerHTML"
-                                        hx-indicator="#regenerate-loader"
-                                        title="Add to Skills">
-                                    <span class="tag-clickable-plus" aria-hidden="true">+</span>{{ kw }}
-                                </button>
-                                {% endfor %}
-                                {% if overflow > 0 %}
-                                {{ badge("+" ~ overflow ~ " more", "more") }}
-                                {% endif %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
             </div>
 
-            <!-- Regenerate (LLM rerun) control — useful while iterating in dev -->
+            <!-- Regenerate (LLM rerun) control -->
             <div class="ats-regenerate">
                 <form hx-post="/analyze" hx-target="#generate-area" hx-swap="outerHTML"
                       hx-indicator="#regenerate-loader" style="display:inline;">
@@ -270,28 +323,31 @@
                 </form>
                 <div class="ai-loading-hint htmx-indicator" id="regenerate-loader">
                     <div class="spinner"></div>
-                    <span class="regenerate-loader-text">Updating your CV…</span>
+                    <span class="regenerate-loader-text">Updating your CV...</span>
                 </div>
             </div>
+        </section>
+
+        <!-- ================================================================
+             CV PREVIEW DEFERRED — moved to step 7 (Final Review in Builder).
+             ================================================================ -->
+        <div class="cv-preview-deferred">
+            <p class="cv-preview-deferred-msg">
+                Your CV preview is shown in the next step — Final Review.
+            </p>
         </div>
 
-        <!-- Generated CV Preview -->
-        <div class="generated-cv">
-            {# Final Review CTA — the only path to download. No skip affordance. #}
-            <div class="final-review-cta">
-                <a href="/final-review" class="btn btn-accent btn-lg btn-full final-review-cta__btn">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                        <path d="M2 8 L7 13 L14 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    Final Review (required) &rarr;
-                </a>
-                <p class="final-review-cta__hint">
-                    Review and confirm your CV before downloading. This is the step that makes the biggest difference.
-                </p>
-            </div>
-            <div class="cv-preview">
-                {{ generated_cv | safe }}
-            </div>
+        <!-- Final Review CTA — the only path to download. No skip affordance. -->
+        <div class="final-review-cta">
+            <a href="/final-review" class="btn btn-accent btn-lg btn-full final-review-cta__btn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M2 8 L7 13 L14 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Final Review (required) &rarr;
+            </a>
+            <p class="final-review-cta__hint">
+                Review and confirm your CV before downloading. This is the step that makes the biggest difference.
+            </p>
         </div>
 
         <!-- CV Actions -->
@@ -299,7 +355,7 @@
             <button type="button" class="btn btn-ghost btn-sm results-action-back"
                     hx-get="/wizard/step/5" hx-target="#wizard-container" hx-swap="innerHTML"
                     onclick="document.getElementById('generate-area').remove();">
-                <span aria-hidden="true">←</span> Change template
+                <span aria-hidden="true">&#8592;</span> Change template
             </button>
             <div class="results-action-downloads">
                 <a href="/final-review" class="btn btn-accent">
@@ -310,7 +366,10 @@
 
     </div><!-- /results-tab-cv -->
 
-    <!-- Cover Letter Tab Panel -->
+    <!-- Cover Letter Tab Panel — preview stays on step 6 per product intent.
+         The user's wording "don't show the preview" referred to the CV preview;
+         the cover letter preview is retained here so users can review their letter
+         before proceeding to Final Review. -->
     {% if cover_letter %}
     <div id="results-tab-cl" class="results-tab-panel" style="display: none;">
         <div class="generated-cv">
@@ -336,7 +395,7 @@
             <button type="button" class="btn btn-ghost btn-sm results-action-back"
                     hx-get="/wizard/step/5" hx-target="#wizard-container" hx-swap="innerHTML"
                     onclick="document.getElementById('generate-area').remove();">
-                <span aria-hidden="true">←</span> Change template
+                <span aria-hidden="true">&#8592;</span> Change template
             </button>
             <div class="results-action-downloads">
                 <a href="/final-review" class="btn btn-accent">

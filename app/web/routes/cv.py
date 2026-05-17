@@ -15,6 +15,7 @@ from app.cv_generation.adapters.pdfplumber_parser import parse_cv
 from app.cv_generation.adapters.refiner import apply_review_fixes
 from app.cv_generation.use_cases.generate_cv import run_generation_pipeline
 from app.infrastructure.llm.client import set_llm_context
+from app.pii.use_cases.filter_suggestions import filter_personal_detail_items
 from app.infrastructure.persistence.attempt_store import (
     get_attempt,
     get_document_bytes,
@@ -33,6 +34,40 @@ router = APIRouter()
 # for a single attempt (POST /analyze regenerations).  Each run costs 1 credit,
 # so this also acts as a per-attempt spend ceiling.
 _MAX_REGENERATIONS = 5
+
+
+def _build_results_context(
+    result: dict,
+    missing_keyword_groups: dict,
+    missing_keyword_categories_order: list,
+    **extra,
+) -> dict:
+    """Build the template context dict for ``partials/results.html``.
+
+    Applies the personal-detail filter to quality flags and ATS recommendations
+    so the suggestions panel never shows identity-field items.
+    """
+    quality_review = result.get("quality_review") or {}
+    raw_flags = quality_review.get("flags") or []
+    ats_generated = result.get("ats_generated")
+    raw_recs = list(getattr(ats_generated, "recommendations", None) or [])
+
+    filtered_flags, filtered_recs = filter_personal_detail_items(raw_flags, raw_recs)
+
+    # Produce a patched quality_review with filtered flags only (keep summary)
+    filtered_quality_review = None
+    if quality_review:
+        filtered_quality_review = {**quality_review, "flags": filtered_flags}
+
+    ctx = {
+        **result,
+        "quality_review": filtered_quality_review,
+        "ats_recommendations": filtered_recs,
+        "missing_keyword_groups": missing_keyword_groups,
+        "missing_keyword_categories_order": missing_keyword_categories_order,
+    }
+    ctx.update(extra)
+    return ctx
 
 
 # ---------------------------------------------------------------------------
@@ -184,10 +219,14 @@ async def ws_analyze(websocket: WebSocket):
         ]
         # `result` already includes `missing_keyword_groups` from the pipeline,
         # so we only add the order list here (not in the pipeline output).
+        results_ctx = _build_results_context(
+            result,
+            missing_keyword_groups,
+            missing_keyword_categories_order,
+        )
         html = templates.get_template("partials/results.html").render(
             request=websocket,
-            **result,
-            missing_keyword_categories_order=missing_keyword_categories_order,
+            **results_ctx,
         )
         await websocket.send_json({"type": "complete", "html": html})
 
@@ -378,14 +417,14 @@ async def analyze(request: Request):
         g.get("category") for g in ((_attempt_for_order.get("cv_data") or {}).get("skills_grouped") or [])
         if g.get("category")
     ]
+    results_ctx = _build_results_context(
+        result,
+        missing_keyword_groups,
+        missing_keyword_categories_order,
+    )
     return templates.TemplateResponse(
         "partials/results.html",
-        {
-            "request": request,
-            **result,
-            "missing_keyword_groups": missing_keyword_groups,
-            "missing_keyword_categories_order": missing_keyword_categories_order,
-        },
+        {"request": request, **results_ctx},
     )
 
 
@@ -502,24 +541,27 @@ async def apply_fixes(request: Request):
         if g.get("category")
     ]
 
+    _apply_fixes_result = {
+        "ats_original": ats_original,
+        "ats_generated": ats_generated,
+        "generated_cv": rendered_cv,
+        "cover_letter": attempt.get("cover_letter_html"),
+        "cover_letter_data": attempt.get("cover_letter_data"),
+        "cv_text": full_cv_text[:500],
+        "template": selected_template,
+        "region": region_code,
+        "region_rules": region_rules,
+        "quality_review": None,
+    }
+    results_ctx = _build_results_context(
+        _apply_fixes_result,
+        missing_keyword_groups,
+        missing_keyword_categories_order,
+        fixes_applied=len(flags),
+    )
     return templates.TemplateResponse(
         "partials/results.html",
-        {
-            "request": request,
-            "ats_original": ats_original,
-            "ats_generated": ats_generated,
-            "generated_cv": rendered_cv,
-            "cover_letter": attempt.get("cover_letter_html"),
-            "cover_letter_data": attempt.get("cover_letter_data"),
-            "cv_text": full_cv_text[:500],
-            "template": selected_template,
-            "region": region_code,
-            "region_rules": region_rules,
-            "quality_review": None,
-            "fixes_applied": len(flags),
-            "missing_keyword_groups": missing_keyword_groups,
-            "missing_keyword_categories_order": missing_keyword_categories_order,
-        },
+        {"request": request, **results_ctx},
     )
 
 
@@ -656,24 +698,27 @@ async def add_skills(request: Request):
     missing_keyword_categories_order = [
         g.get("category") for g in (cv_data.get("skills_grouped") or []) if g.get("category")
     ]
+    _add_skills_result = {
+        "ats_original": ats_original,
+        "ats_generated": ats_generated,
+        "generated_cv": rendered_cv,
+        "cover_letter": attempt.get("cover_letter_html"),
+        "cover_letter_data": attempt.get("cover_letter_data"),
+        "cv_text": full_cv_text[:500],
+        "template": selected_template,
+        "region": region_code,
+        "region_rules": region_rules,
+        "quality_review": attempt.get("quality_review"),
+    }
+    results_ctx = _build_results_context(
+        _add_skills_result,
+        missing_keyword_groups,
+        missing_keyword_categories_order,
+        skills_added=len(new_skills),
+    )
     return templates.TemplateResponse(
         "partials/results.html",
-        {
-            "request": request,
-            "ats_original": ats_original,
-            "ats_generated": ats_generated,
-            "generated_cv": rendered_cv,
-            "cover_letter": attempt.get("cover_letter_html"),
-            "cover_letter_data": attempt.get("cover_letter_data"),
-            "cv_text": full_cv_text[:500],
-            "template": selected_template,
-            "region": region_code,
-            "region_rules": region_rules,
-            "quality_review": attempt.get("quality_review"),
-            "skills_added": len(new_skills),
-            "missing_keyword_groups": missing_keyword_groups,
-            "missing_keyword_categories_order": missing_keyword_categories_order,
-        },
+        {"request": request, **results_ctx},
     )
 
 

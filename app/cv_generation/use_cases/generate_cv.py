@@ -280,6 +280,49 @@ async def run_generation_pipeline(
         if redactor:
             cv_data = redactor.restore(cv_data)
 
+        # Prefill identity fields from known PII so the generated CV never
+        # contains empty or placeholder values for data the platform already has.
+        # The PII vault is the authoritative source; the LLM output is secondary.
+        _pii_identity_map = {
+            "full_name": "name",   # User.name / vault full_name → cv_data.name
+            "email":     "email",
+            "phone":     "phone",
+            "linkedin":  "linkedin",
+            "github":    "github",
+            "portfolio": "portfolio",
+            "location":  "location",
+        }
+        _pii_source = pii or {}
+        # Also treat attempt["full_name"] as authoritative for the name field
+        # (it is set at step-2 from the wizard form before any LLM run).
+        _attempt_full_name = (attempt.get("full_name") or "").strip()
+        if _attempt_full_name:
+            _pii_source = {**_pii_source, "full_name": _attempt_full_name}
+
+        _placeholder_tokens = {
+            "<<CANDIDATE_NAME>>", "<<EMAIL_1>>", "<<PHONE_1>>",
+            "<<LINKEDIN_URL>>", "<<GITHUB_URL>>", "<<PORTFOLIO_URL>>",
+            "<<LOCATION>>",
+        }
+
+        for _pii_key, _cv_key in _pii_identity_map.items():
+            _real_val = (_pii_source.get(_pii_key) or "").strip()
+            if not _real_val:
+                continue
+            _existing = (cv_data.get(_cv_key) or "").strip()
+            # Overwrite if: empty, a redaction token, or a bracket placeholder
+            _is_placeholder = (
+                not _existing
+                or _existing in _placeholder_tokens
+                or (_existing.startswith("[") and _existing.endswith("]"))
+            )
+            if _is_placeholder:
+                cv_data[_cv_key] = _real_val
+                logger.info(
+                    "Pipeline[%s] prefilled cv_data.%s from PII vault",
+                    attempt_id, _cv_key,
+                )
+
         # Make sure user-provided references survive even if the LLM dropped
         # the references array from its JSON output. The candidate filled
         # these in at step 2; they're authoritative — the LLM has no business
