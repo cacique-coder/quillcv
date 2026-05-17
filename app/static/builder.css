@@ -78,6 +78,10 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+/* Browsers apply [hidden]=display:none via UA stylesheet, but some grid
+ * implementations don't honour it for grid items. This rule ensures hidden
+ * thumbnails are always invisible regardless of the display context. */
+.tmpl-pick .t[hidden] { display: none !important; }
 .tmpl-pick .t {
   aspect-ratio: 210/297;
   background: #fbf7ee;
@@ -89,6 +93,14 @@
   position: relative;
 }
 .tmpl-pick .t.on { outline: 2px solid var(--accent); }
+/* Accent stripe — a thin colored bar at the card top that gives every
+ * thumbnail a unique identity even before reading the name label. */
+.tmpl-pick .t .t-stripe {
+  height: 4px;
+  border-radius: 1px 1px 0 0;
+  margin: -6px -6px 0;
+  /* negative margin bleeds to the card edges (card has 6px padding) */
+}
 .tmpl-pick .t .lbl {
   position: absolute;
   bottom: 4px;
