@@ -5,7 +5,7 @@ Covers:
 - Download endpoints redirect to Final Review when final_review_completed=False.
 - POST /confirm-review flips the flag and unlocks downloads.
 - After confirmation, download endpoints proceed normally.
-- Banner markup: correct element tags, copy, and absence of legacy h2/icon.
+- Banner markup: correct element tags, lock icon, copy, and confirm gate.
 """
 
 from __future__ import annotations
@@ -171,8 +171,8 @@ class TestFinalReviewBannerMarkup:
 
     These tests parse the builder.html template string directly so they run
     without a running server — they verify the markup decisions made in the
-    polish/final-review-banner change and will catch regressions if someone
-    accidentally reverts to an <h2> or reintroduces the icon.
+    polish/final-review-callout change and will catch regressions if someone
+    accidentally reverts to an <h2> or removes the lock icon.
     """
 
     def _banner_html(self) -> str:
@@ -191,11 +191,14 @@ class TestFinalReviewBannerMarkup:
             "Banner title must NOT be an h2 — base.css sets h2 to clamp(28px, …) which dominates"
         )
 
-    def test_banner_icon_removed(self):
-        """The decorative SVG icon inside .final-review-banner__head must be gone."""
+    def test_banner_has_lock_icon(self):
+        """The lock SVG icon must be present inside .final-review-banner__head."""
         html = self._banner_html()
-        assert 'final-review-banner__icon' not in html, (
-            "Banner icon was removed in the polish pass — do not re-add it"
+        assert 'final-review-banner__icon' in html, (
+            "Banner must include a lock icon (.final-review-banner__icon) to signal importance"
+        )
+        assert 'final-review-banner__head' in html, (
+            "Banner must have a .final-review-banner__head wrapper for icon + title row"
         )
 
     def test_banner_copy_is_two_sentences(self):
