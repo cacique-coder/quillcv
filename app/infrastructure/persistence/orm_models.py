@@ -62,6 +62,11 @@ class Credit(Base):
     total_purchased: Mapped[int] = mapped_column(Integer, default=0)
     total_granted: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     total_used: Mapped[int] = mapped_column(Integer, default=0)
+    # Bumped atomically by add_credits / deduct_credit / reverse_purchase_credits so the
+    # AuthContextMiddleware can detect when a session's cached_balance is stale and refetch.
+    last_change_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, server_default="now()"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 

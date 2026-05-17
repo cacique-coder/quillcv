@@ -12,6 +12,7 @@ from app.billing.entities import (
     TOPUP_PACKS,
     user_can_see_pack,
 )
+from app.billing.session_balance import set_cached_balance
 from app.billing.use_cases.grant_purchase_credits import grant_purchase_credits
 from app.billing.use_cases.manage_credits import (
     get_balance,
@@ -316,7 +317,7 @@ async def checkout_success(
 
                         # Refresh cached balance in session so nav bar updates immediately.
                         new_balance = await get_balance(db, user.id)
-                        request.state.session["cached_balance"] = new_balance
+                        set_cached_balance(request.state.session, new_balance)
 
                         # Send payment confirmation email — non-fatal on failure
                         try:
@@ -334,7 +335,7 @@ async def checkout_success(
                         # the cached balance so the success page still
                         # renders correct numbers in the nav bar.
                         new_balance = await get_balance(db, user.id)
-                        request.state.session["cached_balance"] = new_balance
+                        set_cached_balance(request.state.session, new_balance)
         except Exception:
             logger.exception("Error verifying checkout session")
 

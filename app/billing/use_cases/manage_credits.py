@@ -1,9 +1,15 @@
 """Credit management: purchase, deduct, check balance."""
 
+from datetime import UTC, datetime
+
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.persistence.orm_models import Credit
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC)
 
 
 async def get_balance(db: AsyncSession, user_id: str) -> int:
@@ -19,6 +25,7 @@ async def deduct_credit(db: AsyncSession, user_id: str) -> bool:
         .values(
             balance=Credit.balance - 1,
             total_used=Credit.total_used + 1,
+            last_change_at=_utcnow(),
         )
         .execution_options(synchronize_session=False)
     )
@@ -38,16 +45,18 @@ async def add_credits(db: AsyncSession, user_id: str, amount: int, *, as_grant: 
     decrementing = amount < 0
     if decrementing:
         # Negative deltas (clawbacks) only adjust balance, never lifetime totals.
-        values: dict = {"balance": Credit.balance + amount}
+        values: dict = {"balance": Credit.balance + amount, "last_change_at": _utcnow()}
     elif as_grant:
         values = {
             "balance": Credit.balance + amount,
             "total_granted": Credit.total_granted + amount,
+            "last_change_at": _utcnow(),
         }
     else:
         values = {
             "balance": Credit.balance + amount,
             "total_purchased": Credit.total_purchased + amount,
+            "last_change_at": _utcnow(),
         }
 
     result = await db.execute(

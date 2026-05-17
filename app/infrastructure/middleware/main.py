@@ -6,6 +6,7 @@ import logging
 import os
 import secrets
 import uuid
+from datetime import UTC, datetime
 from typing import ClassVar
 from urllib.parse import parse_qs
 
@@ -150,9 +151,89 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
             user = await get_current_user(request)
             request.state.user = user
             if user:
-                request.state.balance = request.state.session.get("cached_balance", 0)
+                session = request.state.session
+                balance = await _refresh_balance_if_stale(session, user.id)
+                request.state.balance = balance
                 user_id_var.set(user.id)
                 from app.infrastructure.instrumentation import add_custom_attributes
                 add_custom_attributes({"user_id": user.id})
 
         return await call_next(request)
+
+
+async def _refresh_balance_if_stale(session: dict, user_id: str) -> int:
+    """Return the credit balance for *user_id*, refreshing the session cache when stale.
+
+    Staleness is detected by comparing ``Credit.last_change_at`` (the DB
+    timestamp that is bumped on every balance mutation) against
+    ``session["cached_balance_set_at"]`` (written by ``set_cached_balance``
+    at auth time or after any in-request balance change).
+
+    The query is a single indexed PK lookup — one cheap SELECT per
+    authenticated request.  When the timestamps agree (the common case) we
+    return the cached value and never touch the balance column.
+
+    If either timestamp is missing we fall back to the cache value and do
+    *not* force a refetch, so existing sessions created before this
+    migration always behave safely (they will eventually pick up the fresh
+    value on their next login).
+    """
+    from sqlalchemy import select
+
+    from app.billing.session_balance import set_cached_balance
+    from app.billing.use_cases.manage_credits import get_balance
+    from app.infrastructure.persistence.database import async_session
+    from app.infrastructure.persistence.orm_models import Credit
+
+    cached = session.get("cached_balance", 0)
+    set_at_raw: str | None = session.get("cached_balance_set_at")
+
+    # Fast path: fetch just last_change_at (single indexed column read).
+    try:
+        async with async_session() as db:
+            row = await db.execute(
+                select(Credit.last_change_at).where(Credit.user_id == user_id)
+            )
+            last_change_at: datetime | None = row.scalar_one_or_none()
+    except Exception:
+        logger.exception("Failed to query Credit.last_change_at for user %s", user_id)
+        return cached
+
+    if last_change_at is None:
+        # No credit row yet — return the cached value (likely 0).
+        return cached
+
+    # Ensure last_change_at is timezone-aware so comparison is valid.
+    if last_change_at.tzinfo is None:
+        last_change_at = last_change_at.replace(tzinfo=UTC)
+
+    if set_at_raw is None:
+        # Old session (pre-migration) — trust the cache; it will refresh on next login.
+        return cached
+
+    try:
+        set_at = datetime.fromisoformat(set_at_raw)
+        if set_at.tzinfo is None:
+            set_at = set_at.replace(tzinfo=UTC)
+    except (ValueError, TypeError):
+        logger.warning("Unparseable cached_balance_set_at=%r for user %s", set_at_raw, user_id)
+        return cached
+
+    if last_change_at > set_at:
+        # DB was mutated after the session was last written — refetch.
+        try:
+            async with async_session() as db:
+                fresh = await get_balance(db, user_id)
+            set_cached_balance(session, fresh)
+            logger.debug(
+                "Balance cache refreshed user=%s old=%d new=%d",
+                user_id,
+                cached,
+                fresh,
+            )
+            return fresh
+        except Exception:
+            logger.exception("Failed to refresh balance for user %s", user_id)
+            return cached
+
+    return cached
