@@ -189,6 +189,22 @@ async def analyze(request: Request):
     http_user = getattr(request.state, "user", None)
     http_user_id = http_user.id if http_user else None
 
+    # POST /analyze is the Regenerate endpoint (initial generation uses /ws/analyze).
+    # Always clear cached LLM outputs so the pipeline re-runs from scratch.
+    # User inputs (cv_text, job_description, region, template, pii, documents) are preserved.
+    update_attempt(
+        attempt_id,
+        extracted_keywords=None,
+        cv_data=None,
+        rendered_cv=None,
+        cover_letter_data=None,
+        cover_letter_html=None,
+        quality_review=None,
+        quality_review_flags=None,
+        missing_keyword_groups=None,
+    )
+    logger.info("Pipeline[%s] regenerate: cleared cached LLM outputs", attempt_id)
+
     try:
         result = await run_generation_pipeline(
             attempt_id,

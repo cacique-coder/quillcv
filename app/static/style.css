@@ -1553,54 +1553,31 @@ select.input-field {
 }
 
 /* ── Phone Input Component ───────────────────────────────────────────────── */
+/* The visible <input> is wrapped by intl-tel-input at runtime — see
+   app/static/phone-input.js. We only style the outer .phone-input-wrap so
+   that, inside a vault-field or ref-row, the library's `.iti` wrapper
+   inherits the right width. The library ships its own dropdown + flag CSS
+   (vendored at /static/vendor/intl-tel-input/intlTelInput.min.css). */
 
 .phone-input-wrap {
-    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
 }
 
-.phone-input {
-    padding-right: 2.4rem; /* space for the flag indicator */
+/* Make the library's wrapper fill the parent width. */
+.phone-input-wrap .iti {
+    width: 100%;
 }
 
-/* Flag badge — positioned inside the right side of the input */
-.phone-input-flag {
-    position: absolute;
-    right: 0.7rem;
-    top: 0.65rem;
-    font-size: 1.1rem;
-    line-height: 1;
-    pointer-events: none;
-    user-select: none;
-}
-
-.phone-input-hint {
-    font-size: 0.75rem;
-    color: var(--text-muted, #888);
-    margin-top: 0.1rem;
-}
-
-/* Red border only after the user has typed something and the value is invalid */
-.phone-input:not(:placeholder-shown):invalid {
-    border-color: #ef4444;
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
-}
-
-/* Inside a vault-field the wrap should stretch full width */
+/* Inside a vault-field the wrap should stretch full width. */
 .vault-field .phone-input-wrap {
     width: 100%;
 }
 
-/* Inside a ref-row the phone wrap should match sibling inputs — hide hint and flag to save space */
+/* Inside a ref-row the phone wrap should match sibling inputs. */
 .ref-row .phone-input-wrap {
     flex: 1;
     min-width: 0;
-}
-.ref-row .phone-input-hint,
-.ref-row .phone-input-flag {
-    display: none;
 }
 
 /* ============================================================

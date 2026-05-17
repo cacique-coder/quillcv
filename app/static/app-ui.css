@@ -12,35 +12,110 @@
 }
 .form-group label {
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
+    color: var(--ink);
+    letter-spacing: -0.005em;
 }
 .hint {
     font-size: 0.82rem;
     color: var(--text-muted);
+    line-height: 1.5;
 }
-input[type="file"] {
-    padding: 0.8rem;
-    background: var(--surface);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    cursor: pointer;
-}
-textarea, .input-field {
-    padding: 0.8rem;
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 4px 6px 5px 3px;
-    color: var(--text);
+
+/* ── Unified field identity ───────────────────────────────────
+   One consistent baseline for textareas, text-like inputs, and
+   selects. The slightly asymmetric radius is the "handmade paper"
+   signature — kept subtle so it reads cohesive, not broken.
+   Wizard textareas only adjust size + comfort, never the shell.
+   ─────────────────────────────────────────────────────────── */
+textarea,
+.input-field,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+input[type="search"],
+input[type="password"],
+input[type="date"],
+select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.7rem 0.85rem;
+    background: var(--paper-raised);
+    border: 1.5px solid var(--rule);
+    border-radius: 6px 8px 7px 5px;
+    color: var(--ink);
     font-family: inherit;
-    font-size: 0.9rem;
-    resize: vertical;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
-textarea:focus, .input-field:focus, input[type="file"]:focus {
+textarea {
+    resize: vertical;
+    min-height: 96px;
+}
+textarea:hover,
+.input-field:hover,
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="tel"]:hover,
+input[type="url"]:hover,
+input[type="number"]:hover,
+input[type="search"]:hover,
+input[type="password"]:hover,
+input[type="date"]:hover,
+select:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--rule));
+}
+textarea:focus,
+.input-field:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
+    background: var(--paper);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+textarea::placeholder,
+input::placeholder {
+    color: var(--ink-4);
+    opacity: 1;
+}
+textarea:disabled,
+input:disabled,
+select:disabled {
+    background: color-mix(in srgb, var(--paper-sunk) 55%, transparent);
+    color: var(--ink-3);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+input[type="file"] {
+    padding: 0.85rem 1rem;
+    background: color-mix(in srgb, var(--paper-raised) 70%, transparent);
+    border: 1.5px dashed var(--rule);
+    border-radius: 6px 8px 7px 5px;
+    color: var(--ink-2);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+input[type="file"]:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--rule));
+    background: color-mix(in srgb, var(--accent-wash) 25%, transparent);
+}
+input[type="file"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 button[type="submit"] {
     padding: 0.85rem 2rem;

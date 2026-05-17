@@ -24,9 +24,11 @@
   <div class="nav-section">Admin</div>
   <nav class="nav">
     <a href="/admin" {% if request.url.path == '/admin' %}class="active"{% endif %}>Dashboard</a>
+    <a href="/admin/requests" {% if '/admin/requests' in request.url.path %}class="active"{% endif %}>All Requests</a>
     <a href="/admin/users" {% if '/admin/users' in request.url.path %}class="active"{% endif %}>Users</a>
     <a href="/admin/prompts" {% if '/admin/prompts' in request.url.path %}class="active"{% endif %}>Prompts</a>
     <a href="/admin/invitations" {% if '/admin/invitations' in request.url.path %}class="active"{% endif %}>Invitations</a>
+    <a href="/admin/features" {% if '/admin/features' in request.url.path %}class="active"{% endif %}>Features</a>
   </nav>
   {% endif %}
 

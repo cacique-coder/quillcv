@@ -61,12 +61,20 @@ _SKIP_PREFIXES = ("/static/", "/favicon.ico")
 
 
 class StaticCacheMiddleware(BaseHTTPMiddleware):
-    """Set long-lived Cache-Control for versioned static assets."""
+    """Set Cache-Control for static assets.
+
+    In dev we disable caching so edits to CSS/JS show up on the next reload
+    without a hard refresh. Production keeps the immutable year-long cache;
+    bust on deploy via a content hash in the asset URL when that ships.
+    """
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         if request.url.path.startswith("/static/"):
-            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            if _dev_mode_for_logging:
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            else:
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         return response
 
 

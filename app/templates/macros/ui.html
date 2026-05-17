@@ -146,7 +146,10 @@
 <div class="wiz-footer">
     {% if back_step > 0 %}
     <button type="button" class="btn btn-ghost btn-sm"
-            hx-get="/wizard/step/{{ back_step }}" hx-target="#wizard-container" hx-swap="innerHTML">← Back</button>
+            hx-get="/wizard/step/{{ back_step }}"
+            hx-target="#wizard-container"
+            hx-swap="innerHTML"
+            hx-push-url="true">← Back</button>
     {% else %}
     <span></span>
     {% endif %}
@@ -170,102 +173,39 @@
 
 
 {# ── Phone Input ───────────────────────────────────────────── #}
-{# Renders a tel input with international format hint, pattern validation,
-   a country-flag indicator, and a JS formatter that runs on blur.
-   Usage: {{ phone_input("phone", value=attempt.get('phone', ''), required=false) }}
+{# Renders a tel input wired to intl-tel-input (vendored at
+   /static/vendor/intl-tel-input/). The library adds a country-picker
+   dropdown with flags, auto-formats the visible input as the user types,
+   validates against libphonenumber, and writes the canonical E.164 form
+   (e.g. "+61400111222") to a hidden input that takes over the original
+   `name` attribute on submit. See app/static/phone-input.js for init.
+
+   `region` is an optional 2-letter ISO code (or QuillCV region code like
+   "AU"/"UK") that seeds the initial country in the dropdown.
+
+   Usage: {{ phone_input("phone", value="+61400111222", region="AU") }}
 #}
-{% macro phone_input(name, value="", placeholder="+1 (555) 123-4567", required=false) %}
+{% macro phone_input(name, value="", placeholder="", required=false, region="") %}
 <div class="phone-input-wrap">
     <input type="tel"
            name="{{ name }}"
            value="{{ value }}"
            placeholder="{{ placeholder }}"
            class="input-field phone-input"
-           pattern="^\+?[\d\s\-\(\)\.]{7,20}$"
            inputmode="tel"
            autocomplete="tel"
+           data-intl-tel
+           {% if region %}data-region="{{ region }}"{% endif %}
            {% if required %}required{% endif %}>
-    <span class="phone-input-flag" aria-hidden="true" data-phone-flag="{{ name }}"></span>
-    <span class="phone-input-hint">Include country code (e.g. +61, +44, +1)</span>
 </div>
-<script>
-(function () {
-    // Country code prefix → flag emoji + country name
-    var FLAG_MAP = [
-        ["+61",  "🇦🇺"],
-        ["+1",   "🇺🇸"],
-        ["+44",  "🇬🇧"],
-        ["+64",  "🇳🇿"],
-        ["+1",   "🇨🇦"],
-        ["+49",  "🇩🇪"],
-        ["+33",  "🇫🇷"],
-        ["+31",  "🇳🇱"],
-        ["+91",  "🇮🇳"],
-        ["+55",  "🇧🇷"],
-        ["+971", "🇦🇪"],
-        ["+81",  "🇯🇵"],
-        ["+57",  "🇨🇴"],
-        ["+58",  "🇻🇪"],
-        ["+34",  "🇪🇸"],
-        ["+39",  "🇮🇹"],
-        ["+7",   "🇷🇺"],
-        ["+86",  "🇨🇳"],
-        ["+82",  "🇰🇷"],
-        ["+65",  "🇸🇬"],
-        ["+60",  "🇲🇾"],
-        ["+27",  "🇿🇦"],
-        ["+20",  "🇪🇬"],
-        ["+52",  "🇲🇽"],
-        ["+54",  "🇦🇷"]
-    ];
-
-    function detectFlag(val) {
-        if (!val || val[0] !== "+") return "";
-        // Try longest prefix first for disambiguation (e.g. +971 before +9)
-        var sorted = FLAG_MAP.slice().sort(function (a, b) { return b[0].length - a[0].length; });
-        for (var i = 0; i < sorted.length; i++) {
-            if (val.startsWith(sorted[i][0])) return sorted[i][1];
-        }
-        return "";
-    }
-
-    function normalizeOnBlur(input) {
-        var val = input.value.trim();
-        if (!val) { updateFlag(input, ""); return; }
-        // Auto-prepend + when user started with digits only
-        if (val && /^\d/.test(val)) val = "+" + val;
-        // Strip non-phone characters
-        val = val.replace(/[^\d\s\+\-\(\)\.]/g, "");
-        // Collapse whitespace
-        val = val.replace(/\s+/g, " ").trim();
-        input.value = val;
-        updateFlag(input, val);
-    }
-
-    function updateFlag(input, val) {
-        var flagEl = document.querySelector("[data-phone-flag='" + input.name + "']");
-        if (flagEl) flagEl.textContent = detectFlag(val);
-    }
-
-    // Wire up this specific input (by name) — handles multiple phone inputs per page
-    var inputs = document.querySelectorAll("input[name='{{ name }}'].phone-input");
-    inputs.forEach(function (input) {
-        // Show flag immediately for pre-filled values
-        updateFlag(input, input.value);
-
-        input.addEventListener("blur", function () { normalizeOnBlur(input); });
-        input.addEventListener("input", function () { updateFlag(input, input.value); });
-    });
-})();
-</script>
 {% endmacro %}
 
 
 {# ── Reference Entry ──────────────────────────────────────── #}
 {# Renders a reference person form block.
-   Usage: {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
+   Usage: {{ reference_entry(1, refs[0] if refs|length > 0 else {}, region="AU") }}
 #}
-{% macro reference_entry(index, ref={}) %}
+{% macro reference_entry(index, ref={}, region="") %}
 <div class="reference-entry">
     <div class="ref-row">
         {{ text_input("ref_name_" ~ index, placeholder="Full name", value=ref.get('name', '') if ref else '') }}
@@ -276,7 +216,7 @@
         {{ text_input("ref_email_" ~ index, type="email", placeholder="Email", value=ref.get('email', '') if ref else '') }}
     </div>
     <div class="ref-row">
-        {{ phone_input("ref_phone_" ~ index, value=ref.get('phone', '') if ref else '', placeholder="+1 (555) 123-4567") }}
+        {{ phone_input("ref_phone_" ~ index, value=ref.get('phone', '') if ref else '', region=region) }}
     </div>
 </div>
 {% endmacro %}
@@ -309,4 +249,78 @@
 </div>
 {% endif %}
 {% endif %}
+{% endmacro %}
+
+
+{# ── Wizard Section Header ─────────────────────────────────
+   Renders the numbered SVG circle + title + description block used
+   at the top of wizard step sections.
+   Usage: {{ wizard_section_header(1, "Section title", "Short description.") }}
+#}
+{% macro wizard_section_header(number, title, description) %}
+<div class="wizard-section-header">
+    <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+        <path d="M18 3 C25 2, 33 8, 33 18 C33 28, 26 34, 18 33 C10 33, 3 27, 3 18 C3 9, 10 2, 18 3 Z"
+              stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+        <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+              fill="var(--accent)" font-family="inherit">{{ number }}</text>
+    </svg>
+    <div>
+        <h3 class="wizard-section-title">{{ title }}</h3>
+        <p class="wizard-section-desc">{{ description }}</p>
+    </div>
+</div>
+{% endmacro %}
+
+
+{# ── Voice Disclosure ──────────────────────────────────────
+   Collapsible "starter pills" helper. The caller body is rendered
+   inside the .voice-starters wrapper so consumers just pass the
+   pill content and a target input id (for the JS that drops a
+   pill value into the textarea).
+
+   Pass grouped=true to add the .voice-pills--grouped variant.
+
+   Usage:
+     {% call voice_disclosure(target="self_description") %}
+       <p class="voice-starters__lead">Click any pill to drop it in.</p>
+       <div class="voice-starters__pills">
+         <button type="button" class="voice-pill">Pragmatic builder</button>
+       </div>
+     {% endcall %}
+#}
+{% macro voice_disclosure(target="", label="Need a starter? Show suggestions", grouped=false) %}
+<details class="voice-disclosure">
+    <summary class="voice-disclosure__summary">
+        <span class="voice-disclosure__icon" aria-hidden="true">+</span>
+        <span class="voice-disclosure__label">{{ label }}</span>
+    </summary>
+    <div class="voice-starters voice-pills{% if grouped %} voice-pills--grouped{% endif %}" data-target="{{ target }}">
+        {{ caller() }}
+    </div>
+</details>
+{% endmacro %}
+
+
+{# ── Wavy Divider ──────────────────────────────────────────
+   Hand-drawn-looking SVG wavy line between wizard sections. Three
+   variants exist so consecutive dividers don't look identical.
+   Variant defaults to 1; any unknown value also falls back to 1.
+   Usage: {{ wavy_divider(variant=2) }}
+#}
+{% macro wavy_divider(variant=1) %}
+<div class="wizard-section-wavy" aria-hidden="true">
+    <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+        {% if variant == 2 %}
+        <path d="M0 5 C25 9, 50 1, 75 5 S125 1, 150 6 S200 2, 225 5 S275 1, 300 6 S350 2, 375 5 S425 1, 450 6 S500 2, 525 5 S575 1, 600 5"
+              stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        {% elif variant == 3 %}
+        <path d="M0 5 C30 2, 55 8, 80 5 S130 8, 155 3 S205 7, 230 5 S280 8, 305 3 S355 7, 380 5 S430 8, 455 3 S505 7, 530 5 S580 8, 600 5"
+              stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        {% else %}
+        <path d="M0 5 C25 1, 50 9, 75 5 S125 9, 150 4 S200 8, 225 5 S275 9, 300 4 S350 8, 375 5 S425 9, 450 4 S500 8, 525 5 S575 9, 600 5"
+              stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        {% endif %}
+    </svg>
+</div>
 {% endmacro %}

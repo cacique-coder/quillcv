@@ -37,9 +37,22 @@
 <div class="wiz-tabs">
     {% for num, roman, label in steps %}
     {% set state = "done" if step > num else ("on" if step == num else "") %}
-    <div class="wiz-tab {{ state }}">
+    {% if state == "done" %}
+    <a class="wiz-tab {{ state }}"
+       href="/wizard/step/{{ num }}"
+       hx-get="/wizard/step/{{ num }}"
+       hx-target="#wizard-container"
+       hx-swap="innerHTML"
+       hx-push-url="true"
+       title="Go back to {{ label }}">
+        <div class="n">{{ roman }}.</div>
+        <div class="t">{{ label }}</div>
+    </a>
+    {% else %}
+    <div class="wiz-tab {{ state }}" {% if state == "on" %}aria-current="step"{% endif %}>
         <div class="n">{{ roman }}.</div>
         <div class="t">{{ label }}</div>
     </div>
+    {% endif %}
     {% endfor %}
 </div>

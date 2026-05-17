@@ -68,7 +68,7 @@
     ] %}
 
     <div class="voice-emphasis">
-        &#10033; Optional, but the candidates who fill this in get noticeably better CVs. <strong>Three quick prompts</strong> below.
+        &#10033; Optional, but the candidates who fill this in get noticeably better CVs. <strong>Four quick prompts</strong> below.
     </div>
 
     {# ─────────────────────────────────────────────────────────
@@ -89,24 +89,30 @@
         </div>
 
         {{ text_area("self_description", rows=4, placeholder="e.g. I'm a hands-on developer who loves mentoring juniors and simplifying complex systems...", value=attempt.get('self_description', '')) }}
-        <div class="voice-starters voice-pills voice-pills--grouped" data-target="self_description">
-            <p class="voice-starters__lead">
-                <span class="voice-starters__icon" aria-hidden="true">↑</span>
-                Need a starter? Click any pill to drop it into the field above, then make it yours.
-            </p>
-            {% for cat_name, cat_hint, pills in self_description_categories %}
-            <div class="voice-pill-group">
-                <span class="voice-pill-group__label">
-                    {{ cat_name }}<span class="voice-pill-group__hint">— {{ cat_hint }}</span>
-                </span>
-                <div class="voice-pill-group__pills">
-                    {% for label, text in pills %}
-                    <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
-                    {% endfor %}
+        <details class="voice-disclosure">
+            <summary class="voice-disclosure__summary">
+                <span class="voice-disclosure__icon" aria-hidden="true">+</span>
+                <span class="voice-disclosure__label">Need a starter? Show suggestions</span>
+            </summary>
+            <div class="voice-starters voice-pills voice-pills--grouped" data-target="self_description">
+                <p class="voice-starters__lead">
+                    <span class="voice-starters__icon" aria-hidden="true">↑</span>
+                    Click any pill to drop it in — then make it yours.
+                </p>
+                {% for cat_name, cat_hint, pills in self_description_categories %}
+                <div class="voice-pill-group">
+                    <span class="voice-pill-group__label">
+                        {{ cat_name }}<span class="voice-pill-group__hint">— {{ cat_hint }}</span>
+                    </span>
+                    <div class="voice-pill-group__pills">
+                        {% for label, text in pills %}
+                        <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                        {% endfor %}
+                    </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
+        </details>
     </div>
 
     {# ── Wavy divider ─────────────────────────────────────────── #}
@@ -135,17 +141,23 @@
         </div>
 
         {{ text_area("values", rows=4, placeholder="e.g. Code quality, user-centric design, continuous learning, transparent communication...", value=attempt.get('values', '')) }}
-        <div class="voice-starters voice-pills" data-target="values">
-            <p class="voice-starters__lead">
-                <span class="voice-starters__icon" aria-hidden="true">↑</span>
-                Need a starter? Click any pill to drop it into the field above.
-            </p>
-            <div class="voice-starters__pills">
-                {% for label, text in values_pills %}
-                <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
-                {% endfor %}
+        <details class="voice-disclosure">
+            <summary class="voice-disclosure__summary">
+                <span class="voice-disclosure__icon" aria-hidden="true">+</span>
+                <span class="voice-disclosure__label">Need a starter? Show suggestions</span>
+            </summary>
+            <div class="voice-starters voice-pills" data-target="values">
+                <p class="voice-starters__lead">
+                    <span class="voice-starters__icon" aria-hidden="true">↑</span>
+                    Click any pill to drop it in — then make it yours.
+                </p>
+                <div class="voice-starters__pills">
+                    {% for label, text in values_pills %}
+                    <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
+        </details>
     </div>
 
     {# ── Wavy divider ─────────────────────────────────────────── #}
@@ -174,17 +186,51 @@
         </div>
 
         {{ text_area("offer_appeal", rows=4, placeholder="e.g. The chance to work on distributed systems at scale, the team's open-source culture...", value=attempt.get('offer_appeal', '')) }}
-        <div class="voice-starters voice-pills" data-target="offer_appeal">
-            <p class="voice-starters__lead">
-                <span class="voice-starters__icon" aria-hidden="true">↑</span>
-                Need a starter? Click any pill to drop it into the field above.
-            </p>
-            <div class="voice-starters__pills">
-                {% for label, text in offer_appeal_pills %}
-                <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
-                {% endfor %}
+        <details class="voice-disclosure">
+            <summary class="voice-disclosure__summary">
+                <span class="voice-disclosure__icon" aria-hidden="true">+</span>
+                <span class="voice-disclosure__label">Need a starter? Show suggestions</span>
+            </summary>
+            <div class="voice-starters voice-pills" data-target="offer_appeal">
+                <p class="voice-starters__lead">
+                    <span class="voice-starters__icon" aria-hidden="true">↑</span>
+                    Click any pill to drop it in — then make it yours.
+                </p>
+                <div class="voice-starters__pills">
+                    {% for label, text in offer_appeal_pills %}
+                    <button type="button" class="voice-pill" data-text="{{ text|e }}">{{ label }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
+    </div>
+
+    {# ── Wavy divider ─────────────────────────────────────────── #}
+    <div class="wizard-section-wavy" aria-hidden="true">
+        <svg viewBox="0 0 600 10" preserveAspectRatio="none">
+            <path d="M0 5 C30 2, 60 8, 90 5 S150 8, 180 4 S240 9, 270 5 S330 1, 360 6 S420 9, 450 4 S510 8, 540 5 S585 2, 600 5"
+                  stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+    </div>
+
+    {# ─────────────────────────────────────────────────────────
+       SECTION 4 — Featured achievement
+       ───────────────────────────────────────────────────────── #}
+    <div class="wizard-section">
+        <div class="wizard-section-header">
+            <svg class="wizard-section-num" viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
+                <path d="M18 3 C26 3, 34 9, 33 18 C33 27, 26 34, 18 33 C10 33, 3 27, 3 18 C3 9, 11 3, 18 3 Z"
+                      stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" fill="rgba(108,99,255,0.08)"/>
+                <text x="18" y="23" text-anchor="middle" font-size="14" font-weight="600"
+                      fill="var(--accent)" font-family="inherit">4</text>
+            </svg>
+            <div>
+                <h3 class="wizard-section-title">Your most important achievement or project</h3>
+                <p class="wizard-section-desc">Pick the one you'd lead with in an interview — even if you can't define a metric. We'll feature this in your cover letter.</p>
             </div>
         </div>
+
+        {{ text_area("featured_achievement", rows=4, placeholder="e.g. I designed an AI agentic flow that's now embedded in every active client project — replacing ~900 lines of custom orchestration code...", value=attempt.get('featured_achievement', '')) }}
     </div>
 
     {{ wizard_nav(back_step=2, next_label="Continue →", step=3, total_steps=6) }}
@@ -197,6 +243,7 @@
             self_description: "I'm a pragmatic full-stack developer with 8 years of experience who thrives on turning ambiguous requirements into clean, shipped products. Colleagues describe me as reliable, curious, and the person who quietly unblocks the team.",
             values: "Code quality over speed, user empathy, continuous learning, honest communication, keeping things simple.",
             offer_appeal: "The opportunity to work on a product used by millions, the engineering culture of shipping fast with high quality, and the chance to grow into a tech lead role.",
+            featured_achievement: "I designed the AI agentic flow for the company — embedded across every active client project, replacing ~900 lines of custom orchestration code with native agent teams. It changed how the team ships parallel work.",
         };
         for (const [name, value] of Object.entries(data)) {
             const el = document.querySelector(`[name="${name}"]`);

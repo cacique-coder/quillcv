@@ -56,6 +56,27 @@ async def _save_pii(request: Request, user, pii: dict) -> None:
     request.state.session["pii_onboarded"] = True
 
 
+def _references_from_form(form) -> list[dict]:
+    """Parse up to two reference entries (indices 1 and 2) from a submitted form.
+
+    Mirrors the wizard step-2 layout (ref_name_N, ref_title_N, ref_company_N,
+    ref_email_N, ref_phone_N). Entries with no name are dropped.
+    """
+    refs: list[dict] = []
+    for idx in (1, 2):
+        name = (form.get(f"ref_name_{idx}") or "").strip()
+        if not name:
+            continue
+        refs.append({
+            "name": name,
+            "title": (form.get(f"ref_title_{idx}") or "").strip(),
+            "company": (form.get(f"ref_company_{idx}") or "").strip(),
+            "email": (form.get(f"ref_email_{idx}") or "").strip(),
+            "phone": normalize_phone(form.get(f"ref_phone_{idx}") or ""),
+        })
+    return refs
+
+
 # ---------------------------------------------------------------------------
 # Routes: /onboarding
 # ---------------------------------------------------------------------------
@@ -101,6 +122,9 @@ async def onboarding_submit(
 ):
     """Save PII to the vault and redirect to /app."""
 
+    form = await request.form()
+    references = _references_from_form(form)
+
     full_name = full_name.strip()
     if not full_name:
         pii = get_session_pii(request)
@@ -130,7 +154,7 @@ async def onboarding_submit(
         "linkedin": linkedin.strip(),
         "github": github.strip(),
         "portfolio": portfolio.strip(),
-        "references": get_session_pii(request).get("references", []),
+        "references": references,
     }
 
     await _save_pii(request, user, pii)
@@ -193,6 +217,9 @@ async def account_pii_submit(
 ):
     """Save updated PII to the vault from account settings."""
 
+    form = await request.form()
+    references = _references_from_form(form)
+
     full_name = full_name.strip()
     if not full_name:
         pii = get_session_pii(request)
@@ -222,7 +249,7 @@ async def account_pii_submit(
         "linkedin": linkedin.strip(),
         "github": github.strip(),
         "portfolio": portfolio.strip(),
-        "references": get_session_pii(request).get("references", []),
+        "references": references,
     }
 
     await _save_pii(request, user, pii)

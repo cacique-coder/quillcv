@@ -223,6 +223,30 @@ async def run_generation_pipeline(
         rendered_cv = cached_rendered_cv
         logger.info("Pipeline[%s] step=ai_generate cached", attempt_id)
         timings["ai_generate"] = 0.0
+
+        # Self-healing: if the candidate filled in references after the LLM
+        # ran (or the LLM dropped them on the original run), reinstate them
+        # and re-render the template only. No LLM call needed — references
+        # are pure user input.
+        attempt_refs = attempt.get("references") or []
+        cached_refs = cv_data.get("references") or []
+        refs_changed = (
+            bool(attempt_refs)
+            and [(r.get("name"), r.get("email")) for r in attempt_refs]
+            != [(r.get("name"), r.get("email")) for r in cached_refs]
+        )
+        if refs_changed:
+            cv_data["references"] = [dict(r) for r in attempt_refs if isinstance(r, dict)]
+            llm_usage = cv_data.pop("_llm_usage", {})
+            rendered_cv = templates.get_template(
+                f"cv_templates/{template_id}.html"
+            ).render(**cv_data)
+            cv_data["_llm_usage"] = llm_usage
+            update_attempt(attempt_id, cv_data=cv_data, rendered_cv=rendered_cv)
+            logger.info(
+                "Pipeline[%s] step=render refs_resynced count=%d",
+                attempt_id, len(attempt_refs),
+            )
         # Placeholder check still runs so warnings surface on resumed runs
         placeholder_issues = check_placeholders(cv_data)
         if placeholder_issues:
@@ -255,6 +279,16 @@ async def run_generation_pipeline(
         # Restore real PII values from tokens
         if redactor:
             cv_data = redactor.restore(cv_data)
+
+        # Make sure user-provided references survive even if the LLM dropped
+        # the references array from its JSON output. The candidate filled
+        # these in at step 2; they're authoritative — the LLM has no business
+        # arbitrating whether they appear on the CV. If the model did echo
+        # them back, prefer the candidate's version anyway (LLM occasionally
+        # reformats name/title in ways the user didn't intend).
+        attempt_refs = attempt.get("references") if attempt else None
+        if attempt_refs:
+            cv_data["references"] = [dict(r) for r in attempt_refs if isinstance(r, dict)]
 
         # Quality gate — catch any leftover placeholders
         placeholder_issues = check_placeholders(cv_data)
@@ -316,8 +350,20 @@ async def run_generation_pipeline(
         return result
 
     # --- Cover letter ---
-    cached_cl_data = _cached(attempt, "cover_letter_data")
-    if cached_cl_data:
+    # Gated by the `cover_letter` feature flag — when off, skip generation
+    # entirely and surface results without the Cover Letter tab. The flag
+    # was added because cover-letter prompts have been timing out via the
+    # local claude CLI; see app/features.py.
+    from app.features import is_enabled as _flag_enabled
+
+    cover_letter_enabled = _flag_enabled("cover_letter")
+    cover_letter_data = None
+    cover_letter_html = None
+    cached_cl_data = _cached(attempt, "cover_letter_data") if cover_letter_enabled else None
+    if not cover_letter_enabled:
+        logger.info("Pipeline[%s] step=cover_letter skipped (flag off)", attempt_id)
+        run_cover_letter = False
+    elif cached_cl_data:
         cover_letter_data = cached_cl_data
         cover_letter_html = attempt.get("cover_letter_html")
         logger.info("Pipeline[%s] step=cover_letter cached", attempt_id)

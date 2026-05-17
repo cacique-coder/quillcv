@@ -132,14 +132,19 @@ def _build_dynamic_schema(extra_sections: list[str]) -> str:
     return base[:insert_point + 1] + extra_block + "\n" + base[last_brace:]
 
 
-def _build_region_rules(region: RegionConfig) -> str:
-    """Build strict region-specific formatting instructions from config."""
+def _build_region_rules(region: RegionConfig, *, include_work_rights: bool = False) -> str:
+    """Build strict region-specific formatting instructions from config.
+
+    ``include_work_rights`` reflects the user's opt-in choice from step 2.
+    Work rights are never required by the region alone — the candidate has
+    to explicitly elect to surface them.
+    """
     lines = [f"Region: {region.name} ({region.code})"]
 
     include = ["Summary / Profile", "Experience (reverse chronological)", "Skills", "Education"]
     if region.include_references:
         include.append("References (2-3 professional referees with contact details)")
-    if region.include_visa_status:
+    if include_work_rights:
         include.append("Visa / Work Rights status")
     lines.append(f"REQUIRED sections: {', '.join(include)}")
 
@@ -161,8 +166,8 @@ def _build_region_rules(region: RegionConfig) -> str:
         exclude.append("Nationality")
     if not region.include_marital_status:
         exclude.append("Marital status")
-    if not region.include_visa_status:
-        exclude.append("Visa status / work rights")
+    if not include_work_rights:
+        exclude.append("Visa status / work rights (candidate has not opted in)")
     if exclude:
         lines.append(f"DO NOT INCLUDE: {', '.join(exclude)}")
 
@@ -212,7 +217,7 @@ def _build_personal_context(attempt: dict, redactor=None) -> str:
         parts.append(f"Professional values: {attempt['values']}")
     if attempt.get("offer_appeal"):
         parts.append(f"What attracts them to this role: {attempt['offer_appeal']}")
-    if attempt.get("visa_status"):
+    if attempt.get("include_work_rights") and attempt.get("visa_status"):
         parts.append(f"Visa/work rights: {attempt['visa_status']}")
     if attempt.get("references"):
         refs = attempt["references"]
@@ -281,7 +286,10 @@ async def generate_tailored_cv(
     cv_text = sanitize_user_input(cv_text, MAX_CV_LENGTH, "CV text")
     job_description = sanitize_user_input(job_description, MAX_JOB_DESC_LENGTH, "Job description")
 
-    region_rules = _build_region_rules(region)
+    region_rules = _build_region_rules(
+        region,
+        include_work_rights=bool(attempt and attempt.get("include_work_rights")),
+    )
     # Build a local redactor purely so reference contact details (name/email/phone)
     # are tokenised before being embedded in the prompt. The cv_text passed in is
     # already redacted upstream in the pipeline.

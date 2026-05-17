@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import text_input, text_area, file_input, select_input, badge, field_tag, section_divider, info_card, wizard_nav, phone_input, region_warnings, form_group, wizard_section_header, voice_disclosure, wavy_divider %}
+
+{% block title %}Components — Dev Catalogue · QuillCV{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Page-scoped — this template is the only consumer. */
+    .catalogue-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 96px; display: grid; grid-template-columns: 220px 1fr; gap: 32px; }
+    @media (max-width: 900px) { .catalogue-wrap { grid-template-columns: 1fr; } }
+    .catalogue-toc { position: sticky; top: 24px; align-self: start; font-family: var(--mono); font-size: 12px; line-height: 2; }
+    .catalogue-toc h4 { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+    .catalogue-toc a { display: block; color: var(--ink-2); text-decoration: none; padding: 2px 0; border-left: 2px solid transparent; padding-left: 8px; transition: color 0.15s, border-color 0.15s; }
+    .catalogue-toc a:hover { color: var(--accent); border-left-color: var(--accent); }
+    .catalogue-section { padding: 28px 0; border-top: 1px dashed var(--border); }
+    .catalogue-section:first-of-type { border-top: 0; padding-top: 0; }
+    .catalogue-section > h2 { margin: 0 0 4px; font-size: 22px; }
+    .catalogue-section > .catalogue-section__lede { color: var(--ink-3); margin: 0 0 18px; font-size: 14px; }
+    .catalogue-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+    .catalogue-row--stack { flex-direction: column; align-items: stretch; }
+    .catalogue-block { padding: 16px; background: var(--paper-raised); border: 1px solid var(--border); border-radius: var(--r-2); flex: 1 1 280px; min-width: 0; }
+    .catalogue-block > .catalogue-block__label { font-family: var(--mono); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 10px; }
+    .catalogue-block > .catalogue-block__code { font-family: var(--mono); font-size: 11px; color: var(--ink-3); background: var(--paper); padding: 8px 10px; border-radius: var(--r-1); margin: 10px 0 0; overflow-x: auto; white-space: pre; }
+    .catalogue-banner { background: var(--accent-wash); border: 1px solid var(--accent); border-radius: var(--r-2); padding: 14px 18px; margin: 0 0 24px; font-size: 13px; color: var(--accent-ink); }
+    .catalogue-banner strong { font-weight: 700; }
+    /* Inline token swatch */
+    .token-swatch { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-1); font-family: var(--mono); font-size: 11px; }
+    .token-swatch__chip { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--border); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="catalogue-wrap">
+
+    <nav class="catalogue-toc" aria-label="Component sections">
+        <h4>Catalogue</h4>
+        <a href="#tokens">Color tokens</a>
+        <a href="#typography">Typography</a>
+        <a href="#buttons">Buttons</a>
+        <a href="#inputs">Inputs</a>
+        <a href="#tags">Tags & badges</a>
+        <a href="#wizard">Wizard pieces</a>
+        <a href="#disclosure">Voice disclosure</a>
+        <a href="#pills">Voice pills</a>
+        <a href="#info">Info cards</a>
+        <a href="#warnings">Region warnings</a>
+        <a href="#loading">Loading & spinner</a>
+    </nav>
+
+    <main>
+
+    <div class="catalogue-banner">
+        <strong>Component catalogue.</strong> Every reusable UI component renders here in canonical + edge states. If your CSS PR breaks something on this page, it breaks the app. Visible at <code>/dev/components</code> when <code>dev_mode=true</code>.
+    </div>
+
+    <!-- TOKENS -->
+    <section id="tokens" class="catalogue-section">
+        <h2>Color tokens</h2>
+        <p class="catalogue-section__lede">From <code>app/static/tokens.css</code>. Hover a swatch and copy its var name.</p>
+        <div class="catalogue-row">
+            {% for token in ["--paper", "--paper-raised", "--ink-1", "--ink-2", "--ink-3", "--accent", "--accent-wash", "--accent-ink", "--border", "--rule", "--text-muted"] %}
+            <span class="token-swatch"><span class="token-swatch__chip" style="background: var({{ token }});"></span>{{ token }}</span>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- TYPOGRAPHY -->
+    <section id="typography" class="catalogue-section">
+        <h2>Typography</h2>
+        <p class="catalogue-section__lede">Headings, body, hint, monospace.</p>
+        <div class="catalogue-block">
+            <h1>Heading 1 — display</h1>
+            <h2>Heading 2 — section</h2>
+            <h3>Heading 3 — subsection</h3>
+            <h4>Heading 4 — minor</h4>
+            <p>Body paragraph. The quick brown fox jumps over the lazy dog. ATS-friendly typography means good kerning, predictable spacing, and serif/sans pairings that survive PDF rendering.</p>
+            <p class="hint">Hint / small text — used under labels and to provide context.</p>
+            <p style="font-family: var(--mono); font-size: 12px;">Monospace · 12px · var(--mono)</p>
+        </div>
+    </section>
+
+    <!-- BUTTONS -->
+    <section id="buttons" class="catalogue-section">
+        <h2>Buttons</h2>
+        <p class="catalogue-section__lede">All variants + sizes + states. Single-dash naming per project convention.</p>
+        <div class="catalogue-row">
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">Variants</p>
+                <button class="btn btn-primary">Primary</button>
+                <button class="btn btn-accent">Accent</button>
+                <button class="btn btn-secondary">Secondary</button>
+                <button class="btn btn-ghost">Ghost</button>
+                <button class="btn btn-disabled" disabled>Disabled</button>
+            </div>
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">Sizes</p>
+                <button class="btn btn-accent btn-sm">Small</button>
+                <button class="btn btn-accent">Default</button>
+                <button class="btn btn-accent btn-lg">Large</button>
+                <br><br>
+                <button class="btn btn-accent btn-full">Full width</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- INPUTS -->
+    <section id="inputs" class="catalogue-section">
+        <h2>Inputs</h2>
+        <p class="catalogue-section__lede">All form macros: <code>text_input</code>, <code>text_area</code>, <code>select_input</code>, <code>phone_input</code>, <code>file_input</code>.</p>
+
+        <div class="catalogue-row catalogue-row--stack">
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">text_input — canonical</p>
+                {{ text_input("demo_text", placeholder="e.g. Software engineer", value="") }}
+                <p class="catalogue-block__code">{{ '{{ text_input("demo_text", placeholder="...", value="") }}' }}</p>
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">text_input — filled</p>
+                {{ text_input("demo_text_filled", placeholder="", value="Daniel Zambrano") }}
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">text_input — required</p>
+                {{ text_input("demo_text_req", placeholder="Required field", value="", required=true) }}
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">text_area — canonical (rows=4)</p>
+                {{ text_area("demo_area", rows=4, placeholder="Type something here…", value="") }}
+                <p class="catalogue-block__code">{{ '{{ text_area("demo_area", rows=4, placeholder="…", value="") }}' }}</p>
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">text_area — filled (shows accent left-stripe inside .wizard-section)</p>
+                <div class="wizard-section">
+                    {{ text_area("demo_area_filled", rows=4, placeholder="…", value="When the user types, the left edge gets an accent stripe and a soft cream tint. Focus state has a 3px accent ring.") }}
+                </div>
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">select_input</p>
+                {{ select_input("demo_select", options=[("au","Australia"),("us","United States"),("uk","United Kingdom"),("de","Germany")], selected="au") }}
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">phone_input</p>
+                {{ phone_input("demo_phone", value="+61 412 345 678") }}
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">file_input — empty</p>
+                {{ file_input("demo_file", accept=".pdf,.docx") }}
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">file_input — with stored file</p>
+                {{ file_input("demo_file_stored", accept=".pdf,.docx", stored_name="Daniel_CV_v2.pdf") }}
+            </div>
+
+            <div class="catalogue-block">
+                <p class="catalogue-block__label">form_group wrap (label + hint + slot)</p>
+                {% call form_group("Job Description", hint="Paste the full job posting — we extract keywords and tone.", required=true) %}
+                    {{ text_area("demo_jd", rows=6, placeholder="Job description…") }}
+                {% endcall %}
+            </div>
+        </div>
+    </section>
+
+    <!-- TAGS -->
+    <section id="tags" class="catalogue-section">
+        <h2>Tags & badges</h2>
+        <p class="catalogue-section__lede"><code>badge</code> and <code>field_tag</code> macros.</p>
+        <div class="catalogue-block">
+            <p class="catalogue-block__label">badge — variants</p>
+            {% for variant in ["match", "missing", "yes", "no", "none", "more", "required", "common", "optional", "default"] %}
+            {{ badge(variant, variant) }}
+            {% endfor %}
+        </div>
+        <div class="catalogue-block" style="margin-top: 14px;">
+            <p class="catalogue-block__label">field_tag — region fields</p>
+            {{ field_tag("References", "yes") }}
+            {{ field_tag("Photo", "no") }}
+            {{ field_tag("Date of birth", "optional") }}
+        </div>
+    </section>
+
+    <!-- WIZARD -->
+    <section id="wizard" class="catalogue-section">
+        <h2>Wizard section header + wavy divider</h2>
+        <p class="catalogue-section__lede">Numbered SVG header used across wizard step pages.</p>
+        <div class="wizard-section">
+            {{ wizard_section_header(1, "Section title", "A short description of what this section is for.") }}
+            {{ text_area("demo_wiz", rows=4, placeholder="A textarea inside a wizard-section gets the accent-edge polish.") }}
+        </div>
+
+        <p class="catalogue-block__label" style="margin-top: 18px;">wavy_divider — variant 1</p>
+        {{ wavy_divider(variant=1) }}
+        <p class="catalogue-block__label" style="margin-top: 18px;">wavy_divider — variant 2</p>
+        {{ wavy_divider(variant=2) }}
+        <p class="catalogue-block__label" style="margin-top: 18px;">wavy_divider — variant 3</p>
+        {{ wavy_divider(variant=3) }}
+    </section>
+
+    <!-- DISCLOSURE -->
+    <section id="disclosure" class="catalogue-section">
+        <h2>Voice disclosure</h2>
+        <p class="catalogue-section__lede">Collapsible helper used in the personalization step. Hide/show with native <code>&lt;details&gt;</code>.</p>
+        <div class="wizard-section">
+            {{ text_area("demo_disclosure", rows=4, placeholder="Primary field stays the focal point…") }}
+            {% call voice_disclosure(target="demo_disclosure") %}
+                <p class="voice-starters__lead">
+                    <span class="voice-starters__icon" aria-hidden="true">↑</span>
+                    Click any pill to drop it in — then make it yours.
+                </p>
+                <div class="voice-starters__pills">
+                    {% for label in ["Pragmatic builder", "Quiet leader", "Calm operator", "First-principles thinker"] %}
+                    <button type="button" class="voice-pill">{{ label }}</button>
+                    {% endfor %}
+                </div>
+            {% endcall %}
+        </div>
+    </section>
+
+    <!-- PILLS -->
+    <section id="pills" class="catalogue-section">
+        <h2>Voice pills</h2>
+        <p class="catalogue-section__lede">Selectable starter pills. Default and active state.</p>
+        <div class="catalogue-block">
+            <p class="catalogue-block__label">Flat list</p>
+            <div class="voice-pills">
+                {% for label in ["Code quality", "User-centred", "Open & honest", "Ownership"] %}
+                <button type="button" class="voice-pill">{{ label }}</button>
+                {% endfor %}
+                <button type="button" class="voice-pill is-active">Active</button>
+            </div>
+        </div>
+        <div class="catalogue-block" style="margin-top: 14px;">
+            <p class="catalogue-block__label">Grouped (with category labels)</p>
+            <div class="voice-pills voice-pills--grouped">
+                <div class="voice-pill-group">
+                    <span class="voice-pill-group__label">Mindset<span class="voice-pill-group__hint">— how I think</span></span>
+                    <div class="voice-pill-group__pills">
+                        <button type="button" class="voice-pill">Systems thinker</button>
+                        <button type="button" class="voice-pill">Numbers-led</button>
+                    </div>
+                </div>
+                <div class="voice-pill-group">
+                    <span class="voice-pill-group__label">Working style<span class="voice-pill-group__hint">— how I deliver</span></span>
+                    <div class="voice-pill-group__pills">
+                        <button type="button" class="voice-pill">Hands-on</button>
+                        <button type="button" class="voice-pill">Detail-driven</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INFO -->
+    <section id="info" class="catalogue-section">
+        <h2>Info cards</h2>
+        <p class="catalogue-section__lede"><code>info_card</code> macro.</p>
+        {% call info_card() %}
+            <p>This is an info card. Use it to wrap a paragraph or two of helper context inside a form. Consistent padding and surface from the global card style.</p>
+        {% endcall %}
+    </section>
+
+    <!-- WARNINGS -->
+    <section id="warnings" class="catalogue-section">
+        <h2>Region warnings</h2>
+        <p class="catalogue-section__lede"><code>region_warnings</code> macro. Used on region-conditional fields (photo, DOB, marital status).</p>
+        {{ region_warnings([
+            {"severity": "warning", "field": "photo", "message": "Australian CVs typically omit photos — including one risks bias-screening rejection."},
+            {"severity": "info", "field": "dob", "message": "Date of birth is not required in the AU market and is often left off."}
+        ]) }}
+    </section>
+
+    <!-- LOADING -->
+    <section id="loading" class="catalogue-section">
+        <h2>Loading & spinner</h2>
+        <p class="catalogue-section__lede">The HTMX <code>ai-loading-hint</code> shown during long-running generations.</p>
+        <div class="ai-loading-hint" style="display: flex;">
+            <div class="spinner"></div>
+            <span>Generating your CV — about 20 seconds…</span>
+        </div>
+    </section>
+
+    </main>
+</div>
+{% endblock %}

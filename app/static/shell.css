@@ -161,6 +161,16 @@
 
 .content.wide { max-width: 100%; padding: 0; }
 
+/* Mobile: collapse sidebar so .main can use the full viewport width.
+   The sidebar nav is duplicated in the topbar/marketing header for mobile users
+   on auth flows like /wizard. Without this, the fixed 240px sidebar squishes
+   the wizard's two-column body into ~150px of usable width on phones. */
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .content { padding: 24px 16px 48px; }
+}
+
 /* Page headers */
 .page-head {
   display: flex; align-items: flex-end; justify-content: space-between;

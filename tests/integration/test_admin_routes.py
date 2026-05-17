@@ -69,7 +69,7 @@ async def test_admin_can_toggle_feature_flag(admin_client):
     page = await client.get("/admin/features")
     assert page.status_code == 200
     # Reflect the disabled state somewhere on the page
-    assert "DISABLED" in page.text or "open_signups" in page.text
+    assert "Disabled" in page.text or "open_signups" in page.text
 
 
 @pytest.mark.asyncio
@@ -86,6 +86,45 @@ async def test_admin_toggle_unknown_feature_returns_404(admin_client):
 
 
 # ── Invitation creation ───────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_admin_session_detail_404_for_unknown_session(admin_client):
+    """An attempt_id that has no APIRequestLog rows should 404, not crash."""
+    client, _ = admin_client
+    response = await client.get("/admin/sessions/no-such-attempt-id", follow_redirects=False)
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_admin_session_detail_shows_iterations(admin_client, db_session):
+    """Seed two transactions sharing an attempt_id; session page lists both."""
+    from app.infrastructure.persistence.orm_models import APIRequestLog
+
+    client, _user = admin_client
+    attempt_id = "test_attempt_for_session_view"
+    async with db_session() as db:
+        for txn_id in ("txn_alpha_0001", "txn_beta_00002"):
+            db.add(APIRequestLog(
+                transaction_id=txn_id,
+                attempt_id=attempt_id,
+                service="ai_generator",
+                model="claude-sonnet-4",
+                input_tokens=100,
+                output_tokens=50,
+                cost_usd=0.001,
+                duration_ms=500,
+                status="success",
+            ))
+        await db.commit()
+
+    response = await client.get(f"/admin/sessions/{attempt_id}")
+    assert response.status_code == 200
+    # Both iteration ids should render (truncated to first 12 chars).
+    assert "txn_alpha_00" in response.text
+    assert "txn_beta_000" in response.text
+    # Headline stats reflect 2 iterations.
+    assert "Iterations" in response.text
 
 
 @pytest.mark.asyncio

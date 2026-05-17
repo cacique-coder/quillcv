@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# QuillCV pre-commit hook — runs the template linter.
+# Enable per-clone with: git config core.hooksPath .githooks
+
+if ! python scripts/lint_templates.py; then
+    echo
+    echo "Template lint failed. See output above."
+    echo "To bypass for this commit: git commit --no-verify"
+    exit 1
+fi

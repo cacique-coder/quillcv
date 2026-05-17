@@ -34,6 +34,19 @@ def _is_htmx(request: Request) -> bool:
     return request.headers.get("HX-Request") == "true"
 
 
+def _step_response(template_name: str, ctx: dict, step: int):
+    """Render a wizard step partial and tell HTMX to push the matching URL.
+
+    HX-Push-Url updates the browser address bar so step transitions are
+    bookmarkable and the back button on the progress tabs works as a real
+    navigation. Step GET routes already serve the full shell when HX-Request
+    is absent, so a direct reload at /wizard/step/N keeps working.
+    """
+    resp = templates.TemplateResponse(template_name, ctx)
+    resp.headers["HX-Push-Url"] = f"/wizard/step/{step}"
+    return resp
+
+
 async def _ensure_session_pii(request: Request) -> dict | None:
     """Return the user's PII map, re-unlocking the vault from the DB when the
     session cache has been pruned. Writes the result back into the session so
@@ -108,7 +121,14 @@ def _check_pii_completeness(attempt: dict, pii: dict, region_code: str) -> tuple
         missing.append("Nationality")
     if fields.get("marital") and not _has("marital_status"):
         missing.append("Marital status")
-    if fields.get("visa") and not _has("visa_status"):
+    # Work rights are opt-in: only require visa_status if the user has
+    # explicitly chosen to include them on the CV. Region defaults no longer
+    # force the field — see step 2 "Include my work rights" checkbox.
+    if (
+        fields.get("visa")
+        and attempt.get("include_work_rights")
+        and not _has("visa_status")
+    ):
         missing.append("Visa / work rights")
     if fields.get("references"):
         refs = attempt.get("references") or pii.get("references") or []
@@ -123,16 +143,43 @@ def _check_pii_completeness(attempt: dict, pii: dict, region_code: str) -> tuple
     return (len(missing) == 0, missing)
 
 
+def _bind_llm_context(request: Request, attempt_id: str) -> None:
+    """Tag the current request's LLM-tracking context with the active session.
+
+    A "session" here = one wizard flow = one ``attempt_id``. Calling this on
+    every wizard handler means any LLM call that fires inside the request
+    inherits the attempt_id + user_id, so APIRequestLog rows group cleanly
+    by session in the admin cost dashboard. Each generation pipeline run
+    inside the session gets its own ``transaction_id`` (an "iteration") set
+    downstream in ``run_generation_pipeline``.
+    """
+    from app.infrastructure.llm.client import set_llm_context
+
+    user = getattr(request.state, "user", None)
+    set_llm_context(
+        service="wizard",
+        attempt_id=attempt_id,
+        user_id=user.id if user else None,
+    )
+
+
 def _get_or_create_attempt(request: Request) -> dict:
-    """Get the current attempt from session, or create a new one."""
+    """Get the current attempt from session, or create a new one.
+
+    Also binds the attempt_id to the LLM-tracking context vars so every
+    LLM call within this request lands in APIRequestLog tagged with the
+    session — see ``_bind_llm_context`` for the model.
+    """
     attempt_id = request.state.session.get("attempt_id")
     if attempt_id:
         attempt = get_attempt(attempt_id)
         if attempt:
+            _bind_llm_context(request, attempt_id)
             return attempt
     # Create new attempt
     attempt_id = create_attempt()
     request.state.session["attempt_id"] = attempt_id
+    _bind_llm_context(request, attempt_id)
     return get_attempt(attempt_id)
 
 
@@ -263,13 +310,13 @@ async def step1(request: Request):
     else:
         selected = "AU"
 
-    return templates.TemplateResponse("partials/wizard/step1_country.html", {
+    return _step_response("partials/wizard/step1_country.html", {
         "request": request,
         "regions": list_regions(),
         "selected_region": selected,
         "region_config": REGIONS.get(selected, REGIONS["AU"]),
         "fields": _region_fields(selected),
-    })
+    }, step=1)
 
 
 @router.post("/step/1/save")
@@ -332,7 +379,7 @@ async def step2(request: Request):
     pii_complete, pii_missing = _check_pii_completeness(attempt, pii, region)
     pii_incomplete = not pii_complete
 
-    return templates.TemplateResponse("partials/wizard/step2_details.html", {
+    return _step_response("partials/wizard/step2_details.html", {
         "request": request,
         "attempt": attempt,
         "region": region,
@@ -343,7 +390,7 @@ async def step2(request: Request):
         "pii_prefilled": pii_prefilled,
         "pii_incomplete": pii_incomplete,
         "pii_missing": pii_missing,
-    })
+    }, step=2)
 
 
 @router.post("/step/2/save")
@@ -353,6 +400,7 @@ async def step2_save(
     email: str = Form(""),
     phone: str = Form(""),
     visa_status: str = Form(""),
+    include_work_rights: str = Form(""),
     nationality: str = Form(""),
     marital_status: str = Form(""),
     ref_name_1: str = Form(""),
@@ -426,6 +474,7 @@ async def step2_save(
             "nationality": nationality,
             "marital_status": marital_status,
             "visa_status": visa_status,
+            "include_work_rights": bool(include_work_rights),
             "references": references,
         }
         pii_complete, pii_missing = _check_pii_completeness(attempt_with_overrides, pii, region)
@@ -445,7 +494,7 @@ async def step2_save(
         }
         if extra:
             ctx.update(extra)
-        return templates.TemplateResponse("partials/wizard/step2_details.html", ctx)
+        return _step_response("partials/wizard/step2_details.html", ctx, step=2)
 
     if not already_age_confirmed and not age_confirmed:
         return _render_error(
@@ -546,7 +595,8 @@ async def step2_save(
         full_name=full_name.strip(),
         email=email.strip(),
         phone=normalize_phone(phone),
-        visa_status=visa_status,
+        visa_status=visa_status if include_work_rights else "",
+        include_work_rights=bool(include_work_rights),
         nationality=nationality.strip(),
         marital_status=marital_status,
         references=references,
@@ -618,13 +668,13 @@ async def step3(request: Request):
         if not attempt.get(key) and pii.get(key):
             attempt[key] = pii[key]
 
-    return templates.TemplateResponse("partials/wizard/step3_personalization.html", {
+    return _step_response("partials/wizard/step3_personalization.html", {
         "request": request,
         "attempt": attempt,
         "region": region,
         "region_config": region_config,
         "dev_mode": request.app.state.dev_mode,
-    })
+    }, step=3)
 
 
 @router.post("/step/3/save")
@@ -682,13 +732,13 @@ async def step4(request: Request):
     region_config = REGIONS.get(region, REGIONS["AU"])
     pii = request.state.session.get("pii") or {}
     warnings = region_warnings_dicts(attempt, pii, region)
-    return templates.TemplateResponse("partials/wizard/step4_documents.html", {
+    return _step_response("partials/wizard/step4_documents.html", {
         "request": request,
         "attempt": attempt,
         "cv_filename": cv_filename,
         "region_config": region_config,
         "warnings": warnings,
-    })
+    }, step=4)
 
 
 @router.post("/step/4/save")
@@ -719,14 +769,14 @@ async def step4_save(
         region_config = REGIONS.get(region, REGIONS["AU"])
         pii = request.state.session.get("pii") or {}
         warnings = region_warnings_dicts(attempt, pii, region)
-        return templates.TemplateResponse("partials/wizard/step4_documents.html", {
+        return _step_response("partials/wizard/step4_documents.html", {
             "request": request,
             "attempt": attempt,
             "cv_filename": None,
             "region_config": region_config,
             "warnings": warnings,
             "error": "Please upload a CV file or describe your experience before continuing.",
-        })
+        }, step=4)
 
     # Save extra documents
     if extra_docs:
@@ -771,7 +821,7 @@ async def step5(request: Request):
         recommended = [t.id for t in templates_list[:3]]
         recommendation_reason = ""
 
-    return templates.TemplateResponse("partials/wizard/step5_template.html", {
+    return _step_response("partials/wizard/step5_template.html", {
         "request": request,
         "attempt": attempt,
         "region_config": region_config,
@@ -779,7 +829,7 @@ async def step5(request: Request):
         "grouped_templates": grouped,
         "recommended": recommended,
         "recommendation_reason": recommendation_reason,
-    })
+    }, step=5)
 
 
 @router.post("/step/5/save")
@@ -813,7 +863,7 @@ async def step6(request: Request):
     warnings = region_warnings_dicts(attempt, pii, region)
     job_keywords = _extract_keywords(attempt.get("job_description", ""))
 
-    return templates.TemplateResponse("partials/wizard/step6_review.html", {
+    return _step_response("partials/wizard/step6_review.html", {
         "request": request,
         "attempt": attempt,
         "region_config": region_config,
@@ -822,7 +872,7 @@ async def step6(request: Request):
         "pii_missing": pii_missing,
         "warnings": warnings,
         "job_keywords": job_keywords,
-    })
+    }, step=6)
 
 
 # ------------------------------------------------------------------

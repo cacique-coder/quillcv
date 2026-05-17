@@ -120,8 +120,8 @@
                     {{ text_input("email", type="email", placeholder="e.g. jane@example.com", value=attempt.get('email', '')) }}
                 {% endcall %}
 
-                {% call form_group("Phone Number", hint="Include country code, e.g. +61 400 123 456.", optional=true) %}
-                    {{ phone_input("phone", value=attempt.get('phone', ''), placeholder="+61 400 123 456") }}
+                {% call form_group("Phone Number", hint="Pick your country from the flag dropdown, then type the local number.", optional=true) %}
+                    {{ phone_input("phone", value=attempt.get('phone', ''), region=attempt.get('region', '')) }}
                 {% endcall %}
             </div>
         </details>
@@ -256,22 +256,39 @@
         {% endif %}
 
         {% if fields.visa %}
+        {% set work_rights_on = attempt.get('include_work_rights') %}
 <div class="form-group">
-    <label>Visa / Work Rights Status
-        <span class="photo-level photo-required">Required for {{ region_config.name }}</span>
+    <label>Work Rights
+        <span class="photo-level">Optional</span>
     </label>
-    <p class="hint">{{ region_config.name }} expects work rights information on your CV.</p>
-    <select name="visa_status" class="input-field" required>
-        <option value="">— Select your work rights —</option>
-        <option value="Citizen" {% if attempt.get('visa_status') == 'Citizen' %}selected{% endif %}>Citizen</option>
-        <option value="Permanent Resident" {% if attempt.get('visa_status') == 'Permanent Resident' %}selected{% endif %}>Permanent Resident</option>
-        <option value="Work Visa" {% if attempt.get('visa_status') == 'Work Visa' %}selected{% endif %}>Work Visa (employer-sponsored)</option>
-        <option value="Working Holiday Visa" {% if attempt.get('visa_status') == 'Working Holiday Visa' %}selected{% endif %}>Working Holiday Visa</option>
-        <option value="Student Visa" {% if attempt.get('visa_status') == 'Student Visa' %}selected{% endif %}>Student Visa (with work rights)</option>
-        <option value="Partner/Spouse Visa" {% if attempt.get('visa_status') == 'Partner/Spouse Visa' %}selected{% endif %}>Partner / Spouse Visa</option>
-        <option value="Bridging Visa" {% if attempt.get('visa_status') == 'Bridging Visa' %}selected{% endif %}>Bridging Visa</option>
-        <option value="Other" {% if attempt.get('visa_status') == 'Other' %}selected{% endif %}>Other</option>
-    </select>
+    <p class="hint">
+        Stating your work rights is <strong>not required for the offer</strong> in {{ region_config.name }} —
+        employers verify eligibility separately. Tick the box if you're a visa holder or want to
+        signal full work rights up front (often helpful for recruiter screening).
+    </p>
+
+    <label class="consent-checkbox-label">
+        <input type="checkbox"
+               name="include_work_rights"
+               value="1"
+               {% if work_rights_on %}checked{% endif %}
+               onchange="document.getElementById('visa-status-wrap').hidden = !this.checked;">
+        <span class="consent-checkbox-text">Include my work rights on the CV</span>
+    </label>
+
+    <div id="visa-status-wrap" {% if not work_rights_on %}hidden{% endif %} style="margin-top: var(--space-3);">
+        <select name="visa_status" class="input-field">
+            <option value="">— Select your work rights —</option>
+            <option value="Citizen" {% if attempt.get('visa_status') == 'Citizen' %}selected{% endif %}>Citizen</option>
+            <option value="Permanent Resident" {% if attempt.get('visa_status') == 'Permanent Resident' %}selected{% endif %}>Permanent Resident</option>
+            <option value="Work Visa" {% if attempt.get('visa_status') == 'Work Visa' %}selected{% endif %}>Work Visa (employer-sponsored)</option>
+            <option value="Working Holiday Visa" {% if attempt.get('visa_status') == 'Working Holiday Visa' %}selected{% endif %}>Working Holiday Visa</option>
+            <option value="Student Visa" {% if attempt.get('visa_status') == 'Student Visa' %}selected{% endif %}>Student Visa (with work rights)</option>
+            <option value="Partner/Spouse Visa" {% if attempt.get('visa_status') == 'Partner/Spouse Visa' %}selected{% endif %}>Partner / Spouse Visa</option>
+            <option value="Bridging Visa" {% if attempt.get('visa_status') == 'Bridging Visa' %}selected{% endif %}>Bridging Visa</option>
+            <option value="Other" {% if attempt.get('visa_status') == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+    </div>
 </div>
         {% endif %}
 
@@ -279,8 +296,8 @@
         {% call form_group("References", hint=region_config.name ~ " expects references on the CV. Add 2-3 professional referees — this is something AI cannot fabricate. Each reference needs at least one contact method (email or phone).") %}
             {% set refs = attempt.get('references', []) %}
             <div id="references-list">
-                {{ reference_entry(1, refs[0] if refs|length > 0 else {}) }}
-                {{ reference_entry(2, refs[1] if refs|length > 1 else {}) }}
+                {{ reference_entry(1, refs[0] if refs|length > 0 else {}, region=attempt.get('region', '')) }}
+                {{ reference_entry(2, refs[1] if refs|length > 1 else {}, region=attempt.get('region', '')) }}
             </div>
         {% endcall %}
         {% endif %}

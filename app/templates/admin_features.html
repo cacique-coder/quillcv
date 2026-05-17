@@ -23,25 +23,6 @@
     font-size: 0.9rem;
     margin-bottom: 2rem;
   }
-  .admin-nav {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.85rem;
-    flex-wrap: wrap;
-  }
-  .admin-nav a {
-    color: var(--text-muted);
-    text-decoration: none;
-    padding: 0.3rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-  }
-  .admin-nav a:hover, .admin-nav a.active {
-    color: var(--accent);
-    border-color: var(--accent);
-  }
-
   .flag-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -86,39 +67,68 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.5rem;
-    min-width: 140px;
+    gap: 0.6rem;
+    min-width: 110px;
   }
-  .state-badge {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    border-radius: 4px;
-    font-size: 0.78rem;
+  .state-label {
+    font-size: 0.72rem;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
-  .state-on  { background: rgba(52, 211, 153, 0.15); color: var(--green); }
-  .state-off { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .state-label.on  { color: var(--green); }
+  .state-label.off { color: var(--text-muted); }
 
-  .toggle-form { display: inline-flex; gap: 0.4rem; }
-  .toggle-btn {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    font-size: 0.82rem;
-    font-weight: 600;
-    padding: 0.4rem 0.9rem;
+  /* iOS-style toggle switch */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
     cursor: pointer;
   }
-  .toggle-btn.on  { border-color: var(--green); color: var(--green); }
-  .toggle-btn.off { border-color: var(--red);   color: var(--red); }
-  .toggle-btn:hover { opacity: 0.85; }
+  .toggle-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 999px;
+    transition: background-color 0.18s ease;
+  }
+  .toggle-track::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.18s ease;
+  }
+  .toggle-switch input:checked + .toggle-track {
+    background: var(--green, #34d399);
+  }
+  .toggle-switch input:checked + .toggle-track::before {
+    transform: translateX(24px);
+  }
+  .toggle-switch input:focus-visible + .toggle-track {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .toggle-switch input:disabled + .toggle-track {
+    opacity: 0.6;
+    cursor: wait;
+  }
 </style>
 
 <div class="admin-wrap">
-  {% set active = "features" %}
-  {% include "partials/admin_nav.html" %}
-
   <h1 class="admin-heading">Admin — Feature Flags</h1>
   <p class="admin-sub">Toggle features at runtime. Changes apply immediately to new requests.</p>
 
@@ -141,18 +151,32 @@
         </div>
       </div>
       <div class="flag-state">
-        <span class="state-badge {{ 'state-on' if flag.enabled else 'state-off' }}">
-          {{ "ENABLED" if flag.enabled else "DISABLED" }}
+        <span class="state-label {{ 'on' if flag.enabled else 'off' }}">
+          {{ "Enabled" if flag.enabled else "Disabled" }}
         </span>
-        <form method="post" action="/admin/features/{{ flag.key }}" class="toggle-form">
+        <form method="post" action="/admin/features/{{ flag.key }}" data-flag-form>
           <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
           <input type="hidden" name="enabled" value="{{ 'false' if flag.enabled else 'true' }}">
-          <button type="submit" class="toggle-btn {{ 'off' if flag.enabled else 'on' }}">
-            {% if flag.enabled %}Disable{% else %}Enable{% endif %}
-          </button>
+          <label class="toggle-switch" aria-label="Toggle {{ flag.label }}">
+            <input type="checkbox" {% if flag.enabled %}checked{% endif %} data-flag-toggle>
+            <span class="toggle-track" aria-hidden="true"></span>
+          </label>
         </form>
       </div>
     </div>
   {% endfor %}
 </div>
+
+<script>
+  // Submit the form when the toggle flips. Disable the input mid-flight so
+  // double-clicks don't fire two POSTs.
+  document.querySelectorAll('[data-flag-toggle]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var form = input.closest('form');
+      if (!form) return;
+      input.disabled = true;
+      form.submit();
+    });
+  });
+</script>
 {% endblock %}

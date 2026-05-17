@@ -121,12 +121,17 @@ async def admin_dashboard(request: Request, user: User = Depends(require_auth)):
         )
         recent_requests = recent_result.scalars().all()
 
-        # Cost per CV — group by transaction_id, most recent first
+        # Cost per Session — a "session" is one wizard flow (one attempt_id).
+        # A session can contain multiple iterations (each = one transaction_id,
+        # one generation pipeline run). Group by attempt_id so the headline
+        # is total cost per CV iteration the user actually walked through.
+        # Rows without an attempt_id (e.g. admin testing) are excluded — they
+        # show up in the "Recent API Requests" log instead.
         cv_cost_result = await db.execute(
             select(
-                APIRequestLog.transaction_id,
                 APIRequestLog.attempt_id,
                 APIRequestLog.user_id,
+                func.count(func.distinct(APIRequestLog.transaction_id)).label("iterations"),
                 func.count(APIRequestLog.id).label("api_calls"),
                 func.coalesce(func.sum(APIRequestLog.cost_usd), 0).label("total_cost"),
                 func.coalesce(func.sum(APIRequestLog.input_tokens), 0).label("total_input"),
@@ -136,7 +141,8 @@ async def admin_dashboard(request: Request, user: User = Depends(require_auth)):
                 func.string_agg(APIRequestLog.service.distinct(), ', ').label("services"),
                 func.string_agg(APIRequestLog.model.distinct(), ', ').label("models"),
             )
-            .group_by(APIRequestLog.transaction_id, APIRequestLog.attempt_id, APIRequestLog.user_id)
+            .where(APIRequestLog.attempt_id.isnot(None))
+            .group_by(APIRequestLog.attempt_id, APIRequestLog.user_id)
             .order_by(func.min(APIRequestLog.created_at).desc())
             .limit(PAGE_SIZE)
         )
@@ -653,3 +659,69 @@ async def admin_toggle_feature(
     await feature_flags.set_flag(key, new_value, updated_by=user.id)
     logger.info("Admin %s set feature flag %s=%s", user.email, key, new_value)
     return RedirectResponse("/admin/features", status_code=303)
+
+
+# ── Admin: Session detail (one wizard flow → its iterations) ────
+
+
+@router.get("/admin/sessions/{attempt_id}")
+async def admin_session_detail(
+    request: Request,
+    attempt_id: str,
+    user: User = Depends(require_auth),
+):
+    """One row per pipeline iteration inside a wizard session (attempt_id).
+
+    A session = one wizard flow. Each iteration (transaction_id) is a single
+    generation pipeline run, made of multiple LLM API calls. This page rolls
+    them up so we can see how much one user spent across a CV.
+    """
+    if not _is_admin(user):
+        return HTMLResponse(status_code=404)
+
+    async with async_session() as db:
+        iters_result = await db.execute(
+            select(
+                APIRequestLog.transaction_id,
+                func.count(APIRequestLog.id).label("api_calls"),
+                func.coalesce(func.sum(APIRequestLog.cost_usd), 0).label("total_cost"),
+                func.coalesce(func.sum(APIRequestLog.input_tokens), 0).label("total_input"),
+                func.coalesce(func.sum(APIRequestLog.output_tokens), 0).label("total_output"),
+                func.coalesce(func.sum(APIRequestLog.duration_ms), 0).label("total_duration"),
+                func.min(APIRequestLog.created_at).label("started_at"),
+            )
+            .where(APIRequestLog.attempt_id == attempt_id)
+            .group_by(APIRequestLog.transaction_id)
+            .order_by(func.min(APIRequestLog.created_at).asc())
+        )
+        iterations = iters_result.all()
+
+        owner_email = ""
+        owner_row = await db.execute(
+            select(User.email)
+            .join(APIRequestLog, APIRequestLog.user_id == User.id)
+            .where(APIRequestLog.attempt_id == attempt_id)
+            .limit(1)
+        )
+        owner_email = owner_row.scalar_one_or_none() or ""
+
+    if not iterations:
+        return HTMLResponse(status_code=404)
+
+    total_cost = sum(i.total_cost for i in iterations)
+    total_calls = sum(i.api_calls for i in iterations)
+    total_duration = sum(i.total_duration for i in iterations)
+
+    return templates.TemplateResponse(
+        "admin_session.html",
+        {
+            "request": request,
+            "user": user,
+            "attempt_id": attempt_id,
+            "owner_email": owner_email,
+            "iterations": iterations,
+            "total_cost": total_cost,
+            "total_calls": total_calls,
+            "total_duration": total_duration,
+        },
+    )

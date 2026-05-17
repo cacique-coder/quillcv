@@ -101,3 +101,13 @@ landing.css                                                                     
 - **Out of scope**: `app/templates/cv_templates/**`, `app/templates/cover_letter_templates/**`, `app/templates/emails/**` — these stay on inline styles for the print/email pipeline.
 
 When extending the look: shared classes first (`components.css`); only fall back to a page-scoped `<style>` block if a pattern is genuinely one-off.
+
+## Template lint hook (opt-in)
+
+A git pre-commit hook enforces "components are macros, not inline patterns".
+
+- Hook: `.githooks/pre-commit` → runs `scripts/lint_templates.py`
+- Enable per clone (one-time): `git config core.hooksPath .githooks`
+- Bypass a single commit: `git commit --no-verify`
+- Flags raw `<textarea>`, `<input type="text|email|tel|file">`, `<select>` as FAIL; raw `<button class="btn ...">` as WARN (no button macro yet)
+- Excluded: `macros/`, `dev/components.html`, `cv_templates/`, `cover_letter_templates/`, `emails/`

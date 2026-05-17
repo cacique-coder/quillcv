@@ -37,6 +37,14 @@ def _open_signups_default() -> bool:
     return os.environ.get("APP_ENV", "development") != "production"
 
 
+def _cover_letter_default() -> bool:
+    """Env-driven default for the cover-letter flag. Off unless explicitly enabled."""
+    raw = os.environ.get("COVER_LETTER_ENABLED")
+    if raw is not None:
+        return raw.lower() in {"1", "true", "yes", "on"}
+    return False
+
+
 REGISTRY: dict[str, FlagSpec] = {
     "open_signups": FlagSpec(
         key="open_signups",
@@ -47,6 +55,17 @@ REGISTRY: dict[str, FlagSpec] = {
             "users. Invited signups always work regardless of this flag."
         ),
         default=_open_signups_default,
+    ),
+    "cover_letter": FlagSpec(
+        key="cover_letter",
+        label="Cover letter generation",
+        description=(
+            "When on, the CV generation pipeline also produces a tailored cover "
+            "letter alongside the CV (extra LLM call, slower, currently prone to "
+            "timeouts via the local claude CLI). When off, the cover-letter step "
+            "is skipped and the results page renders without the Cover Letter tab."
+        ),
+        default=_cover_letter_default,
     ),
 }
 
