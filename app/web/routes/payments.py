@@ -16,6 +16,7 @@ from app.billing.use_cases.grant_purchase_credits import grant_purchase_credits
 from app.billing.use_cases.manage_credits import (
     get_balance,
 )
+from app.billing.use_cases.reverse_purchase_credits import reverse_purchase_credits
 from app.identity.adapters.fastapi_deps import require_auth
 from app.identity.use_cases.authenticate import count_alpha_users
 from app.infrastructure.email.smtp import send_payment_confirmation_email
@@ -418,12 +419,52 @@ async def stripe_webhook(request: Request):
                             session_id,
                         )
 
+    elif event["type"] == "charge.refunded":
+        # A charge (and therefore payment) was refunded by the merchant or
+        # requested by the customer.  We claw back the credits that were
+        # granted when the payment completed.  Stripe provides the
+        # payment_intent ID on the charge object.
+        #
+        # Invariant on async_payment_failed: for Stripe Checkout one-time
+        # payments, checkout.session.async_payment_failed fires BEFORE the
+        # session ever reaches `payment_status=paid`, so
+        # grant_purchase_credits never runs for them — there are no credits
+        # to claw back.  We only mark the pending row as failed (below).
+        # charge.refunded is the correct event for post-completion reversals.
+        charge = event["data"]["object"]
+        payment_intent = charge.get("payment_intent")
+        if payment_intent:
+            async with async_session() as db:
+                reverse_result = await reverse_purchase_credits(
+                    db,
+                    stripe_payment_intent=payment_intent,
+                )
+            if reverse_result.reversed:
+                logger.warning(
+                    "Stripe refund: clawed back %d credits from user %s "
+                    "(payment_intent %s)",
+                    reverse_result.credits_reversed,
+                    reverse_result.user_id,
+                    payment_intent,
+                )
+            else:
+                logger.info(
+                    "Stripe refund: no-op for payment_intent %s "
+                    "(already reversed or payment not found)",
+                    payment_intent,
+                )
+        else:
+            logger.warning("charge.refunded event missing payment_intent: %r", charge)
+
     elif event["type"] in ("checkout.session.expired", "checkout.session.async_payment_failed"):
         session = event["data"]["object"]
         session_id = session["id"]
         user_id = session.get("metadata", {}).get("user_id")
         new_status = "expired" if event["type"] == "checkout.session.expired" else "failed"
 
+        # async_payment_failed fires before the session reaches payment_status=paid,
+        # so grant_purchase_credits never ran for it — no credits to claw back.
+        # We only mark the pending row as failed here.
         logger.warning(
             "Stripe payment %s for session %s user_id=%s",
             event["type"],

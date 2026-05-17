@@ -3,8 +3,9 @@ import re
 import time
 
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 
+from app.billing.use_cases.manage_credits import add_credits, deduct_credit, has_credits
 from app.cv_export.adapters.docx_export import generate_docx
 from app.cv_export.adapters.puppeteer_pdf import generate_pdf
 from app.cv_export.adapters.template_registry import REGION_RULES, get_template
@@ -18,12 +19,18 @@ from app.infrastructure.persistence.attempt_store import (
     get_document_filename,
     update_attempt,
 )
+from app.infrastructure.persistence.database import async_session
 from app.scoring.adapters.keyword_matcher import analyze_ats
 from app.web.templates import templates
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Maximum number of times the user may re-run the full generation pipeline
+# for a single attempt (POST /analyze regenerations).  Each run costs 1 credit,
+# so this also acts as a per-attempt spend ceiling.
+_MAX_REGENERATIONS = 5
 
 
 # ---------------------------------------------------------------------------
@@ -77,15 +84,63 @@ async def ws_analyze(websocket: WebSocket):
         ws_user = await get_current_user(websocket)
         ws_user_id = ws_user.id if ws_user else None
 
-        result = await run_generation_pipeline(
-            attempt_id,
-            llm,
-            llm_fast,
-            on_progress=send_progress,
-            user_id=ws_user_id,
-            pii=_ws_session_data.get("pii") or {},
-            pii_password=_ws_session_data.get("_pii_password"),
-        )
+        # ── Credit gate ────────────────────────────────────────────────────
+        # Authenticated users must have a positive balance.  Guests (ws_user_id
+        # is None) are allowed through — they can't buy credits, but they can
+        # use any free trial quota granted at registration.  If credits run out,
+        # we close with 4402 (4000-range = app-level, 02 ≈ HTTP 402).
+        if ws_user_id is not None:
+            async with async_session() as db:
+                _credits_ok = await has_credits(db, ws_user_id)
+            if not _credits_ok:
+                await websocket.send_json({
+                    "type": "error",
+                    "code": "insufficient_credits",
+                    "message": "You have no credits remaining. Please top up to generate a CV.",
+                })
+                await websocket.close(code=4402, reason="Payment required")
+                return
+
+            # Deduct before running the pipeline.  The atomic UPDATE prevents
+            # concurrent requests from both succeeding on a balance of 1.
+            async with async_session() as db:
+                _deducted = await deduct_credit(db, ws_user_id)
+            if not _deducted:
+                # Race condition — another concurrent request won the credit.
+                await websocket.send_json({
+                    "type": "error",
+                    "code": "insufficient_credits",
+                    "message": "You have no credits remaining. Please top up to generate a CV.",
+                })
+                await websocket.close(code=4402, reason="Payment required")
+                return
+
+            logger.info("WS credit deducted user=%s attempt=%s", ws_user_id, attempt_id)
+
+        _ws_credit_deducted = ws_user_id is not None  # track for refund on hard failure
+
+        try:
+            result = await run_generation_pipeline(
+                attempt_id,
+                llm,
+                llm_fast,
+                on_progress=send_progress,
+                user_id=ws_user_id,
+                pii=_ws_session_data.get("pii") or {},
+                pii_password=_ws_session_data.get("_pii_password"),
+            )
+        except Exception:
+            # Hard failure — refund the credit so the user isn't charged for a
+            # broken generation.  Only on hard failure, not transient retries
+            # handled inside run_generation_pipeline.
+            if _ws_credit_deducted:
+                try:
+                    async with async_session() as db:
+                        await add_credits(db, ws_user_id, 1, as_grant=True)
+                    logger.info("WS credit refunded (hard failure) user=%s attempt=%s", ws_user_id, attempt_id)
+                except Exception:
+                    logger.exception("Failed to refund credit after WS failure user=%s", ws_user_id)
+            raise
 
         total_ms = round((time.monotonic() - ws_start) * 1000)
         result.get("quality_review") and (
@@ -177,7 +232,14 @@ async def ws_analyze(websocket: WebSocket):
 
 @router.post("/analyze")
 async def analyze(request: Request):
-    """Parse CV from attempt store, run ATS analysis, and generate tailored CV."""
+    """Parse CV from attempt store, run ATS analysis, and generate tailored CV.
+
+    POST /analyze is the *Regenerate* path (the initial generation uses
+    /ws/analyze).  Each call costs 1 credit and is capped at
+    _MAX_REGENERATIONS per attempt to prevent runaway spend.
+    Concurrent duplicate requests are serialised by the atomic credit
+    deduction — only one call can win the balance check and proceed.
+    """
     attempt_id = request.state.session.get("attempt_id")
     if not attempt_id:
         return templates.TemplateResponse(
@@ -185,9 +247,52 @@ async def analyze(request: Request):
             {"request": request, "error": "No active session. Please start from the beginning."},
         )
 
-    # TODO(billing): de-dup concurrent /analyze calls per attempt before enabling credit gating
     http_user = getattr(request.state, "user", None)
     http_user_id = http_user.id if http_user else None
+
+    # ── Regeneration cap ──────────────────────────────────────────────────
+    _attempt_meta = get_attempt(attempt_id) or {}
+    regen_count = _attempt_meta.get("regeneration_count", 0)
+    if regen_count >= _MAX_REGENERATIONS:
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": "regeneration_limit_reached",
+                "message": (
+                    f"You have reached the maximum of {_MAX_REGENERATIONS} regenerations "
+                    "for this session. Start a new session to generate another CV."
+                ),
+            },
+        )
+
+    # ── Credit gate ───────────────────────────────────────────────────────
+    if http_user_id is not None:
+        async with async_session() as db:
+            _credits_ok = await has_credits(db, http_user_id)
+        if not _credits_ok:
+            return JSONResponse(
+                status_code=402,
+                content={
+                    "error": "insufficient_credits",
+                    "message": "You have no credits remaining. Please top up to generate a CV.",
+                },
+            )
+
+        # Atomic deduction — prevents concurrent duplicate requests from both
+        # succeeding when the balance is exactly 1.
+        async with async_session() as db:
+            _deducted = await deduct_credit(db, http_user_id)
+        if not _deducted:
+            return JSONResponse(
+                status_code=402,
+                content={
+                    "error": "insufficient_credits",
+                    "message": "You have no credits remaining. Please top up to generate a CV.",
+                },
+            )
+        logger.info("HTTP /analyze credit deducted user=%s attempt=%s", http_user_id, attempt_id)
+
+    _credit_deducted = http_user_id is not None
 
     # POST /analyze is the Regenerate endpoint (initial generation uses /ws/analyze).
     # Always clear cached LLM outputs so the pipeline re-runs from scratch.
@@ -202,8 +307,15 @@ async def analyze(request: Request):
         quality_review=None,
         quality_review_flags=None,
         missing_keyword_groups=None,
+        regeneration_count=regen_count + 1,
     )
-    logger.info("Pipeline[%s] regenerate: cleared cached LLM outputs", attempt_id)
+    logger.info(
+        "Pipeline[%s] regenerate #%d: cleared cached LLM outputs",
+        attempt_id,
+        regen_count + 1,
+    )
+
+    _AI_FAILURE_MSG = "CV generation failed"  # prefix used by run_generation_pipeline
 
     try:
         result = await run_generation_pipeline(
@@ -215,10 +327,48 @@ async def analyze(request: Request):
             pii_password=request.state.session.get("_pii_password"),
         )
     except ValueError as e:
+        err_str = str(e)
+        # AI-failure errors get a credit refund; input-validation errors do not.
+        # run_generation_pipeline uses "CV generation failed" as the prefix for
+        # AI hard failures; all other ValueErrors are input/session errors.
+        is_ai_failure = _AI_FAILURE_MSG in err_str
+        if is_ai_failure and _credit_deducted:
+            try:
+                async with async_session() as db:
+                    await add_credits(db, http_user_id, 1, as_grant=True)
+                logger.info(
+                    "HTTP /analyze credit refunded (AI failure) user=%s attempt=%s",
+                    http_user_id,
+                    attempt_id,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to refund credit after /analyze AI failure user=%s",
+                    http_user_id,
+                )
         return templates.TemplateResponse(
             "partials/error.html",
-            {"request": request, "error": str(e)},
+            {"request": request, "error": err_str},
         )
+    except Exception:
+        # Unexpected hard failure — refund the credit so the user isn't charged
+        # for a broken generation.  Only on hard failure, not transient retries
+        # handled inside run_generation_pipeline.
+        if _credit_deducted:
+            try:
+                async with async_session() as db:
+                    await add_credits(db, http_user_id, 1, as_grant=True)
+                logger.info(
+                    "HTTP /analyze credit refunded (hard failure) user=%s attempt=%s",
+                    http_user_id,
+                    attempt_id,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to refund credit after /analyze failure user=%s",
+                    http_user_id,
+                )
+        raise
 
     missing_keyword_groups = result.get("missing_keyword_groups") or {}
     _attempt_for_order = get_attempt(attempt_id) or {}
@@ -244,7 +394,14 @@ async def analyze(request: Request):
 
 @router.post("/apply-fixes")
 async def apply_fixes(request: Request):
-    """Apply selected quality review fixes to the generated CV."""
+    """Apply selected quality review fixes to the generated CV.
+
+    /apply-fixes is treated as in-progress refinement of an already-paid
+    generation, so it does NOT charge a credit.  However, we cap calls per
+    attempt at _MAX_REGENERATIONS to prevent unbounded LLM cost from a
+    single session.  The cap is shared with the /analyze regeneration
+    counter so the combined total stays within the per-attempt ceiling.
+    """
     attempt_id = request.state.session.get("attempt_id")
     if not attempt_id:
         return templates.TemplateResponse(
