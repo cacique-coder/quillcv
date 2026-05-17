@@ -7,6 +7,9 @@ image: cacique-coder/quillcv
 # cd into, rsync for backups, or tar offsite on a cron.
 volumes:
   - "./storage/uploads:/app/app/uploads"
+  # SQLite session store. Keeping it on a host-mounted volume means users
+  # stay logged in across container rebuilds.
+  - "./storage/sessions:/var/lib/quillcv"
 
 servers:
   web:
@@ -41,6 +44,7 @@ env:
     APP_ENV: production
     LLM_PROVIDER: gemini
     PYTHONUNBUFFERED: "1"
+    SESSION_DB_PATH: /var/lib/quillcv/sessions.db
   secret:
     - DATABASE_URL
     - SESSION_SECRET

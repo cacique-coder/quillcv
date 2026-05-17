@@ -66,14 +66,17 @@ RUN python scripts/minify_css.py
 # UID/GID pinned to 1000 so that a bind-mounted uploads directory on the host
 # (owned by the typical deploy user, UID 1000) is writable from inside the
 # container without extra chown gymnastics on the host.
+# Home directory must exist and be writable: gunicorn 26's control server
+# writes a unix socket under $HOME, and the SQLite session middleware
+# defaults to $XDG_STATE_HOME (= ~/.local/state) when SESSION_DB_PATH is unset.
 RUN groupadd --gid 1000 appuser \
-    && useradd --uid 1000 --gid 1000 --no-create-home --shell /usr/sbin/nologin appuser \
-    && mkdir -p /app/app/uploads \
-    && chown -R appuser:appuser /app
+    && useradd --uid 1000 --gid 1000 --create-home --shell /usr/sbin/nologin appuser \
+    && mkdir -p /app/app/uploads /var/lib/quillcv \
+    && chown -R appuser:appuser /app /var/lib/quillcv
 
-# Declared so operators know this path holds state; the concrete bind mount
-# lives in config/deploy.yml and resolves to ~deploy/storage/uploads on the host.
-VOLUME ["/app/app/uploads"]
+# Declared so operators know these paths hold state; the concrete bind mounts
+# live in config/deploy.yml and resolve to ~deploy/storage/* on the host.
+VOLUME ["/app/app/uploads", "/var/lib/quillcv"]
 
 USER appuser
 
